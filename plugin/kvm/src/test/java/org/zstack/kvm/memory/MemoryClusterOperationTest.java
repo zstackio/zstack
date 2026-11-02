@@ -367,6 +367,38 @@ public class MemoryClusterOperationTest {
                 manager.commands.get(manager.commands.size() - 1).get("path"));
     }
 
+    @Test public void aPreparationResumesADrainedHostThatWantsZram() throws Exception {
+        setup();
+        repository.drained.add("host1");
+        MemoryAgentResponse done = reply("Succeeded", null, null);
+        done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
+        manager.script("host1", "writeback-backends", done);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+
+        assertEquals(Collections.singletonList("success"), manager.outcomes);
+        assertTrue(repository.plans.contains("host1:prepareWritebackBackend:active"));
+        Map<String, Object> apply = manager.commands.get(manager.commands.size() - 1);
+        assertEquals("apply", apply.get("path"));
+        assertEquals("the prepared Host activates instead of draining its reset pool again",
+                "active", ((Map<?, ?>) apply.get("desired")).get("control"));
+    }
+
+    @Test public void aPreparationKeepsADrainedHostWithoutZramDrained() throws Exception {
+        setup();
+        repository.drained.add("host1");
+        repository.zramOff.add("host1");
+        MemoryAgentResponse done = reply("Succeeded", null, null);
+        done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
+        manager.script("host1", "writeback-backends", done);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+
+        assertEquals(Collections.singletonList("success"), manager.outcomes);
+        assertTrue(repository.plans.contains("host1:prepareWritebackBackend:null"));
+        assertFalse(repository.plans.contains("host1:prepareWritebackBackend:active"));
+    }
+
     @Test public void aPreparationWaitsForTheApplyInFlight() throws Exception {
         setup();
         MemoryHostOperationMsg pause = new MemoryHostOperationMsg();

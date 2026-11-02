@@ -590,7 +590,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         return;
                     }
                     repository.recordPreparedBackend(host, (String) resource, capacity);
-                    repository.plan(host, null, MemoryBackendPreparationRules.ACTION, actor, licensed(), false);
+                    // The preparation reset the drained pool; a Host whose configuration still wants ZRAM activates it.
+                    boolean resume = repository.isDrained(host) && repository.wantsZram(host);
+                    repository.plan(host, resume ? "active" : null, MemoryBackendPreparationRules.ACTION, actor, licensed(), false);
                     done.accept("success");
                     return;
                 }
