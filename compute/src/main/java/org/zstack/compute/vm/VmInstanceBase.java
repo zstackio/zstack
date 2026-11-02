@@ -149,6 +149,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     private VmInstanceDeviceManager vidm;
     @Autowired
     private TpmEncryptedResourceKeyBackend tpmKeyBackend;
+    @Autowired
+    private VmTpmManager vmTpmManager;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -9339,9 +9341,22 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(MessageReply r) {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
                 }
 
-                bus.reply(msg, reply);
+                vmTpmManager.resetVmHostFilesIfNeeded(self.getUuid(), new Completion(msg) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
         });
     }

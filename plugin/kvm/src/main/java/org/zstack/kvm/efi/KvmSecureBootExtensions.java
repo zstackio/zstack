@@ -28,7 +28,6 @@ import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.BeforeHaStartVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
@@ -92,7 +91,6 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
         VmPreMigrationExtensionPoint,
-        AfterReimageVmInstanceExtensionPoint,
         VmReleaseResourceExtensionPoint,
         VmInstanceMigrateExtensionPoint,
         VolumeSnapshotCreationExtensionPoint,
@@ -600,22 +598,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         VmInstanceSpec spec;
 
         VolumeInventory inventory;
-    }
-
-    @Override
-    public void afterReimageVmInstance(VolumeInventory inventory) {
-        String vmUuid = inventory.getVmInstanceUuid();
-        if (vmUuid == null) {
-            return;
-        }
-
-        SQL.New(VmHostFileVO.class)
-                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
-                .delete();
-        secureBootManager.cleanVmHostBackupFile(vmUuid);
-
-        logger.debug(String.format("reset TPM state for VM[uuid:%s] after reimage: " +
-                "deleted all VmHostFileVO and VmHostBackupFileVO records", vmUuid));
     }
 
     @Override

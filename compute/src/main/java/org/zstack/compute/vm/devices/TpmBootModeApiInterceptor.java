@@ -12,6 +12,7 @@ import org.zstack.header.tag.APIDeleteTagMsg;
 import org.zstack.header.tag.APIUpdateSystemTagMsg;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.APIDeleteVmBootModeMsg;
 import org.zstack.header.vm.APISetVmBootModeMsg;
 import org.zstack.header.vm.VmInstanceVO;
@@ -22,6 +23,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.header.tpm.TpmErrors.VM_BOOT_MODE_ERROR;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_DEVICES_10011;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_DEVICES_10012;
 
 public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
     @Override
@@ -33,7 +35,8 @@ public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
                 APICreateSystemTagMsg.class,
                 APICreateSystemTagsMsg.class,
                 APIUpdateSystemTagMsg.class,
-                APIDeleteTagMsg.class
+                APIDeleteTagMsg.class,
+                APICreateVmInstanceMsg.class
         );
     }
 
@@ -56,6 +59,8 @@ public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
             validate((APIUpdateSystemTagMsg) msg);
         } else if (msg instanceof APIDeleteTagMsg) {
             validate((APIDeleteTagMsg) msg);
+        } else if (msg instanceof APICreateVmInstanceMsg) {
+            validate((APICreateVmInstanceMsg) msg);
         }
 
         return msg;
@@ -99,6 +104,28 @@ public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
         SystemTagVO tag = findSystemTag(msg.getUuid());
         if (tag != null && isVmBootModeTag(tag.getResourceType(), tag.getTag())) {
             checkTpmAllowsBootMode(tag.getResourceUuid(), null);
+        }
+    }
+
+    private void validate(APICreateVmInstanceMsg msg) {
+        if (msg.getDevicesSpec() == null || msg.getDevicesSpec().getTpm() == null
+                || !msg.getDevicesSpec().getTpm().isEnable()) {
+            return;
+        }
+
+        String bootMode = null;
+        if (msg.getSystemTags() != null) {
+            for (String tag : msg.getSystemTags()) {
+                if (VmSystemTags.BOOT_MODE.isMatch(tag)) {
+                    bootMode = bootModeOf(tag);
+                }
+            }
+        }
+
+        if (!VmTpmManager.isUefiBootMode(bootMode)) {
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10012, VM_BOOT_MODE_ERROR,
+                    "cannot create VM[name:%s] with a TPM device in %s boot mode, TPM requires UEFI boot mode",
+                    msg.getName(), bootMode == null ? ImageBootMode.Legacy : bootMode));
         }
     }
 
