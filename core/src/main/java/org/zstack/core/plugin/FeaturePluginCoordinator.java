@@ -253,6 +253,9 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                 markRestartPending();
             }
             refreshDrivers();
+            if (!reply.isNeedRestart()) {
+                FeaturePlugins.refresh();
+            }
         } catch (OperationFailureException e) {
             reply.setError(e.getErrorCode());
         } catch (Exception e) {

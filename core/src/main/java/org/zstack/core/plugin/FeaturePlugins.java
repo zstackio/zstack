@@ -29,6 +29,26 @@ public class FeaturePlugins {
         return installed;
     }
 
+    /**
+     * Reads the records again after a change that needs no restart, e.g. of a driver-only plugin. A plugin whose
+     * package did not change keeps the status it got when the management node started.
+     */
+    public static synchronized void refresh() {
+        Map<String, FeaturePluginInventory> before = new HashMap<>();
+        for (FeaturePluginInventory inv : installed()) {
+            before.put(inv.getId(), inv);
+        }
+        filesByPlugin.clear();
+        List<FeaturePluginInventory> now = load();
+        for (int i = 0; i < now.size(); i++) {
+            FeaturePluginInventory old = before.get(now.get(i).getId());
+            if (old != null && Objects.equals(old.getSha256(), now.get(i).getSha256())) {
+                now.set(i, old);
+            }
+        }
+        installed = now;
+    }
+
     public static List<String> loadedEntityClasses() {
         List<String> ret = new ArrayList<>();
         for (FeaturePluginInventory inv : installed()) {

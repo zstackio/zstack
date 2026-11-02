@@ -14,6 +14,8 @@ public class FeaturePluginPackageInventory {
     private String sha256;
     private Boolean desired;
     private String licenseAddon;
+    // false for a package that only carries drivers, which are loaded without restarting management nodes
+    private Boolean needRestart;
     private String error;
 
     public String getPath() {
@@ -89,6 +91,7 @@ public class FeaturePluginPackageInventory {
         inv.setCategory("network");
         inv.setVersion("5.5.48-1");
         inv.setInstalled(false);
+        inv.setNeedRestart(true);
         return inv;
     }
 
@@ -114,5 +117,13 @@ public class FeaturePluginPackageInventory {
 
     public void setLicenseAddon(String licenseAddon) {
         this.licenseAddon = licenseAddon;
+    }
+
+    public Boolean getNeedRestart() {
+        return needRestart;
+    }
+
+    public void setNeedRestart(Boolean needRestart) {
+        this.needRestart = needRestart;
     }
 }

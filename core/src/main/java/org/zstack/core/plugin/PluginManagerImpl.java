@@ -758,10 +758,14 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             }
             Map<String, Object> ret = coordinator.runCtlJson(String.format("install %s --json", pkg.getPath()));
             coordinator.refreshDrivers();
+            boolean restartSelf = Boolean.TRUE.equals(ret.get("needRestart"));
+            if (!restartSelf) {
+                FeaturePlugins.refresh();
+            }
             List<String> peers = coordinator.syncToPeers((String) ret.get("package"));
             pkg.setInstalled(true);
             event.setInventory(pkg);
-            return restartAfter(peers, Boolean.TRUE.equals(ret.get("needRestart")));
+            return restartAfter(peers, restartSelf);
         });
     }
 
@@ -807,8 +811,12 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             checkUninstallable(msg.getPluginId());
             Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json", msg.getPluginId()));
             coordinator.refreshDrivers();
+            boolean restartSelf = Boolean.TRUE.equals(ret.get("needRestart"));
+            if (!restartSelf) {
+                FeaturePlugins.refresh();
+            }
             List<String> peers = coordinator.syncToPeers(null);
-            return restartAfter(peers, Boolean.TRUE.equals(ret.get("needRestart")));
+            return restartAfter(peers, restartSelf);
         });
     }
 
