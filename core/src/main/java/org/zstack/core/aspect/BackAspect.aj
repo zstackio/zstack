@@ -1,5 +1,7 @@
 package org.zstack.core.aspect;
 
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.utils.TaskContext;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -8,12 +10,12 @@ import org.zstack.utils.logging.CLogger;
 public aspect BackAspect {
     private static final CLogger logger = Utils.getLogger(BackAspect.class);
 
-    void around(org.zstack.header.core.workflow.Flow obj):target(obj) && execution(void Flow+.rollback(..)) {
+    void around(Flow obj):target(obj) && execution(void Flow+.rollback(..)) {
         setMsgDeadline();
         proceed(obj);
     }
 
-    void around(org.zstack.core.cloudbus.CloudBusCallBack obj):target(obj) && execution(void CloudBusCallBack+.CloudBusCallBack(..)) {
+    void around(CloudBusCallBack obj):target(obj) && execution(void CloudBusCallBack+.CloudBusCallBack(..)) {
         setMsgDeadline();
         proceed(obj);
     }
