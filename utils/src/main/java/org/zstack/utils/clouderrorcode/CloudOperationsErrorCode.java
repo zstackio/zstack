@@ -2752,6 +2752,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_KVM_10163 = "ORG_ZSTACK_KVM_10163";
 
+    public static final String ORG_ZSTACK_KVM_10164 = "ORG_ZSTACK_KVM_10164";
+
     public static final String ORG_ZSTACK_ZSV_10000 = "ORG_ZSTACK_ZSV_10000";
 
     public static final String ORG_ZSTACK_ZSV_10001 = "ORG_ZSTACK_ZSV_10001";

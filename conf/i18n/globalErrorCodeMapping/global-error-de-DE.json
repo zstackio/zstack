@@ -489,6 +489,7 @@
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "Der Startmodus der VM[uuid:%s] kann nicht auf %s geändert werden, da die VM ein TPM-Gerät hat, das den UEFI-Startmodus erfordert; entfernen Sie zuerst das TPM",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10012": "Die VM[name:%s] mit einem TPM-Gerät kann nicht im Startmodus %s erstellt werden; TPM erfordert den UEFI-Startmodus",
   "ORG_ZSTACK_KVM_10163": "KVM-vTPM-/host-file-Operation fehlgeschlagen: %s",
+  "ORG_ZSTACK_KVM_10164": "%s-Datei[path:%s] der VM[uuid:%s] kann auf dem Host[uuid:%s] nicht gelesen werden, sie fehlt möglicherweise oder ist beschädigt; stellen Sie die Originaldatei wieder her, bevor Sie die VM starten",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "Volume-Protokolloperation fehlgeschlagen: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "Volume-Snapshot-Operation fehlgeschlagen: %s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "Die Snapshot-Gruppe[uuid:%s] enthält einen Speicher-Snapshot; daraus kann keine VM erstellt werden",

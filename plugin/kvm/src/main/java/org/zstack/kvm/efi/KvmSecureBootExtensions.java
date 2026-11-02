@@ -19,6 +19,7 @@ import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.tpm.entity.TpmVO;
@@ -354,6 +355,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         // whether the NvRam is on the same host as before
         private boolean sameHost = false;
         private boolean syncFromOriginHostSuccess = false;
+        private ErrorCode syncFromOriginHostError;
         private boolean writeSuccess = false;
         private VmHostFileVO vmHostFile;
         private VmHostBackupFileVO vmBackupFileVO;
@@ -362,6 +364,23 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         //             > VmHostFileVO (read success)
         //             > VmHostFileVO (read fail, but has content)
         //             > VmHostBackupFileVO (vmInstanceUuid matched)  <-  read this only if VmHostFileVO is not exist
+    }
+
+    private static boolean isFileLevelReadError(ErrorCode error) {
+        if (error == null) {
+            return false;
+        }
+        if (error.getFromOpaque("path") != null) {
+            return true;
+        }
+        if (error instanceof ErrorCodeList && ((ErrorCodeList) error).getCauses() != null) {
+            for (ErrorCode cause : ((ErrorCodeList) error).getCauses()) {
+                if (isFileLevelReadError(cause)) {
+                    return true;
+                }
+            }
+        }
+        return isFileLevelReadError(error.getCause());
     }
 
     @SuppressWarnings("rawtypes")
@@ -419,6 +438,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
                         logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
                                 context.vmUuid, reply.getError().getReadableDetails()));
+                        context.syncFromOriginHostError = reply.getError();
                         trigger.next();
                     }
                 });
@@ -433,6 +453,18 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                boolean hasContent = Q.New(VmHostFileContentVO.class)
+                        .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
+                        .isExists();
+                if (hasContent && (context.sameHost || isFileLevelReadError(context.syncFromOriginHostError))) {
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10164,
+                            "%s file[path:%s] of VM[uuid:%s] cannot be read on host[uuid:%s], it may be missing or corrupted; "
+                                    + "restore the original file before starting the VM",
+                            context.type, context.path, context.vmUuid, context.vmHostFile.getHostUuid())
+                            .causedBy(context.syncFromOriginHostError));
+                    return;
+                }
+
                 Timestamp latestChangeDate = Q.New(VmHostFileVO.class)
                         .select(VmHostFileVO_.changeDate)
                         .eq(VmHostFileVO_.uuid, context.vmHostFile.getUuid())
@@ -445,9 +477,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     return;
                 }
 
-                if (!Q.New(VmHostFileContentVO.class)
-                        .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
-                        .isExists()) {
+                if (!hasContent) {
                     logger.debug(String.format(
                             "VmHostFileVO[vmUuid=%s, hostUuid=%s, type=%s] has no content",
                             context.vmUuid, context.hostUuid, context.type));

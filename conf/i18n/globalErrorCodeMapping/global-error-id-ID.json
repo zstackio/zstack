@@ -489,6 +489,7 @@
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "tidak dapat mengubah mode boot VM[uuid:%s] menjadi %s karena VM memiliki perangkat TPM yang memerlukan mode boot UEFI; hapus TPM terlebih dahulu",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10012": "tidak dapat membuat VM[name:%s] dengan perangkat TPM dalam mode boot %s; TPM memerlukan mode boot UEFI",
   "ORG_ZSTACK_KVM_10163": "operasi KVM vTPM/host-file gagal: %s",
+  "ORG_ZSTACK_KVM_10164": "file %s[path:%s] milik VM[uuid:%s] tidak dapat dibaca di host[uuid:%s], file mungkin hilang atau rusak; pulihkan file asli sebelum memulai VM",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "operasi protokol volume gagal: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "operasi snapshot volume gagal: %s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "Grup snapshot[uuid:%s] berisi snapshot memori, tidak dapat membuat VM darinya",

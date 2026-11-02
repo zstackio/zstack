@@ -489,6 +489,7 @@
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "VM[uuid:%s] のブートモードを %s に変更できません。VM には UEFI ブートモードが必要な TPM デバイスがあります。先に TPM を削除してください",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10012": "TPM デバイス付きの VM[name:%s] をブートモード %s で作成できません。TPM には UEFI ブートモードが必要です",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file操作に失敗しました: %s",
+  "ORG_ZSTACK_KVM_10164": "%sファイル[path:%s]（VM[uuid:%s]）をホスト[uuid:%s]上で読み取れません。ファイルが存在しないか破損している可能性があります。元のファイルを復元してからVMを起動してください",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "ボリュームプロトコル操作に失敗しました: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "ボリュームスナップショット操作に失敗しました: %s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "スナップショットグループ[uuid:%s]にはメモリースナップショットが含まれているため、そこから VM を作成できません",

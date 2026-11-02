@@ -493,6 +493,7 @@
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "无法将虚拟机[uuid:%s]的启动模式修改为 %s，因为该虚拟机已配置 TPM 设备，TPM 需要 UEFI 启动模式，请先移除 TPM",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10012": "无法创建带 TPM 设备的虚拟机[name:%s]：当前为 %s 启动模式，TPM 需要 UEFI 启动模式",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file 操作失败：%s",
+  "ORG_ZSTACK_KVM_10164": "%s 文件[path:%s]（云主机[uuid:%s]）在物理机[uuid:%s]上无法读取，文件可能缺失或已损坏，请恢复原文件后再启动云主机",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "云盘协议操作失败：%s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "云盘快照操作失败：%s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "快照组[uuid:%s]包含内存快照，无法从该快照组创建云主机",

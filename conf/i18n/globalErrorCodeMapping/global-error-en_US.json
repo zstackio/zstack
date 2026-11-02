@@ -493,6 +493,7 @@
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "cannot change boot mode of VM[uuid:%s] to %s, because the VM has a TPM device which requires UEFI boot mode, remove the TPM first",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10012": "cannot create VM[name:%s] with a TPM device in %s boot mode, TPM requires UEFI boot mode",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file operation failed: %s",
+  "ORG_ZSTACK_KVM_10164": "%s file[path:%s] of VM[uuid:%s] cannot be read on host[uuid:%s], it may be missing or corrupted; restore the original file before starting the VM",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "volume protocol operation failed: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "volume snapshot operation failed: %s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "volume snapshot group[uuid:%s] contains a memory snapshot, cannot create a vm from it",

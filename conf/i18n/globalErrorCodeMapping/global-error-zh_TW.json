@@ -489,6 +489,7 @@
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "無法將虛擬機[uuid:%s]的啟動模式修改為 %s，因為該虛擬機已配置 TPM 設備，TPM 需要 UEFI 啟動模式，請先移除 TPM",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10012": "無法建立帶 TPM 設備的虛擬機[name:%s]：目前為 %s 啟動模式，TPM 需要 UEFI 啟動模式",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file 操作失敗：%s",
+  "ORG_ZSTACK_KVM_10164": "%s 檔案[path:%s]（雲主機[uuid:%s]）在實體機[uuid:%s]上無法讀取，檔案可能遺失或已損壞，請還原原檔案後再啟動雲主機",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "雲盤協議操作失敗：%s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "雲盤快照操作失敗：%s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "快照組[uuid:%s]包含記憶體快照，無法從該快照組建立雲主機",
