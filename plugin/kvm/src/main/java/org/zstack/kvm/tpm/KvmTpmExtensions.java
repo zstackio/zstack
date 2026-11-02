@@ -306,13 +306,13 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (context.instantiateForNewVm && context.keyVersion == null) {
+                // no keyVersion means no key has been created yet (new TPM or the TPM content was reset),
+                // a secret left on the host must not be reused
+                if (context.keyVersion == null) {
                     trigger.next();
                     return;
                 }
 
-                // NewCreate cloned from an existing TPM may already carry keyVersion; allow it.
-                // For non-NewCreate, keyVersion must exist (validated above).
                 SecretHostGetMsg innerMsg = new SecretHostGetMsg();
                 innerMsg.setHostUuid(spec.getDestHost().getUuid());
                 innerMsg.setVmUuid(spec.getVmInventory().getUuid());

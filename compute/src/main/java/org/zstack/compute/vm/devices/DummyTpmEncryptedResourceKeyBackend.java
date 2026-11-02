@@ -65,6 +65,11 @@ public class DummyTpmEncryptedResourceKeyBackend implements TpmEncryptedResource
     }
 
     @Override
+    public void resetEncryptedResourceKey(String tpmUuid) {
+        logger.debug("ignore reset encrypted resource key request for TPM uuid " + tpmUuid);
+    }
+
+    @Override
     public void cloneEncryptedResourceKey(CloneEncryptedResourceKeyContext context, Completion completion) {
         // do nothing
         logger.debug("ignore clone encrypted resource key request for TPM uuid "

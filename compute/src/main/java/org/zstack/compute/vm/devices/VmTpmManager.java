@@ -3,12 +3,22 @@ package org.zstack.compute.vm.devices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageBootMode;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.tpm.TpmConstants;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
+import org.zstack.header.vm.additions.ResetVmTpmMsg;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
+import org.zstack.header.vm.additions.VmHostFileVO;
+import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -34,6 +44,8 @@ public class VmTpmManager {
     private ResourceConfigFacade resourceConfigFacade;
     @Autowired
     private AccountManager accountManager;
+    @Autowired
+    private CloudBus bus;
 
     public TpmVO persistTpmVO(String tpmUuid, String vmUuid) {
         if (tpmUuid == null) {
@@ -92,5 +104,29 @@ public class VmTpmManager {
 
     public boolean needRegister(VmHostFileType type, String vmUuid) {
         return vmHostFileTypeNeedRegisterForVm(vmUuid).contains(type);
+    }
+
+    public void resetVmHostFilesIfNeeded(String vmUuid, Completion completion) {
+        boolean needReset = Q.New(TpmVO.class).eq(TpmVO_.vmInstanceUuid, vmUuid).isExists()
+                || Q.New(VmHostFileVO.class).eq(VmHostFileVO_.vmInstanceUuid, vmUuid).isExists()
+                || Q.New(VmHostBackupFileVO.class).eq(VmHostBackupFileVO_.resourceUuid, vmUuid).isExists();
+        if (!needReset) {
+            completion.success();
+            return;
+        }
+
+        ResetVmTpmMsg msg = new ResetVmTpmMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, TpmConstants.SERVICE_ID, vmUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
     }
 }

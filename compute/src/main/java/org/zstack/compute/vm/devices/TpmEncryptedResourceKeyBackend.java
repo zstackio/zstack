@@ -70,6 +70,12 @@ public interface TpmEncryptedResourceKeyBackend {
      */
     boolean checkTpmKeyProviderAttached(String tpmUuid);
 
+    /**
+     * Drop the key material of the TPM but keep its key provider binding,
+     * so that a new key will be created on next VM start.
+     */
+    void resetEncryptedResourceKey(String tpmUuid);
+
     static class CloneEncryptedResourceKeyContext {
         public String srcTpmUuid;
         public String dstTpmUuid;

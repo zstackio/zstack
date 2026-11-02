@@ -27,6 +27,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -92,6 +94,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
 import static org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend.*;
@@ -815,6 +818,7 @@ public class KvmTpmManager extends AbstractService {
 
     static class ResetVmTpmContext {
         String vmInstanceUuid;
+        String tpmUuid;
         Integer keyVersion;
 
         List<VmHostFileVO> hostFiles;
@@ -865,12 +869,12 @@ public class KvmTpmManager extends AbstractService {
 
     private void resetVmTpm(ResetVmTpmContext context, Completion completion) {
         String vmUuid = context.vmInstanceUuid;
-        String tpmUuid = Q.New(TpmVO.class)
+        context.tpmUuid = Q.New(TpmVO.class)
                 .eq(TpmVO_.vmInstanceUuid, vmUuid)
                 .select(TpmVO_.uuid)
                 .findValue();
-        if (tpmUuid != null) {
-            context.keyVersion = tpmKeyBackend.findKeyVersionByTpm(tpmUuid);
+        if (context.tpmUuid != null) {
+            context.keyVersion = tpmKeyBackend.findKeyVersionByTpm(context.tpmUuid);
         }
 
         SimpleFlowChain.of("reset-vm-tpm-" + vmUuid)
@@ -878,9 +882,15 @@ public class KvmTpmManager extends AbstractService {
                 .handle(trigger -> {
                     context.hostFiles = Q.New(VmHostFileVO.class)
                             .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
-                            .eq(VmHostFileVO_.type, VmHostFileType.TpmState)
+                            .in(VmHostFileVO_.type, list(VmHostFileType.TpmState, VmHostFileType.NvRam))
                             .orderByAsc(VmHostFileVO_.lastOpDate)
                             .list();
+                    // files on a deleted host are gone with the host
+                    List<VmHostFileVO> filesOnDeletedHosts = context.hostFiles.stream()
+                            .filter(f -> !Q.New(HostVO.class).eq(HostVO_.uuid, f.getHostUuid()).isExists())
+                            .collect(Collectors.toList());
+                    context.hostFiles.removeAll(filesOnDeletedHosts);
+                    context.hostFileUuidListDeleteSuccessfully.addAll(transform(filesOnDeletedHosts, VmHostFileVO::getUuid));
                     if (!context.hostFiles.isEmpty()) {
                         // We should delete it in last turn:
                         context.hostFileToDeleteLast = context.hostFiles.get(context.hostFiles.size() - 1);
@@ -1005,11 +1015,17 @@ public class KvmTpmManager extends AbstractService {
                     });
                 })
                 .build())
+            .then(Flow.of("reset-encrypted-resource-key")
+                .skipIf(data -> context.tpmUuid == null)
+                .handle(trigger -> {
+                    tpmKeyBackend.resetEncryptedResourceKey(context.tpmUuid);
+                    trigger.next();
+                })
+                .build())
             .then(Flow.of("remove-backups-db-records-for-remains")
                 .handle(trigger -> {
                     List<String> backupUuidList = Q.New(VmHostBackupFileVO.class)
                             .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
-                            .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
                             .select(VmHostBackupFileVO_.uuid)
                             .listValues();
                     if (isEmpty(backupUuidList)) {
@@ -1065,14 +1081,24 @@ public class KvmTpmManager extends AbstractService {
                         return;
                     }
 
-                    new While<>(new ArrayList<>(hostUuids)).each((hostUuid, whileCompletion) -> {
-                        SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
-                        dmsg.setHostUuid(hostUuid);
-                        dmsg.setVmUuid(vmUuid);
-                        dmsg.setPurpose("vtpm");
-                        dmsg.setKeyVersion(context.keyVersion);
-                        dmsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
-                        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
+                    // the new key is created with keyVersion 1 and the host secret is keyed by keyVersion only
+                    Set<Integer> keyVersions = new HashSet<>(list(context.keyVersion, 1));
+                    List<SecretHostDeleteMsg> msgs = new ArrayList<>();
+                    for (String hostUuid : hostUuids) {
+                        for (Integer keyVersion : keyVersions) {
+                            SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
+                            dmsg.setHostUuid(hostUuid);
+                            dmsg.setVmUuid(vmUuid);
+                            dmsg.setPurpose("vtpm");
+                            dmsg.setKeyVersion(keyVersion);
+                            dmsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
+                            msgs.add(dmsg);
+                        }
+                    }
+
+                    new While<>(msgs).each((dmsg, whileCompletion) -> {
+                        String hostUuid = dmsg.getHostUuid();
                         bus.send(dmsg, new CloudBusCallBack(whileCompletion) {
                             @Override
                             public void run(MessageReply reply) {
