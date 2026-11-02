@@ -747,10 +747,10 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
     }
 
     private List<VmHostBackupFileVO> backupVmHostFile(String fromVmUuid, String hostUuid, List<String> toResourceList) {
-        List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class)
+        List<VmHostFileVO> hostFiles = vmHostFileFactory.filterHostFilesNeedRegister(fromVmUuid, Q.New(VmHostFileVO.class)
                 .eq(VmHostFileVO_.vmInstanceUuid, fromVmUuid)
                 .eq(VmHostFileVO_.hostUuid, hostUuid)
-                .list();
+                .list());
 
         if (hostFiles.isEmpty()) {
             return new ArrayList<>();

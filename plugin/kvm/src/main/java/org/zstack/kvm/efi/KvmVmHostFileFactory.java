@@ -12,6 +12,7 @@ import org.zstack.kvm.vmfiles.AbstractVmHostBackupFileBase;
 import org.zstack.kvm.vmfiles.AbstractVmHostFileBase;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.zstack.core.Platform.operr;
@@ -47,5 +48,9 @@ public class KvmVmHostFileFactory {
 
     public boolean needRegister(VmHostFileType type, String vmUuid) {
         return vmTpmManager.needRegister(type, vmUuid);
+    }
+
+    public List<VmHostFileVO> filterHostFilesNeedRegister(String vmUuid, List<VmHostFileVO> hostFiles) {
+        return vmTpmManager.filterHostFilesNeedRegister(vmUuid, hostFiles);
     }
 }

@@ -329,7 +329,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
         final NvRamSpec nvRamSpec = spec.getDevicesSpec() == null ? null : spec.getDevicesSpec().getNvRam();
-        if (nvRamSpec == null) {
+        if (nvRamSpec == null || !nvRamSpec.isNeedRegister()) {
             completion.success();
             return;
         }
@@ -801,10 +801,10 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 .eq(VmInstanceVO_.uuid, vmUuid)
                 .findValue();
 
-        List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class)
+        List<VmHostFileVO> hostFiles = vmHostFileFactory.filterHostFilesNeedRegister(vmUuid, Q.New(VmHostFileVO.class)
                 .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
                 .eq(VmHostFileVO_.hostUuid, hostUuid)
-                .list();
+                .list());
 
         if (hostFiles.isEmpty()) {
             completion.success();

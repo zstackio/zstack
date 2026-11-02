@@ -116,6 +116,10 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
             }
 
             nvRamSpec.setNeedRegister(true);
+        } else if (devicesSpec.getNvRam() != null && devicesSpec.getNvRam().isNeedRegister()) {
+            devicesSpec.getNvRam().setNeedRegister(false);
+            logger.debug(String.format(
+                    "ignore nvRam.needRegister for VM[uuid:%s] because it has neither TPM nor UEFI secure boot", vmUuid));
         }
 
         if (tpmUuid != null) {
