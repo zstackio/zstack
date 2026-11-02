@@ -51,8 +51,9 @@ public interface EncryptedResourceKeyManager {
      * Roll back a newly created resource key during upper-layer workflow rollback.
      * <p>
      * When {@link ResourceKeyResult#isCreatedNewKey()} is true, the implementation deletes the
-     * key-tool secret if one was materialized, then removes the {@code EncryptedResourceKeyRef} row
-     * for the resource (same storage effect as detaching the key provider from the resource).
+     * key-tool secret if one was materialized, then clears the key material of the
+     * {@code EncryptedResourceKeyRef} row but keeps its provider binding, so the next start creates
+     * a new key with the same provider. The row is removed only when the provider no longer exists.
      * When {@code createdNewKey} is false (existing secret was reused), this is a no-op.
      */
     void rollbackCreatedKey(ResourceKeyResult result, Completion completion);
