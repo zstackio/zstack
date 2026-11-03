@@ -525,33 +525,41 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
      * Sends a Host its current generation. The Agent converges as far as it
      * can and reports Succeeded, Converging (send again later) or Failed.
      */
-    @ExceptionSafe @Deferred
     void deliver(String host) {
-        // Registered before looking at preparing, as a preparation registers before looking at delivering.
-        if (!delivering.add(host)) { return; }
-        // Until the Agent is called, a failure frees the Host for the next scan.
-        Defer.guard(() -> {
-            delivering.remove(host);
-            logger.warn(String.format("Unable to send the memory configuration of Host[%s]; the next scan retries", host));
-        });
-        if (preparing.contains(host)) { delivering.remove(host); return; }
-        MemoryRepository.Delivery delivery = repository.pending(host);
-        if (delivery == null) { delivering.remove(host); return; }
-        Map<String, Object> command = command(host, Platform.getUuid());
-        command.put("generation", delivery.generation);
-        command.put("desired", delivery.desired);
-        call(host, "apply", command, response -> recordApply(host, delivery.generation, response));
+        deliver(host, round(String.format("Host[%s] memory configuration delivery", host), 1));
     }
 
     @ExceptionSafe @Deferred
-    void recordApply(String host, long generation, MemoryAgentResponse response) {
+    void deliver(String host, MemoryLifecycleHooks.Round round) {
+        // Registered before looking at preparing, as a preparation registers before looking at delivering.
+        if (!delivering.add(host)) { round.finished(host, null); return; }
+        // Until the Agent is called, a failure frees the Host for the next scan.
+        Defer.guard(() -> {
+            delivering.remove(host);
+            round.finished(host, "DELIVERY_NOT_SENT");
+        });
+        if (preparing.contains(host)) { delivering.remove(host); round.finished(host, null); return; }
+        MemoryRepository.Delivery delivery = repository.pending(host);
+        if (delivery == null) { delivering.remove(host); round.finished(host, null); return; }
+        Map<String, Object> command = command(host, Platform.getUuid());
+        command.put("generation", delivery.generation);
+        command.put("desired", delivery.desired);
+        call(host, "apply", command, response -> recordApply(host, delivery.generation, response, round));
+    }
+
+    /** A Converging Host is sent its generation again later; only a failed or unrecorded apply is a failure. */
+    @ExceptionSafe @Deferred
+    void recordApply(String host, long generation, MemoryAgentResponse response, MemoryLifecycleHooks.Round round) {
+        String[] failure = {"APPLY_NOT_RECORDED"};
         Defer.defer(() -> {
             delivering.remove(host);
+            round.finished(host, failure[0]);
             completeWaiters();
         });
-        Defer.guard(() -> logger.error(String.format(
-                "Unable to record the memory apply result of Host[%s] or report its events", host)));
         repository.record(host, generation, response);
+        boolean applied = response != null && response.isSuccess() && (MemoryRepository.SUCCEEDED.equals(response.status)
+                || MemoryRepository.CONVERGING.equals(response.status));
+        failure[0] = applied ? null : String.format("generation %d: %s", generation, failure(response));
     }
 
     /** Prepares the selected disk, resending until the Agent finishes, then binds it to the Host. */
@@ -788,9 +796,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         long now = System.currentTimeMillis();
         Set<String> connected = new HashSet<>(repository.connectedHosts());
         planUnplanned();
-        for (String host : repository.dueHosts(now)) {
-            if (connected.contains(host) && destMaker.isManagedByUs(host)) { deliver(host); }
-        }
+        List<String> due = repository.dueHosts(now).stream()
+                .filter(host -> connected.contains(host) && destMaker.isManagedByUs(host)).collect(Collectors.toList());
+        MemoryLifecycleHooks.Round deliveries = round("Memory configuration delivery", due.size());
+        for (String host : due) { deliver(host, deliveries); }
         completeWaiters();
         boolean observation = now - lastObservation >= TimeUnit.SECONDS.toMillis(30);
         if (observation) {
@@ -813,32 +822,53 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     private void observeRuntime(Set<String> connected) {
         List<String> hosts = connected.stream().filter(destMaker::isManagedByUs).collect(Collectors.toList());
-        for (String host : observationCursor.next("global", hosts, MemoryOptimizationGlobalConfig.observationBatch(hosts.size()))) {
-            observe(host);
-        }
+        List<String> batch = new ArrayList<>(observationCursor.next("global", hosts,
+                MemoryOptimizationGlobalConfig.observationBatch(hosts.size())));
+        MemoryLifecycleHooks.Round observations = round("Memory observation", batch.size());
+        for (String host : batch) { observe(host, observations); }
+    }
+
+    /** One round of Agent calls whose failures are logged once, as an error, by Host and reason. */
+    private static MemoryLifecycleHooks.Round round(String what, int calls) {
+        return new MemoryLifecycleHooks.Round(what, calls, logger::error);
+    }
+
+    /** Why an Agent call did not succeed, for a round's failures. */
+    static String failure(MemoryAgentResponse response) {
+        if (response == null) { return "AGENT_UNREACHABLE"; }
+        return response.reasonCode != null ? response.reasonCode : response.reason != null ? response.reason : response.status;
     }
 
     /** A read-only state sample: public state, service events and VM bindings follow it. */
-    @ExceptionSafe @Deferred
     void observe(String host) {
-        if (host == null || host.trim().isEmpty() || !observingHosts.add(host)) { return; }
+        observe(host, round(String.format("Host[%s] memory observation", host), 1));
+    }
+
+    @ExceptionSafe @Deferred
+    void observe(String host, MemoryLifecycleHooks.Round round) {
+        // A Host already being observed is observed by that call.
+        if (host == null || host.trim().isEmpty() || !observingHosts.add(host)) { round.finished(host, null); return; }
         Defer.guard(() -> {
             observingHosts.remove(host);
-            logger.warn(String.format("Host[%s] memory observation could not be sent; periodic scan will retry", host));
+            round.finished(host, "OBSERVATION_NOT_SENT");
         });
-        call(host, "state", command(host, Platform.getUuid()), response -> recordObservation(host, response));
+        call(host, "state", command(host, Platform.getUuid()), response -> recordObservation(host, response, round));
     }
 
     /** A read-only sample: public state, capability tags, VM bindings and migration holds follow it. */
     @ExceptionSafe @Deferred
-    void recordObservation(String host, MemoryAgentResponse response) {
-        Defer.defer(() -> observingHosts.remove(host));
-        Defer.guard(() -> logger.error(String.format("Host[%s] memory observation failed; periodic scan will retry", host)));
-        if (response == null || !response.isSuccess() || response.state == null) { return; }
+    void recordObservation(String host, MemoryAgentResponse response, MemoryLifecycleHooks.Round round) {
+        String[] failure = {"OBSERVATION_NOT_RECORDED"};
+        Defer.defer(() -> {
+            observingHosts.remove(host);
+            round.finished(host, failure[0]);
+        });
+        if (response == null || !response.isSuccess() || response.state == null) { failure[0] = failure(response); return; }
         repository.observe(host, response);
         syncCapabilityTags(host, response.state);
         lifecycleHooks.reconcileObservedBindings(host, response);
         lifecycleHooks.reconcileUnknownMigrationHolds(host);
+        failure[0] = null;
     }
 
     /** The capabilities a sample reports as supported, or null when the Agent could not discover them. */

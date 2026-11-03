@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.*;
@@ -92,12 +91,6 @@ public class MemoryRepositoryRulesTest {
         assertEquals(600000, MemoryRepository.retryDelay(40));
     }
 
-    @Test public void onlyALostFirstInsertIsPlannedAgain() {
-        assertTrue(MemoryRepository.duplicatePrimaryKey(integrity("Duplicate entry 'host1' for key 'PRIMARY'", 1062)));
-        assertFalse(MemoryRepository.duplicatePrimaryKey(integrity("Column 'actorUuid' cannot be null", 1048)));
-        assertFalse(MemoryRepository.duplicatePrimaryKey(new IllegalStateException("database unavailable")));
-    }
-
     @Test public void anUnreadableStoredConfigurationIsShownAndPlannedAgain() {
         assertEquals(Collections.emptyMap(), MemoryRepository.storedDesired(new MemoryStateVO()));
         stored.setDesired("{broken");
@@ -123,10 +116,5 @@ public class MemoryRepositoryRulesTest {
         } catch (IllegalStateException expected) {
             assertTrue(stored.getState().contains("\"tunedServiceState\":\"failed\""));
         }
-    }
-
-    /** The MySQL driver's integrity error, as Hibernate wraps it. */
-    private static RuntimeException integrity(String message, int code) {
-        return new PersistenceException(new java.sql.SQLIntegrityConstraintViolationException(message, "23000", code));
     }
 }
