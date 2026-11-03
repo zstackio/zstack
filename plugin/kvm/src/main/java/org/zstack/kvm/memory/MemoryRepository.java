@@ -142,20 +142,6 @@ public class MemoryRepository {
                 .eq(HostVO_.status, HostStatus.Connected).orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues());
     }
 
-    /** Current VM placement snapshot used by read-only batched observations. */
-    public Map<String, String> currentVmHosts(Collection<String> vmUuids) {
-        if (vmUuids == null || vmUuids.isEmpty()) { return Collections.emptyMap(); }
-        return transaction(em -> {
-            List<Tuple> rows = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid)
-                    .in(VmInstanceVO_.uuid, new ArrayList<>(new LinkedHashSet<>(vmUuids))).listTuple();
-            Map<String, String> result = new LinkedHashMap<>();
-            for (Tuple row : rows) {
-                if (row.get(1, String.class) != null) { result.put(row.get(0, String.class), row.get(1, String.class)); }
-            }
-            return result;
-        });
-    }
-
     public List<String> summaryTargets(List<String> requested, String zoneUuid) {
         if (requested != null && requested.isEmpty()) { return Collections.emptyList(); }
         return transaction(em -> {

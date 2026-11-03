@@ -36,7 +36,6 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.*;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
 import org.zstack.identity.AccountManager;
@@ -206,8 +205,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (message instanceof APIMessage) {
                 checkReadAuthorization((APIMessage) message);
             }
-            if (message instanceof APIGetVmMemoryOptimizationsMsg) { vmAccountings((APIGetVmMemoryOptimizationsMsg) message); }
-            else if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
+            if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
             else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
             else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
             else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
@@ -241,8 +239,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /**
      * API permission/session evaluation belongs to the platform authorization
      * backend before service dispatch (including IAM2). This service retains
-     * the object-level read boundary: infrastructure data remain admin-only;
-     * VM statistics are scoped to resources visible to the session's account.
+     * the object-level read boundary: infrastructure data remain admin-only.
      * Internal callers must use the normal API entry, not forge a session here.
      */
     void checkReadAuthorization(APIMessage api) {
@@ -250,21 +247,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "An authenticated account session is required");
         }
 
-        if (api instanceof APIGetVmMemoryOptimizationsMsg) {
-            // Reuse owner/public/private sharing semantics without running
-            // legacy UserVO policy evaluation on an IAM2 VirtualID session.
-            List<String> accessible = accountManager.getResourceUuidsCanAccessByAccount(
-                    api.getSession().getAccountUuid(), VmInstanceVO.class);
-            List<String> requested = ((APIGetVmMemoryOptimizationsMsg) api).getVmUuids();
-            if (accessible != null && (requested == null || requested.isEmpty()
-                    || !new HashSet<>(accessible).containsAll(requested))) {
-                throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "The account cannot access the requested VM memory statistics");
-            }
-            return;
-        }
-
-        // The remaining memory APIs expose host-wide state, tasks, operations,
-        // policy, or controls. Preserve the existing admin-only boundary.
+        // The memory APIs expose host-wide state, tasks, operations, policy,
+        // or controls. Preserve the existing admin-only boundary.
         if (accountManager.getResourceUuidsCanAccessByAccount(api.getSession().getAccountUuid(), HostVO.class) != null) {
             throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "Infrastructure administrator access is required");
         }
@@ -708,111 +692,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         new HashMap<>(unplannedHosts).forEach(this::planConfiguration);
     }
 
-    /** One read-only Prometheus snapshot per Host, then expose only requested VMs. */
-    private void vmAccountings(APIGetVmMemoryOptimizationsMsg msg) {
-        List<String> requested = new ArrayList<>(new LinkedHashSet<>(msg.getVmUuids()));
-        Map<String, String> hosts = repository.currentVmHosts(requested);
-        Map<String, MemoryVmAccountingInventory> result = new LinkedHashMap<>();
-        Map<String, List<String>> byHost = new LinkedHashMap<>();
-        for (String vm : requested) {
-            String host = hosts.get(vm);
-            if (host == null) {
-                result.put(vm, unavailableVm(vm, "VM_HAS_NO_CURRENT_HOST"));
-            } else {
-                byHost.computeIfAbsent(host, ignored -> new ArrayList<>()).add(vm);
-            }
-        }
-        new VmAccountingBatch(msg, requested, hosts, new ArrayList<>(byHost.keySet()), byHost, result).start();
-    }
-
-    /** Fixed-width Prometheus fan-out on the shared thread facade. */
-    private final class VmAccountingBatch {
-        private static final int WIDTH = MemoryVmAccountingBatchRules.MAX_IN_FLIGHT_HOSTS;
-        private static final long DEADLINE_SECONDS = MemoryVmAccountingBatchRules.DEADLINE_SECONDS;
-        private final APIGetVmMemoryOptimizationsMsg msg;
-        private final List<String> requested;
-        private final Map<String, String> initialHosts;
-        private final List<String> hostList;
-        private final Map<String, List<String>> byHost;
-        private final Map<String, MemoryVmAccountingInventory> result;
-        private int next;
-        private int active;
-        private boolean finished;
-
-        private VmAccountingBatch(APIGetVmMemoryOptimizationsMsg msg, List<String> requested, Map<String, String> initialHosts,
-                                  List<String> hostList, Map<String, List<String>> byHost,
-                                  Map<String, MemoryVmAccountingInventory> result) {
-            this.msg = msg; this.initialHosts = initialHosts; this.hostList = hostList;
-            this.requested = new ArrayList<>(requested);
-            this.byHost = byHost; this.result = result;
-        }
-
-        private void start() {
-            thdf.submitTimeoutTask(this::deadline, TimeUnit.SECONDS, DEADLINE_SECONDS);
-            synchronized (this) { launchLocked(); }
-        }
-
-        private void launchLocked() {
-            while (!finished && active < WIDTH && next < hostList.size()) {
-                String host = hostList.get(next++);
-                active++;
-                List<String> vmUuids = byHost.get(host);
-                callVmMetrics(host, vmUuids, response -> completed(host, vmUuids, response));
-            }
-            if (!finished && active == 0 && next >= hostList.size()) { finishLocked(); }
-        }
-
-        private void completed(String host, List<String> vmUuids, MemoryAgentResponse response) {
-            synchronized (this) {
-                if (finished) { return; }
-                Map<String, String> currentHosts = repository.currentVmHosts(vmUuids);
-                boolean hostFailed = response == null || !response.isSuccess() || response.state == null;
-                for (String vm : vmUuids) {
-                    boolean placementChanged = !host.equals(initialHosts.get(vm)) || !host.equals(currentHosts.get(vm));
-                    String unavailableReason = MemoryVmAccountingBatchRules.unavailableReason(!hostFailed, placementChanged);
-                    if (unavailableReason != null) {
-                        result.put(vm, unavailableVm(vm, unavailableReason));
-                    } else {
-                        result.put(vm, vmObservation(host, vm, response));
-                    }
-                }
-                active--; launchLocked();
-            }
-        }
-
-        private void deadline() {
-            synchronized (this) {
-                if (finished) { return; }
-                // next counts dispatched hosts, not completed hosts. Include both
-                // queued and in-flight VMs, without replacing completed results.
-                for (String vm : requested) {
-                    if (!result.containsKey(vm)) {
-                        result.put(vm, unavailableVm(vm, "BATCH_DEADLINE_EXCEEDED"));
-                    }
-                }
-                finishLocked();
-            }
-        }
-
-        private void finishLocked() {
-            if (finished) { return; }
-            finished = true;
-            APIGetVmMemoryOptimizationsReply reply = new APIGetVmMemoryOptimizationsReply();
-            reply.setInventories(new LinkedHashMap<>(result)); bus.reply(msg, reply);
-        }
-    }
-
-    private MemoryVmAccountingInventory unavailableVm(String vm, String reason) {
-        MemoryVmAccountingInventory unavailable = new MemoryVmAccountingInventory();
-        unavailable.setVmUuid(vm); unavailable.setQuality("unavailable"); unavailable.setReason(reason);
-        return unavailable;
-    }
-
-    /** Prometheus callback response is scoped by callVmMetrics(host), not an Agent hostUuid envelope. */
-    static MemoryVmAccountingInventory vmObservation(String host, String vm, MemoryAgentResponse response) {
-        return MemoryObservationRules.vm(host, vm, response.state);
-    }
-
     private void writebackBackends(APIGetHostMemoryWritebackBackendsMsg msg) {
         repository.targets("Host", msg.getHostUuid());
         call(msg.getHostUuid(), "writeback-backends", command(msg.getHostUuid(), Platform.getUuid()), response -> {
@@ -872,26 +751,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         MemoryHostSavingsSamples samples = provider == null ? null
                 : provider.hostSavings(hosts, now, MemoryOptimizationGlobalConfig.displayTtlMillis());
         return samples == null ? new MemoryHostSavingsSamples(null, null) : samples;
-    }
-
-    private void callVmMetrics(String host, List<String> vms, Consumer<MemoryAgentResponse> callback) {
-        thdf.submit(new org.zstack.core.thread.Task<Void>() {
-            @Override public String getName() { return "memory-prometheus-vm-observation"; }
-            @Override public Void call() {
-                MemoryAgentResponse response = new MemoryAgentResponse();
-                try {
-                    MemoryMetricsExtensionPoint provider = metricProvider();
-                    response.state = provider == null ? null : provider.vmAccounting(host, vms,
-                            System.currentTimeMillis(), MemoryOptimizationGlobalConfig.displayTtlMillis());
-                    response.setSuccess(response.state != null);
-                } catch (RuntimeException e) {
-                    response.setSuccess(false);
-                    logger.warn("VM memory Prometheus query unavailable", e);
-                }
-                callback.accept(response);
-                return null;
-            }
-        });
     }
 
     private void tick() {
