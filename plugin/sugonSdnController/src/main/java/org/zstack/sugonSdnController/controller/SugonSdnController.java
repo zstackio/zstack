@@ -3,6 +3,7 @@ package org.zstack.sugonSdnController.controller;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
@@ -19,6 +20,7 @@ import org.zstack.sdnController.header.*;
 import org.zstack.sugonSdnController.controller.api.*;
 import org.zstack.sugonSdnController.controller.api.types.*;
 import org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg;
+import org.zstack.sugonSdnController.network.TfZstackPortSync;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -32,6 +34,9 @@ import static org.zstack.utils.network.NetworkUtils.getSubnetInfo;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SugonSdnController implements TfSdnController, SdnController {
     private static final CLogger logger = Utils.getLogger(SugonSdnController.class);
+
+    @Autowired
+    TfZstackPortSync tfZstackPortSync;
 
     private SdnControllerVO sdnControllerVO;
 
@@ -94,6 +99,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
 
     @Override
     public void postInitSdnController(APIAddSdnControllerMsg msg, Completion completion){
+        tfZstackPortSync.triggerSyncIfDue(sdnControllerVO.getUuid());
         completion.success();
     }
 
