@@ -2216,26 +2216,75 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
+        final String IMAGE_CACHE_PATH = "imageCachePath";
         ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("re-init-root-volume-on-primary-storage");
         chain.then(new NoRollbackFlow() {
+            String __name__ = "prepare-image-cache";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String imageUuid = msg.getVolume().getRootImageUuid();
+                if (imageUuid == null) {
+                    trigger.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10074, "root image has been deleted, cannot reimage now"));
+                    return;
+                }
+
+                Runnable download = () -> {
+                    ImageVO image = dbf.findByUuid(imageUuid, ImageVO.class);
+                    if (image == null) {
+                        trigger.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10075,
+                                "root image [%s] has been deleted and no usable image cache exists on host [%s], cannot reimage now",
+                                imageUuid, hostUuid));
+                        return;
+                    }
+                    downloadImageToCache(ImageInventory.valueOf(image), hostUuid, new ReturnValueCompletion<String>(trigger) {
+                        @Override
+                        public void success(String imagePath) {
+                            data.put(IMAGE_CACHE_PATH, imagePath);
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                };
+
+                String cachePath = getImageCacheInstallPath(imageUuid, hostUuid);
+                if (cachePath == null) {
+                    download.run();
+                    return;
+                }
+
+                CheckBitsCmd checkCmd = new CheckBitsCmd();
+                checkCmd.path = cachePath;
+                httpCall(CHECK_BITS_PATH, hostUuid, checkCmd, CheckBitsRsp.class, new ReturnValueCompletion<CheckBitsRsp>(trigger) {
+                    @Override
+                    public void success(CheckBitsRsp rsp) {
+                        if (rsp.existing) {
+                            data.put(IMAGE_CACHE_PATH, cachePath);
+                            trigger.next();
+                        } else {
+                            download.run();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 ReinitImageCmd cmd = new ReinitImageCmd();
-                if (msg.getVolume().getRootImageUuid() == null) {
-                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10074, "root image has been deleted, cannot reimage now"));
-                    return;
-                }
-
-                if (!dbf.isExist(msg.getVolume().getRootImageUuid(), ImageVO.class)) {
-                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10075, "root image has been deleted, cannot reimage now"));
-                    return;
-                }
-                cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
+                cmd.imagePath = (String) data.get(IMAGE_CACHE_PATH);
                 cmd.volumePath = makeRootVolumeInstallUrl(msg.getVolume());
-
                 httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(trigger) {
                     @Override
                     public void success(ReinitImageRsp rsp) {

@@ -7,6 +7,15 @@ import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
+import org.zstack.header.storage.backup.UploadImageToRemoteTargetMsg
+import org.zstack.header.storage.backup.UploadImageToRemoteTargetReply
+import org.zstack.header.storage.primary.ImageCacheVO
+import org.zstack.header.storage.primary.ImageCacheVO_
+import org.zstack.header.storage.primary.ReInitRootVolumeFromTemplateOnPrimaryStorageMsg
+import org.zstack.header.volume.VolumeVO
+import org.zstack.storage.primary.ImageCacheUtil
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.message.MessageReply
@@ -51,6 +60,7 @@ import org.zstack.storage.zbs.Config
 import org.zstack.storage.zbs.ZbsAgentUrl
 import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsGlobalProperty
+import org.zstack.storage.zbs.ZbsHelper
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.storage.zbs.ZbsKvmAgentCommands.CheckHostStorageConnectionCmd
@@ -220,6 +230,75 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsReconnectAfterMaximumPingFailures()
             testGetBackingChainNormalizesCbdParentUri()
             testBatchStatsNormalizesCbdInstallPath()
+            testReimageCacheMatchesAllocatedSpace()
+        }
+    }
+
+    void testReimageCacheMatchesAllocatedSpace() {
+        env.cleanAfterSimulatorHandlers()
+        env.cleanSimulatorHandlers()
+        if (!Q.New(PrimaryStorageClusterRefVO.class).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, cluster.uuid).isExists()) {
+            attachPrimaryStorageToCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = cluster.uuid
+            }
+        }
+        CloudBus bus = bean(CloudBus.class)
+        int uploads = 0
+        env.message(UploadImageToRemoteTargetMsg.class) { UploadImageToRemoteTargetMsg msg, CloudBus b ->
+            uploads++
+            b.reply(msg, new UploadImageToRemoteTargetReply())
+        }
+        def image = env.inventoryByName("image") as ImageInventory
+        def vm = createVmInstance {
+            name = "reimage-cache-only"
+            imageUuid = image.uuid
+            instanceOfferingUuid = (env.inventoryByName("instanceOffering") as InstanceOfferingInventory).uuid
+            l3NetworkUuids = [(env.inventoryByName("l3") as L3NetworkInventory).uuid]
+            primaryStorageUuidForRootVolume = ps.uuid
+        } as VmInstanceInventory
+        stopVmInstance { uuid = vm.uuid }
+        assert uploads == 1 : "a cache miss must still download the image"
+        def cache = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid)
+                .eq(ImageCacheVO_.primaryStorageUuid, ps.uuid).find() as ImageCacheVO
+        assert cache != null : "VM creation must populate the selected storage space's cache"
+        String cachePath = ImageCacheUtil.getImageCachePath(cache.installUrl)
+        String space = cachePath.substring(0, cachePath.lastIndexOf('/') + 1)
+        deleteImage { uuid = image.uuid }
+        expungeImage { imageUuid = image.uuid }
+        assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, image.uuid).isExists() : "reinit must be tested without ImageVO"
+
+        int clones = 0
+        env.afterSimulator(ZbsStorageController.CLONE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CloneVolumeCmd.class)
+            assert ZbsHelper.normalizeToZbsPath(cmd.path) == cachePath : "reinit must clone the cache in the allocated space"
+            clones++
+            return rsp
+        }
+        def reinit = { String allocatedUrl ->
+            def msg = new ReInitRootVolumeFromTemplateOnPrimaryStorageMsg()
+            msg.volume = org.zstack.header.volume.VolumeInventory.valueOf(dbf.findByUuid(vm.rootVolumeUuid, VolumeVO.class))
+            msg.allocatedInstallUrl = allocatedUrl
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps.uuid)
+            return bus.call(msg)
+        }
+        try {
+            def missingCacheReply = reinit(space + "missing/")
+            assert !missingCacheReply.success : "a cache in another space must not be used"
+            assert missingCacheReply.error.globalErrorCode == "ORG_ZSTACK_IMAGE_10025" : "cache miss must report the unavailable source image"
+            assert clones == 0 : "a mismatched cache must not be cloned"
+            assert reinit(space).success : "cache-only reinit must succeed after a cache-miss failure releases the queue"
+            assert clones == 1 : "the matching cache must reach the clone operation"
+            assert uploads == 1 : "cache-only reinit must not try to download a deleted image"
+        } finally {
+            env.cleanAfterSimulatorHandlers()
+            destroyVmInstance { uuid = vm.uuid }
+            expungeVmInstance { uuid = vm.uuid }
+            detachPrimaryStorageFromCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = cluster.uuid
+            }
         }
     }
 
