@@ -155,9 +155,6 @@ public class MemoryWritebackManagerCallbackTest {
             @Override public MemoryHostSavingsSamples hostSavings(java.util.List<String> hosts, long now, long ttl) {
                 return answer.apply(now);
             }
-            @Override public Map<String, Object> vmAccounting(String host, java.util.List<String> vms, long now, long ttl) {
-                throw new AssertionError("not a VM accounting query");
-            }
         };
         set(manager, "pluginRgty", Proxy.newProxyInstance(PluginRegistry.class.getClassLoader(),
                 new Class<?>[]{PluginRegistry.class}, (proxy, method, args) -> "getExtensionList".equals(method.getName())

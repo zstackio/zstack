@@ -537,9 +537,6 @@ public class SourceClassMap {
 			put("org.zstack.kvm.memory.MemoryBackendPreparation", "org.zstack.sdk.MemoryBackendPreparation");
 			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
 			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
-			put("org.zstack.kvm.memory.MemoryVmAccountingInventory", "org.zstack.sdk.MemoryVmAccountingInventory");
-			put("org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory", "org.zstack.sdk.MemoryVmAccountingMetricsInventory");
-			put("org.zstack.kvm.memory.MemoryVmIdentityInventory", "org.zstack.sdk.MemoryVmIdentityInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory", "org.zstack.sdk.MemoryWritebackBackendCandidateInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackBackendInventory", "org.zstack.sdk.MemoryWritebackBackendInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory", "org.zstack.sdk.MemoryWritebackMaintenanceInventory");
@@ -1360,9 +1357,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MemoryBackendPreparation", "org.zstack.kvm.memory.MemoryBackendPreparation");
 			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
 			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");
-			put("org.zstack.sdk.MemoryVmAccountingInventory", "org.zstack.kvm.memory.MemoryVmAccountingInventory");
-			put("org.zstack.sdk.MemoryVmAccountingMetricsInventory", "org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory");
-			put("org.zstack.sdk.MemoryVmIdentityInventory", "org.zstack.kvm.memory.MemoryVmIdentityInventory");
 			put("org.zstack.sdk.MemoryWritebackBackendCandidateInventory", "org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory");
 			put("org.zstack.sdk.MemoryWritebackBackendInventory", "org.zstack.kvm.memory.MemoryWritebackBackendInventory");
 			put("org.zstack.sdk.MemoryWritebackMaintenanceInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory");
