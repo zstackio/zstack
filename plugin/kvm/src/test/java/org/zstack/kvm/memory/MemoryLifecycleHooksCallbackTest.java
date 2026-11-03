@@ -583,7 +583,6 @@ public class MemoryLifecycleHooksCallbackTest {
                     if ("find".equals(method.getName()) && args != null && args.length >= 2
                             && args[0] == MemoryMigrationVO.class) { return hold; }
                     if ("merge".equals(method.getName())) { hold = (MemoryMigrationVO) args[0]; return hold; }
-                    if ("createQuery".equals(method.getName())) { return query((String) args[0]); }
                     if ("flush".equals(method.getName())) { return null; }
                     if (method.getReturnType().isPrimitive()) {
                         if (method.getReturnType() == boolean.class) return false;
@@ -595,35 +594,19 @@ public class MemoryLifecycleHooksCallbackTest {
         String vmHost = "host-a";
         boolean vmDeleted;
         final Set<String> deletedHosts = new HashSet<>();
-        /** Answers the VM placement, Host existence and source Unknown hold queries from the fixtures. */
-        private javax.persistence.TypedQuery<?> query(String jpql) {
-            Map<String, Object> parameters = new HashMap<>();
-            return (javax.persistence.TypedQuery<?>) Proxy.newProxyInstance(javax.persistence.TypedQuery.class.getClassLoader(),
-                    new Class[]{javax.persistence.TypedQuery.class}, (proxy, method, args) -> {
-                        if ("setParameter".equals(method.getName())) { parameters.put((String) args[0], args[1]); return proxy; }
-                        if (!"getResultList".equals(method.getName())) { return null; }
-                        if (jpql.startsWith("from MemoryMigrationVO") && jpql.contains("m.status in ('Preparing', 'Held')")) {
-                            boolean settled = hold != null && ("Preparing".equals(hold.status) || "Held".equals(hold.status))
-                                    && !vmDeleted && !String.valueOf(parameters.get("migrating")).equals(vmState);
-                            return settled && hold.sourceHostUuid.equals(parameters.get("host"))
-                                    ? Collections.singletonList(hold) : Collections.emptyList();
-                        }
-                        if (jpql.startsWith("from MemoryMigrationVO")) {
-                            boolean listed = hold != null && ("Unknown".equals(hold.status) || vmDeleted && !"Released".equals(hold.status));
-                            return listed && hold.sourceHostUuid.equals(parameters.get("host"))
-                                    ? Collections.singletonList(hold) : Collections.emptyList();
-                        }
-                        if (jpql.contains("VmInstanceVO")) {
-                            if (vmDeleted) { return Collections.emptyList(); }
-                            return Collections.singletonList(new Object[]{vmState, vmHost});
-                        }
-                        if (jpql.contains("HostVO")) {
-                            return deletedHosts.contains(parameters.get("uuid")) ? Collections.emptyList()
-                                    : Collections.singletonList(parameters.get("uuid"));
-                        }
-                        return hold != null && "Unknown".equals(hold.status) && hold.sourceHostUuid.equals(parameters.get("host"))
-                                ? Collections.singletonList(hold) : Collections.emptyList();
-                    });
+        /** VM placement, Host existence and the source's holds, answered from the fixtures. */
+        @Override public VmPlacement vmPlacement(String vmUuid) {
+            return vmDeleted ? null : new VmPlacement(org.zstack.header.vm.VmInstanceState.valueOf(vmState), vmHost);
+        }
+        @Override public boolean hostExists(String host) { return !deletedHosts.contains(host); }
+        @Override public List<MemoryMigrationVO> unknownOrOrphanedHolds(String sourceHost) {
+            boolean listed = hold != null && ("Unknown".equals(hold.status) || vmDeleted && !"Released".equals(hold.status));
+            return listed && hold.sourceHostUuid.equals(sourceHost) ? Collections.singletonList(hold) : Collections.emptyList();
+        }
+        @Override public List<MemoryMigrationVO> settledHolds(String sourceHost) {
+            boolean settled = hold != null && ("Preparing".equals(hold.status) || "Held".equals(hold.status))
+                    && !vmDeleted && !"Migrating".equals(vmState);
+            return settled && hold.sourceHostUuid.equals(sourceHost) ? Collections.singletonList(hold) : Collections.emptyList();
         }
         @Override protected <T> T transaction(java.util.function.Function<EntityManager, T> function) {
             return function.apply(entityManager);

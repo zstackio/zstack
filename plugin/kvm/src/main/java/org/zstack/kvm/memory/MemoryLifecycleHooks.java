@@ -527,11 +527,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
      */
     void reconcileUnknownMigrationHolds(String sourceHost) {
         // Also the hold of a deleted VM: no migration callback will ever release it.
-        List<MemoryMigrationVO> holds = repository.transaction(em -> em.createQuery(
-                "from MemoryMigrationVO m where m.sourceHostUuid = :host and (m.status = 'Unknown' or m.status <> 'Released'"
-                        + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid))", MemoryMigrationVO.class)
-                .setParameter("host", sourceHost).getResultList());
-        holds = new ArrayList<>(holds);
+        List<MemoryMigrationVO> holds = new ArrayList<>(repository.unknownOrOrphanedHolds(sourceHost));
         holds.addAll(settledHoldsLeftBehind(sourceHost));
         List<MemoryMigrationVO> started = new ArrayList<>();
         for (MemoryMigrationVO hold : holds) {
@@ -560,11 +556,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
      * VM has been out of Migrating for the grace period is reconciled like an Unknown one.
      */
     private List<MemoryMigrationVO> settledHoldsLeftBehind(String sourceHost) {
-        List<MemoryMigrationVO> settled = repository.transaction(em -> em.createQuery(
-                "from MemoryMigrationVO m where m.sourceHostUuid = :host and m.status in ('Preparing', 'Held')"
-                        + " and exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid and v.state <> :migrating)",
-                MemoryMigrationVO.class).setParameter("host", sourceHost)
-                .setParameter("migrating", VmInstanceState.Migrating).getResultList());
+        List<MemoryMigrationVO> settled = repository.settledHolds(sourceHost);
         long now = System.currentTimeMillis();
         Set<String> current = new HashSet<>();
         List<MemoryMigrationVO> leftBehind = new ArrayList<>();
@@ -578,11 +570,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     private boolean vmStoppedOrDeleted(String vmUuid) {
-        List<Object[]> vm = repository.transaction(em -> em.createQuery(
-                "select v.state, v.hostUuid from VmInstanceVO v where v.uuid = :uuid", Object[].class)
-                .setParameter("uuid", vmUuid).getResultList());
-        return vm.isEmpty() || Arrays.asList(VmInstanceState.Stopped.toString(), VmInstanceState.Destroyed.toString())
-                .contains(String.valueOf(vm.get(0)[0]));
+        MemoryRepository.VmPlacement vm = repository.vmPlacement(vmUuid);
+        return vm == null || vm.state == VmInstanceState.Stopped || vm.state == VmInstanceState.Destroyed;
     }
 
     /**
@@ -595,15 +584,13 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         if (hold == null || "Released".equals(hold.status)) {
             completion.fail(error("MEMORY_INVALID_REQUEST", "VM has no unresolved memory migration hold")); return;
         }
-        List<Object[]> vm = repository.transaction(em -> em.createQuery(
-                "select v.state, v.hostUuid from VmInstanceVO v where v.uuid = :uuid", Object[].class)
-                .setParameter("uuid", vmUuid).getResultList());
-        String vmState = vm.isEmpty() ? null : String.valueOf(vm.get(0)[0]);
-        String vmHost = vm.isEmpty() ? null : (String) vm.get(0)[1];
+        MemoryRepository.VmPlacement vm = repository.vmPlacement(vmUuid);
+        VmInstanceState vmState = vm == null ? null : vm.state;
+        String vmHost = vm == null ? null : vm.hostUuid;
         boolean running = confirmedHost != null;
         if (running && (!Arrays.asList(hold.sourceHostUuid, hold.targetHostUuid).contains(confirmedHost)
-                || !VmInstanceState.Running.toString().equals(vmState) || !confirmedHost.equals(vmHost))
-                || !running && !VmInstanceState.Stopped.toString().equals(vmState)) {
+                || vmState != VmInstanceState.Running || !confirmedHost.equals(vmHost))
+                || !running && vmState != VmInstanceState.Stopped) {
             completion.fail(error("MEMORY_INVALID_REQUEST", String.format("VM is %s on Host[%s]; confirm the migration"
                     + " source or target it runs on, or none for a stopped VM", vmState, vmHost))); return;
         }
@@ -683,8 +670,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     private boolean hostExists(String host) {
-        return !repository.transaction(em -> em.createQuery("select h.uuid from HostVO h where h.uuid = :uuid", String.class)
-                .setParameter("uuid", host).getResultList()).isEmpty();
+        return repository.hostExists(host);
     }
 
     private static String describe(VmIdentity identity) {

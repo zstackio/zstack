@@ -7,16 +7,30 @@ import org.springframework.core.NestedExceptionUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.ResourceVO_;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import javax.persistence.Tuple;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +46,7 @@ import java.util.stream.Collectors;
 public class MemoryRepository {
     private static final CLogger logger = Utils.getLogger(MemoryRepository.class);
     static final String SUCCEEDED = "Succeeded";
+    static final String RELEASED = "Released";
     static final String CONVERGING = "Converging";
     static final String FAILED = "Failed";
     static final int FAILURES_BEFORE_FAILED = 5;
@@ -72,47 +87,49 @@ public class MemoryRepository {
         if ("Global".equals(scope)) {
             if (!"global".equals(resource)) { throw error("MEMORY_INVALID_SCOPE", "Global resource must be global"); }
         } else if ("Cluster".equals(scope)) {
-            List<String> types = em.createQuery("select c.hypervisorType from ClusterVO c where c.uuid = :uuid", String.class)
-                    .setParameter("uuid", resource).getResultList();
-            if (types.isEmpty() || !"KVM".equals(types.get(0))) {
+            if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(clusterHypervisor(resource))) {
                 throw error("MEMORY_INVALID_SCOPE", "Expected an existing KVM Cluster");
             }
         } else if ("Host".equals(scope)) {
-            List<String> types = em.createQuery("select h.hypervisorType from HostVO h where h.uuid = :uuid", String.class)
-                    .setParameter("uuid", resource).getResultList();
-            if (types.isEmpty() || !"KVM".equals(types.get(0))) {
+            if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(hostHypervisor(resource))) {
                 throw error("MEMORY_INVALID_SCOPE", "Expected an existing KVM Host");
             }
         } else if ("VM".equals(scope)) {
-            if (em.createQuery("select v.uuid from VmInstanceVO v where v.uuid = :uuid", String.class)
-                    .setParameter("uuid", resource).getResultList().isEmpty()) {
+            if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, resource).isExists()) {
                 throw error("MEMORY_INVALID_SCOPE", "VM does not exist");
             }
         } else { throw error("MEMORY_INVALID_SCOPE", "Unknown memory scope"); }
     }
 
     private static boolean nonKvm(EntityManager em, String scope, String resource) {
-        String entity = "Host".equals(scope) ? "HostVO h" : "Cluster".equals(scope) ? "ClusterVO h" : null;
-        if (entity == null) { return false; }
-        List<String> types = em.createQuery("select h.hypervisorType from " + entity + " where h.uuid = :uuid", String.class)
-                .setParameter("uuid", resource).getResultList();
-        return !types.isEmpty() && !"KVM".equals(types.get(0));
+        String type = "Host".equals(scope) ? hostHypervisor(resource) : "Cluster".equals(scope) ? clusterHypervisor(resource) : null;
+        return type != null && !KVMConstant.KVM_HYPERVISOR_TYPE.equals(type);
+    }
+
+    private static String hostHypervisor(String host) {
+        return Q.New(HostVO.class).select(HostVO_.hypervisorType).eq(HostVO_.uuid, host).findValue();
+    }
+
+    private static String clusterHypervisor(String cluster) {
+        return Q.New(ClusterVO.class).select(ClusterVO_.hypervisorType).eq(ClusterVO_.uuid, cluster).findValue();
+    }
+
+    private static String hostCluster(String host) {
+        return Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, host).findValue();
     }
 
     private List<String> targets(EntityManager em, String scope, String resource) {
         validateResource(em, scope, resource);
         if ("Global".equals(scope)) {
-            return em.createQuery("select h.uuid from HostVO h where h.hypervisorType = :type order by h.uuid", String.class)
-                    .setParameter("type", "KVM").getResultList();
+            return Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                    .orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues();
         }
         if ("Host".equals(scope)) { return Collections.singletonList(resource); }
         if ("Cluster".equals(scope)) {
-            return em.createQuery("select h.uuid from HostVO h where h.clusterUuid = :cluster " +
-                    "and h.hypervisorType = :type order by h.uuid", String.class)
-                    .setParameter("cluster", resource).setParameter("type", "KVM").getResultList();
+            return Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.clusterUuid, resource)
+                    .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues();
         }
-        String host = em.createQuery("select v.hostUuid from VmInstanceVO v where v.uuid = :uuid", String.class)
-                .setParameter("uuid", resource).getSingleResult();
+        String host = Q.New(VmInstanceVO.class).select(VmInstanceVO_.hostUuid).eq(VmInstanceVO_.uuid, resource).findValue();
         return host == null ? Collections.emptyList() : Collections.singletonList(host);
     }
 
@@ -121,21 +138,19 @@ public class MemoryRepository {
     }
 
     public List<String> connectedHosts() {
-        return transaction(em -> em.createQuery("select h.uuid from HostVO h where h.hypervisorType = :type"
-                        + " and h.status = :status order by h.uuid", String.class)
-                .setParameter("type", "KVM").setParameter("status", HostStatus.Connected).getResultList());
+        return transaction(em -> Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .eq(HostVO_.status, HostStatus.Connected).orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues());
     }
 
     /** Current VM placement snapshot used by read-only batched observations. */
     public Map<String, String> currentVmHosts(Collection<String> vmUuids) {
         if (vmUuids == null || vmUuids.isEmpty()) { return Collections.emptyMap(); }
         return transaction(em -> {
-            List<Object[]> rows = em.createQuery(
-                    "select v.uuid, v.hostUuid from VmInstanceVO v where v.uuid in (:uuids)", Object[].class)
-                    .setParameter("uuids", new ArrayList<>(new LinkedHashSet<>(vmUuids))).getResultList();
+            List<Tuple> rows = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid)
+                    .in(VmInstanceVO_.uuid, new ArrayList<>(new LinkedHashSet<>(vmUuids))).listTuple();
             Map<String, String> result = new LinkedHashMap<>();
-            for (Object[] row : rows) {
-                if (row[0] instanceof String && row[1] instanceof String) { result.put((String) row[0], (String) row[1]); }
+            for (Tuple row : rows) {
+                if (row.get(1, String.class) != null) { result.put(row.get(0, String.class), row.get(1, String.class)); }
             }
             return result;
         });
@@ -149,25 +164,22 @@ public class MemoryRepository {
                 hosts = targets(em, "Global", "global");
             } else {
                 Set<String> selected = new LinkedHashSet<>(requested);
-                hosts = em.createQuery("select h.uuid from HostVO h where h.hypervisorType = 'KVM' "
-                        + "and h.uuid in (:hosts) order by h.uuid", String.class)
-                        .setParameter("hosts", selected).getResultList();
+                hosts = Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                        .in(HostVO_.uuid, selected).orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues();
                 // Recheck KVM eligibility and a resource deleted since API admission.
                 if (hosts.size() != selected.size()) {
                     throw error("MEMORY_INVALID_SCOPE", "Expected an existing KVM Host");
                 }
             }
             if (zoneUuid == null || hosts.isEmpty()) { return hosts; }
-            return em.createQuery("select h.uuid from HostVO h where h.zoneUuid = :zone "
-                    + "and h.uuid in (:hosts) order by h.uuid", String.class)
-                    .setParameter("zone", zoneUuid).setParameter("hosts", hosts).getResultList();
+            return Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.zoneUuid, zoneUuid).in(HostVO_.uuid, hosts)
+                    .orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues();
         });
     }
 
     public List<MemoryStateVO> allStates(List<String> hosts) {
         if (hosts == null || hosts.isEmpty()) { return Collections.emptyList(); }
-        return transaction(em -> em.createQuery("select s from MemoryStateVO s where s.hostUuid in (:hosts)", MemoryStateVO.class)
-                .setParameter("hosts", hosts).getResultList());
+        return transaction(em -> Q.New(MemoryStateVO.class).in(MemoryStateVO_.hostUuid, hosts).list());
     }
 
     public MemoryStateVO state(String host) {
@@ -181,9 +193,7 @@ public class MemoryRepository {
         if (resourceUuid == null) { return "Global"; }
         // Only the registry discriminator is needed; materializing JOINED
         // ResourceVO exceeds MariaDB's join limit in the full product.
-        String resourceType = em.createQuery("select r.resourceType from ResourceVO r where r.uuid = :uuid", String.class)
-                .setParameter("uuid", resourceUuid).setMaxResults(1).getResultList().stream()
-                .filter(Objects::nonNull).findFirst().orElse(null);
+        String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
         if (HostVO.class.getSimpleName().equals(resourceType)) { return "Host"; }
         if (org.zstack.header.cluster.ClusterVO.class.getSimpleName().equals(resourceType)) { return "Cluster"; }
         throw error("MEMORY_INVALID_SCOPE", "Memory configuration requires a KVM Host or Cluster");
@@ -231,8 +241,7 @@ public class MemoryRepository {
     }
 
     Map<String, Object> desired(EntityManager em, String host, String control, License license) {
-        String cluster = em.createQuery("select h.clusterUuid from HostVO h where h.uuid = :uuid", String.class)
-                .setParameter("uuid", host).getResultList().stream().findFirst().orElse(null);
+        String cluster = hostCluster(host);
         Map<String, Object> ksm = new LinkedHashMap<>();
         ksm.put("enabled", effectiveValue(em, MemoryStandardField.KSM_ENABLED, host, cluster));
         Map<String, Object> zram = new LinkedHashMap<>();
@@ -305,7 +314,7 @@ public class MemoryRepository {
     }
 
     /** MySQL's duplicate primary key, matched as DatabaseFacadeImpl matches it. */
-    private static boolean duplicatePrimaryKey(RuntimeException e) {
+    static boolean duplicatePrimaryKey(RuntimeException e) {
         Throwable root = NestedExceptionUtils.getRootCause(e);
         if (!(root instanceof SQLIntegrityConstraintViolationException)) { return false; }
         SQLIntegrityConstraintViolationException violation = (SQLIntegrityConstraintViolationException) root;
@@ -363,16 +372,14 @@ public class MemoryRepository {
 
     public Map<String, MemoryTaskVO> tasks(Collection<String> uuids) {
         if (uuids.isEmpty()) { return Collections.emptyMap(); }
-        return transaction(em -> em.createQuery("select t from MemoryTaskVO t where t.uuid in (:uuids)", MemoryTaskVO.class)
-                .setParameter("uuids", uuids).getResultList().stream()
-                .collect(java.util.stream.Collectors.toMap(MemoryTaskVO::getUuid, t -> t)));
+        return transaction(em -> Q.New(MemoryTaskVO.class).in(MemoryTaskVO_.uuid, uuids).<MemoryTaskVO>list().stream()
+                .collect(Collectors.toMap(MemoryTaskVO::getUuid, t -> t)));
     }
 
     /** Whether the Host's effective configuration turns ZRAM on now. */
     public boolean wantsZram(String host) {
         return transaction(em -> {
-            String cluster = em.createQuery("select h.clusterUuid from HostVO h where h.uuid = :uuid", String.class)
-                    .setParameter("uuid", host).getResultList().stream().findFirst().orElse(null);
+            String cluster = hostCluster(host);
             return Boolean.TRUE.equals(effectiveValue(em, MemoryStandardField.ZRAM_ENABLED, host, cluster));
         });
     }
@@ -415,9 +422,8 @@ public class MemoryRepository {
     }
 
     public List<String> dueHosts(long now) {
-        return transaction(em -> em.createQuery("select s.hostUuid from MemoryStateVO s where s.status = :status"
-                        + " and s.nextAttemptAt <= :now order by s.nextAttemptAt", String.class)
-                .setParameter("status", CONVERGING).setParameter("now", now).getResultList());
+        return transaction(em -> Q.New(MemoryStateVO.class).select(MemoryStateVO_.hostUuid).eq(MemoryStateVO_.status, CONVERGING)
+                .lte(MemoryStateVO_.nextAttemptAt, now).orderBy(MemoryStateVO_.nextAttemptAt, SimpleQuery.Od.ASC).listValues());
     }
 
     /** The outcome of one delivery: Succeeded, Converging (resend later) or Failed. */
@@ -481,10 +487,8 @@ public class MemoryRepository {
     }
 
     private List<MemoryTaskFailureEvent> finishTasks(EntityManager em, String host, long generation, String status, String reason) {
-        List<MemoryTaskVO> tasks = em.createQuery("select t from MemoryTaskVO t where t.hostUuid = :host"
-                        + " and t.desiredRevision <= :generation and t.status = :running", MemoryTaskVO.class)
-                .setParameter("host", host).setParameter("generation", generation).setParameter("running", CONVERGING)
-                .getResultList();
+        List<MemoryTaskVO> tasks = Q.New(MemoryTaskVO.class).eq(MemoryTaskVO_.hostUuid, host)
+                .lte(MemoryTaskVO_.desiredRevision, generation).eq(MemoryTaskVO_.status, CONVERGING).list();
         List<MemoryTaskFailureEvent> events = new ArrayList<>();
         for (MemoryTaskVO task : tasks) {
             task.setStatus(status); task.setReason(reason);
@@ -545,7 +549,7 @@ public class MemoryRepository {
     // ------------------------------------------------------ public state
 
     public List<String> hostsWithState() {
-        return transaction(em -> em.createQuery("select s.hostUuid from MemoryStateVO s", String.class).getResultList());
+        return transaction(em -> Q.New(MemoryStateVO.class).select(MemoryStateVO_.hostUuid).listValues());
     }
 
     /**
@@ -564,27 +568,23 @@ public class MemoryRepository {
 
     private List<String> refreshHostStates(EntityManager em, List<String> hosts) {
         Map<String, HostMemoryStateVO> rows = new HashMap<>();
-        for (HostMemoryStateVO row : em.createQuery("select r from HostMemoryStateVO r where r.hostUuid in (:hosts)",
-                HostMemoryStateVO.class).setParameter("hosts", hosts).getResultList()) {
+        for (HostMemoryStateVO row : Q.New(HostMemoryStateVO.class).in(HostMemoryStateVO_.hostUuid, hosts).<HostMemoryStateVO>list()) {
             rows.put(row.getHostUuid(), row);
         }
-        Set<String> unfinished = unfinishedLongJobs(em, rows.values().stream().map(HostMemoryStateVO::getActiveJobUuid)
-                .filter(Objects::nonNull).collect(Collectors.toSet()));
         List<String> unreadable = new ArrayList<>();
-        for (MemoryStateVO state : em.createQuery("select s from MemoryStateVO s where s.hostUuid in (:hosts)",
-                MemoryStateVO.class).setParameter("hosts", hosts).getResultList()) {
-            if (!refreshHostState(em, state, rows.get(state.getHostUuid()), unfinished)) { unreadable.add(state.getHostUuid()); }
+        for (MemoryStateVO state : Q.New(MemoryStateVO.class).in(MemoryStateVO_.hostUuid, hosts).<MemoryStateVO>list()) {
+            if (!refreshHostState(em, state, rows.get(state.getHostUuid()))) { unreadable.add(state.getHostUuid()); }
         }
         return unreadable;
     }
 
     private void refreshHostState(EntityManager em, MemoryStateVO state) {
-        refreshHostState(em, state, em.find(HostMemoryStateVO.class, state.getHostUuid()), null);
+        refreshHostState(em, state, em.find(HostMemoryStateVO.class, state.getHostUuid()));
     }
 
     /** Returns false when the stored configuration cannot be read. */
     @SuppressWarnings("unchecked")
-    private boolean refreshHostState(EntityManager em, MemoryStateVO state, HostMemoryStateVO existing, Set<String> unfinishedJobs) {
+    boolean refreshHostState(EntityManager em, MemoryStateVO state, HostMemoryStateVO existing) {
         HostMemoryStateVO row = existing;
         boolean created = row == null;
         if (created) { row = new HostMemoryStateVO(); row.setHostUuid(state.getHostUuid()); }
@@ -616,8 +616,6 @@ public class MemoryRepository {
         row.setCapabilities(state.getCapabilities());
         row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), state.getStatus(), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
-        if (row.getActiveJobUuid() != null && !(unfinishedJobs == null ? longJobUnfinished(em, row.getActiveJobUuid())
-                : unfinishedJobs.contains(row.getActiveJobUuid()))) { row.setActiveJobUuid(null); }
         if (created) { em.persist(row); }
         return desired != null;
     }
@@ -636,7 +634,7 @@ public class MemoryRepository {
 
     /** The stored desired configuration, empty before the first plan, or null when it cannot be read. */
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> storedDesired(MemoryStateVO state) {
+    static Map<String, Object> storedDesired(MemoryStateVO state) {
         if (state.getDesired() == null) { return Collections.emptyMap(); }
         try { return JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class); }
         catch (JsonParseException invalid) {
@@ -710,19 +708,15 @@ public class MemoryRepository {
     private static Map<?, ?> map(Object value) { return value instanceof Map ? (Map<?, ?>) value : null; }
     private static Object field(Object value, String key) { Map<?, ?> map = map(value); return map == null ? null : map.get(key); }
 
-    private static boolean longJobUnfinished(EntityManager em, String job) {
-        return unfinishedLongJobs(em, Collections.singleton(job)).contains(job);
-    }
-
-    private static Set<String> unfinishedLongJobs(EntityManager em, Collection<String> jobs) {
-        if (jobs.isEmpty()) { return Collections.emptySet(); }
-        Set<String> unfinished = new HashSet<>();
-        for (Object[] job : em.createQuery("select j.uuid, j.state from LongJobVO j where j.uuid in (:jobs)", Object[].class)
-                .setParameter("jobs", jobs).getResultList()) {
-            String state = String.valueOf(job[1]);
-            if (!"Succeeded".equals(state) && !"Failed".equals(state) && !"Canceled".equals(state)) { unfinished.add((String) job[0]); }
-        }
-        return unfinished;
+    /**
+     * Clears the LongJob markers of Hosts this node has just taken over, except those of jobs running
+     * here: a job of the node that managed them before cannot finish here, and a resumed job sets its marker again.
+     */
+    public void clearActiveJobs(Collection<String> hosts, Collection<String> runningJobs) {
+        if (hosts.isEmpty()) { return; }
+        UpdateQuery update = SQL.New(HostMemoryStateVO.class).in(HostMemoryStateVO_.hostUuid, hosts).notNull(HostMemoryStateVO_.activeJobUuid);
+        if (!runningJobs.isEmpty()) { update.notIn(HostMemoryStateVO_.activeJobUuid, runningJobs); }
+        update.set(HostMemoryStateVO_.activeJobUuid, null).update();
     }
 
     /** Records the LongJob operating on a Host; clearing applies only to the job that set it. */
@@ -782,29 +776,63 @@ public class MemoryRepository {
         }
     }
 
+    // ----------------------------------------------------- migration holds
+
+    /** A VM's state and Host; absent when the VM no longer exists. */
+    static final class VmPlacement {
+        final VmInstanceState state;
+        final String hostUuid;
+        VmPlacement(VmInstanceState state, String hostUuid) { this.state = state; this.hostUuid = hostUuid; }
+    }
+
+    public VmPlacement vmPlacement(String vmUuid) {
+        return transaction(em -> Q.New(VmInstanceVO.class).select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid).listTuple().stream()
+                .map(t -> new VmPlacement(t.get(0, VmInstanceState.class), t.get(1, String.class)))
+                .findFirst().orElse(null));
+    }
+
+    public boolean hostExists(String host) {
+        return transaction(em -> Q.New(HostVO.class).eq(HostVO_.uuid, host).isExists());
+    }
+
+    /** The Unknown holds of a source, and the unreleased holds of VMs that no longer exist. */
+    public List<MemoryMigrationVO> unknownOrOrphanedHolds(String sourceHost) {
+        return transaction(em -> SQL.New("from MemoryMigrationVO m where m.sourceHostUuid = :host and (m.status = :unknown"
+                + " or m.status <> :released and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid))",
+                MemoryMigrationVO.class).param("host", sourceHost).param("unknown", "Unknown").param("released", RELEASED).list());
+    }
+
+    /** The Preparing or Held holds of a source whose VM is not migrating. */
+    public List<MemoryMigrationVO> settledHolds(String sourceHost) {
+        return transaction(em -> SQL.New("from MemoryMigrationVO m where m.sourceHostUuid = :host and m.status in (:held)"
+                + " and exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid and v.state <> :migrating)",
+                MemoryMigrationVO.class).param("host", sourceHost).param("held", Arrays.asList("Preparing", "Held"))
+                .param("migrating", VmInstanceState.Migrating).list());
+    }
+
     // ------------------------------------------------------------ cleanup
 
     /** Removes memory records of deleted Hosts and VMs that hold no unreleased migration. */
     public void cleanupDeletedResources() {
         transaction(em -> {
-            em.createQuery("delete from MemoryMigrationVO m where m.status = 'Released'"
-                    + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid)").executeUpdate();
+            SQL.New("delete from MemoryMigrationVO m where m.status = :released"
+                    + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid)").param("released", RELEASED).execute();
             String deletedHost = "not exists (select h.uuid from HostVO h where h.uuid = %s)";
-            String unreleased = " and not exists (select m.vmUuid from MemoryMigrationVO m where m.status <> 'Released'"
+            String unreleased = " and not exists (select m.vmUuid from MemoryMigrationVO m where m.status <> :released"
                     + " and (m.sourceHostUuid = s.hostUuid or m.targetHostUuid = s.hostUuid))";
-            em.createQuery("delete from MemoryTaskVO t where " + String.format(deletedHost, "t.hostUuid")).executeUpdate();
-            em.createQuery("delete from HostMemoryStateVO s where " + String.format(deletedHost, "s.hostUuid")).executeUpdate();
-            em.createQuery("delete from MemoryStateVO s where " + String.format(deletedHost, "s.hostUuid") + unreleased)
-                    .executeUpdate();
+            SQL.New("delete from MemoryTaskVO t where " + String.format(deletedHost, "t.hostUuid")).execute();
+            SQL.New("delete from HostMemoryStateVO s where " + String.format(deletedHost, "s.hostUuid")).execute();
+            SQL.New("delete from MemoryStateVO s where " + String.format(deletedHost, "s.hostUuid") + unreleased)
+                    .param("released", RELEASED).execute();
             return null;
         });
     }
 
     /** Finished operation records are kept for a week. */
     public void purgeHistory(long now) {
-        transaction(em -> em.createQuery("delete from MemoryTaskVO t where t.status <> :running and t.lastOpDate < :before")
-                .setParameter("running", CONVERGING).setParameter("before", new java.sql.Timestamp(now - HISTORY_MILLIS))
-                .executeUpdate());
+        transaction(em -> SQL.New("delete from MemoryTaskVO t where t.status <> :running and t.lastOpDate < :before")
+                .param("running", CONVERGING).param("before", new java.sql.Timestamp(now - HISTORY_MILLIS)).execute());
     }
 
     static String trim(String value) {
