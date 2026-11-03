@@ -6,7 +6,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class MemoryHostOperationMsg extends NeedReplyMessage {
     private String hostUuid;
     private String action;
-    private MemoryBackendPreparation preparation;
+    private String candidateId;
     private String jobUuid;
     private String accountUuid;
     private String userUuid;
@@ -15,8 +15,8 @@ public class MemoryHostOperationMsg extends NeedReplyMessage {
     public void setHostUuid(String value) { hostUuid = value; }
     public String getAction() { return action; }
     public void setAction(String value) { action = value; }
-    public MemoryBackendPreparation getPreparation() { return preparation; }
-    public void setPreparation(MemoryBackendPreparation value) { preparation = value; }
+    public String getCandidateId() { return candidateId; }
+    public void setCandidateId(String value) { candidateId = value; }
     public String getJobUuid() { return jobUuid; }
     public void setJobUuid(String value) { jobUuid = value; }
     public String getAccountUuid() { return accountUuid; }

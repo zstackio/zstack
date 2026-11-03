@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.MemoryWritebackMaintenanceInventory;
+
 
 public class MemoryWritebackBackendInventory  {
 
@@ -10,22 +10,6 @@ public class MemoryWritebackBackendInventory  {
     }
     public java.lang.String getHostUuid() {
         return this.hostUuid;
-    }
-
-    public java.lang.String bootId;
-    public void setBootId(java.lang.String bootId) {
-        this.bootId = bootId;
-    }
-    public java.lang.String getBootId() {
-        return this.bootId;
-    }
-
-    public java.lang.String observedAt;
-    public void setObservedAt(java.lang.String observedAt) {
-        this.observedAt = observedAt;
-    }
-    public java.lang.String getObservedAt() {
-        return this.observedAt;
     }
 
     public java.lang.String status;
@@ -44,52 +28,12 @@ public class MemoryWritebackBackendInventory  {
         return this.reasons;
     }
 
-    public java.lang.Boolean candidatesFieldPresent;
-    public void setCandidatesFieldPresent(java.lang.Boolean candidatesFieldPresent) {
-        this.candidatesFieldPresent = candidatesFieldPresent;
+    public java.lang.Long observedAt;
+    public void setObservedAt(java.lang.Long observedAt) {
+        this.observedAt = observedAt;
     }
-    public java.lang.Boolean getCandidatesFieldPresent() {
-        return this.candidatesFieldPresent;
-    }
-
-    public java.util.List candidates;
-    public void setCandidates(java.util.List candidates) {
-        this.candidates = candidates;
-    }
-    public java.util.List getCandidates() {
-        return this.candidates;
-    }
-
-    public java.lang.String controlOperationUuid;
-    public void setControlOperationUuid(java.lang.String controlOperationUuid) {
-        this.controlOperationUuid = controlOperationUuid;
-    }
-    public java.lang.String getControlOperationUuid() {
-        return this.controlOperationUuid;
-    }
-
-    public MemoryWritebackMaintenanceInventory maintenance;
-    public void setMaintenance(MemoryWritebackMaintenanceInventory maintenance) {
-        this.maintenance = maintenance;
-    }
-    public MemoryWritebackMaintenanceInventory getMaintenance() {
-        return this.maintenance;
-    }
-
-    public java.lang.String poolGeneration;
-    public void setPoolGeneration(java.lang.String poolGeneration) {
-        this.poolGeneration = poolGeneration;
-    }
-    public java.lang.String getPoolGeneration() {
-        return this.poolGeneration;
-    }
-
-    public java.lang.Boolean canPrepare;
-    public void setCanPrepare(java.lang.Boolean canPrepare) {
-        this.canPrepare = canPrepare;
-    }
-    public java.lang.Boolean getCanPrepare() {
-        return this.canPrepare;
+    public java.lang.Long getObservedAt() {
+        return this.observedAt;
     }
 
     public java.util.List preparationReasons;
@@ -98,6 +42,14 @@ public class MemoryWritebackBackendInventory  {
     }
     public java.util.List getPreparationReasons() {
         return this.preparationReasons;
+    }
+
+    public java.util.List candidates;
+    public void setCandidates(java.util.List candidates) {
+        this.candidates = candidates;
+    }
+    public java.util.List getCandidates() {
+        return this.candidates;
     }
 
 }

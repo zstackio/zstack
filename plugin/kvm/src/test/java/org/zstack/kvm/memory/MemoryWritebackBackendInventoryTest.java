@@ -1,127 +1,121 @@
 package org.zstack.kvm.memory;
 
-import com.google.gson.Gson;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class MemoryWritebackBackendInventoryTest {
     private static final String HOST = "093d46206e694835b4a218449eb1bc7c";
 
-    @Test
-    public void convertsCapturedAgentCandidateAndDropsUnknownFields() {
+    /** An Agent inventory as the writeback-backends call returns it. */
+    private static Map<String, Object> agentState() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("hostUuid", HOST);
         state.put("bootId", "8c6ce488-e264-4c1d-bcd9-763196d10a3e");
         state.put("observedAt", "2026-10-08T14:04:20.720910Z");
         state.put("status", "AVAILABLE");
-        state.put("reasons", new ArrayList<String>());
-
-        Map<String, Object> stable = new LinkedHashMap<>();
-        stable.put("bootId", state.get("bootId"));
-        stable.put("device", "/dev/vdb");
-        stable.put("byIdPath", "/dev/disk/by-id/virtio-e4e9ca6be5425a879187");
-        stable.put("majorMinor", "252:16");
-        stable.put("serial", "e4e9ca6be5425a879187");
-        stable.put("wwn", "");
-        stable.put("capacityBytes", 21474836480L);
-        stable.put("transport", "");
-        stable.put("sysfsPath", "/sys/devices/pci0000:00/0000:00:0c.0/virtio6/block/vdb");
-        stable.put("sysfsInode", "79610");
-        stable.put("rdev", 64528L);
-        stable.put("nodeInode", 1043854454L);
-        stable.put("unknownAgentDiagnostic", "must-not-be-forwarded");
-
+        state.put("reasons", Collections.emptyList());
+        state.put("poolGeneration", "none");
+        state.put("canPrepare", true);
+        state.put("preparationReasons", Collections.emptyList());
+        state.put("maintenance", Collections.singletonMap("stage", "APPLIED"));
         Map<String, Object> candidate = new LinkedHashMap<>();
-        candidate.put("identity", "e9a8d7cb8b6dc595a1c589841e83eb2d10760690a1c9dad3e2c4e970695f253b");
-        candidate.put("fingerprint", candidate.get("identity"));
-        candidate.put("resourceUuid", "6266ba305b5ed487b5f22cefee13f466");
+        candidate.put("identity", "candidate:" + String.join("", Collections.nCopies(64, "e")));
+        candidate.put("fingerprint", String.join("", Collections.nCopies(64, "e")));
+        candidate.put("resourceUuid", null);
         candidate.put("type", "block");
-        candidate.put("path", stable.get("byIdPath"));
+        candidate.put("path", "/dev/disk/by-id/virtio-e4e9ca6be5425a879187");
         candidate.put("device", "/dev/vdb");
-        candidate.put("byIdPath", stable.get("byIdPath"));
+        candidate.put("byIdPath", "/dev/disk/by-id/virtio-e4e9ca6be5425a879187");
         candidate.put("capacityBytes", 21474836480L);
         candidate.put("hostBootId", state.get("bootId"));
-        candidate.put("eligible", true);
-        candidate.put("writebackReady", true);
-        candidate.put("state", "PREPARED");
-        candidate.put("reasons", new ArrayList<String>());
-        candidate.put("transport", "");
+        candidate.put("state", "NEEDS_OFFLINE_PREPARATION");
+        candidate.put("reasons", Collections.singletonList("NEEDS_OFFLINE_PREPARATION"));
+        candidate.put("transport", "virtio");
+        Map<String, Object> stable = new LinkedHashMap<>();
+        stable.put("serial", "e4e9ca6be5425a879187");
+        stable.put("wwn", "");
+        stable.put("majorMinor", "252:16");
         candidate.put("stableIdentity", stable);
-        candidate.put("active", false);
-        candidate.put("unknownInternalField", "must-not-be-forwarded");
-        state.put("candidates", Arrays.asList(candidate));
-        state.put("canPrepare", false);
-        state.put("preparationReasons", Arrays.asList("MEMORY_SERVICE_NOT_STOPPED"));
-        state.put("canPrepareZramPool", false);
-        state.put("zramPoolPreparationReasons", Arrays.asList("DRAIN_PROOF_UNAVAILABLE"));
-        state.put("zramPoolPreparationQuality", "Ineligible");
-        state.put("zramPoolPreparationObservedAt", 1791468260938L);
-        Map<String, Object> targetIdentity = new LinkedHashMap<>();
-        targetIdentity.put("boot_id", state.get("bootId"));
-        targetIdentity.put("canonical_device", "/dev/vdb");
-        targetIdentity.put("rdev", 64528L);
-        targetIdentity.put("node_inode", 1043854454L);
-        targetIdentity.put("sysfs_inode", 79610L);
-        targetIdentity.put("capacity_bytes", 21474836480L);
-        targetIdentity.put("direct_io", false);
-        targetIdentity.put("stack_sha256", "866d2053446ba0b001fdf9b46dbe373f418c09be30fcd465c5a006884600f75c");
-        targetIdentity.put("agentPrivateField", "must-not-be-forwarded");
-        Map<String, Object> maintenance = new LinkedHashMap<>();
-        maintenance.put("schema", 1);
-        maintenance.put("request_id", "288097e635094a56afe759757cc5397f");
-        maintenance.put("candidate_id", "candidate:724d4582adec92a9bd70b2da9d9c2965fbc1506e71987b7201e2d782d12de065");
-        maintenance.put("request_fingerprint", "13114029099baf472d0f3942440f800967e7a904896695de16d38196d5b80af8");
-        maintenance.put("stage", "APPLIED");
-        maintenance.put("started_at", "2026-10-08T09:22:55.375876961Z");
-        maintenance.put("updated_at", "2026-10-08T11:51:44.459781937Z");
-        maintenance.put("host_boot_id", state.get("bootId"));
-        maintenance.put("pool_generation", "af013f2fc83c7845def03466c8612396eb8604a1ddccd6ff4283f0e0317f2333");
-        maintenance.put("target_identity", targetIdentity);
-        maintenance.put("reset_attempted", true);
-        maintenance.put("archive", "/var/lib/zram-efficiency-writeback-20261007/backend-maintenance/288097e635094a56afe759757cc5397f/pre-reset-archive");
-        maintenance.put("backend_resource_uuid", "6266ba305b5ed487b5f22cefee13f466");
-        maintenance.put("newServiceInternalField", "must-not-be-forwarded");
-        state.put("maintenance", maintenance);
-        state.put("unknownInternalField", "must-not-be-forwarded");
+        state.put("candidates", Collections.singletonList(candidate));
+        return state;
+    }
 
-        MemoryWritebackBackendInventory result = MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);
-        MemoryWritebackBackendCandidateInventory projected = result.getCandidates().get(0);
-        assertEquals(HOST, result.getHostUuid());
-        assertEquals(Long.valueOf(21474836480L), projected.getCapacityBytes());
-        assertEquals("6266ba305b5ed487b5f22cefee13f466", projected.getResourceUuid());
-        assertEquals("8c6ce488-e264-4c1d-bcd9-763196d10a3e", projected.getHostBootId());
-        assertEquals(Long.valueOf(21474836480L), projected.getStableIdentity().getCapacityBytes());
-        assertEquals(Long.valueOf(1043854454L), projected.getStableIdentity().getNodeInode());
-        assertEquals("APPLIED", result.getMaintenance().getStage());
-        assertEquals("288097e635094a56afe759757cc5397f", result.getMaintenance().getRequest_id());
-        assertEquals("2026-10-08T11:51:44.459781937Z", result.getMaintenance().getUpdated_at());
-        assertEquals(Long.valueOf(21474836480L), result.getMaintenance().getTarget_identity().getCapacity_bytes());
-        String json = new Gson().toJson(result);
-        assertTrue(json.contains("\"resourceUuid\":\"6266ba305b5ed487b5f22cefee13f466\""));
-        assertFalse(json.contains("unknownInternalField"));
-        assertFalse(json.contains("unknownAgentDiagnostic"));
-        assertFalse(json.contains("qualified"));
-        assertFalse(json.contains("agentPrivateField"));
-        assertFalse(json.contains("newServiceInternalField"));
+    @Test
+    public void projectsTheAgentInventoryOntoTheApiFields() {
+        MemoryWritebackBackendInventory inventory = MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, agentState());
+        assertEquals(HOST, inventory.getHostUuid());
+        assertEquals("Available", inventory.getStatus());
+        assertEquals(Long.valueOf(1791468260720L), inventory.getObservedAt());
+        assertTrue("an empty list means the Host can prepare now", inventory.getPreparationReasons().isEmpty());
+        MemoryWritebackBackendCandidateInventory candidate = inventory.getCandidates().get(0);
+        assertEquals("candidate:" + String.join("", Collections.nCopies(64, "e")), candidate.getId());
+        assertEquals("/dev/disk/by-id/virtio-e4e9ca6be5425a879187", candidate.getPath());
+        assertEquals("/dev/vdb", candidate.getDevice());
+        assertEquals(Long.valueOf(21474836480L), candidate.getSize());
+        assertEquals("e4e9ca6be5425a879187", candidate.getSerial());
+        assertNull("a blank WWN is not known", candidate.getWwn());
+        assertEquals("virtio", candidate.getTransport());
+        assertEquals("Available", candidate.getState());
+    }
+
+    @Test
+    public void eachAgentStateHasItsApiName() {
+        String[][] states = {{"NEEDS_OFFLINE_PREPARATION", "Available"}, {"PREPARED", "Prepared"}, {"ACTIVE", "Active"},
+                {"INELIGIBLE", "Ineligible"}, {"DISCONNECTED", "Disconnected"}, {"IDENTITY_MISMATCH", "IdentityMismatch"}};
+        for (String[] state : states) {
+            Map<String, Object> candidate = new LinkedHashMap<>();
+            candidate.put("state", state[0]);
+            assertEquals(state[1], MemoryWritebackBackendCandidateInventory.fromMap(candidate).getState());
+        }
+        String[][] statuses = {{"AVAILABLE", "Available"}, {"PARTIAL", "Available"}, {"DISCONNECTED", "Disconnected"},
+                {"UNSUPPORTED", "Unsupported"}};
+        for (String[] status : statuses) {
+            Map<String, Object> state = agentState();
+            state.put("status", status[0]);
+            assertEquals(status[1], MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state).getStatus());
+        }
+        Map<String, Object> unknown = new LinkedHashMap<>();
+        unknown.put("state", "PREPARING");
+        try {
+            MemoryWritebackBackendCandidateInventory.fromMap(unknown);
+            fail("an unknown state must not be passed on");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("WRITEBACK_CANDIDATE_STATE_UNKNOWN", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void anAgentThatDidNotDecideCannotPrepareAndHasNoCandidates() {
+        Map<String, Object> state = agentState();
+        state.remove("preparationReasons");
+        state.remove("candidates");
+        MemoryWritebackBackendInventory inventory = MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);
+        assertEquals(Collections.singletonList("PREPARATION_STATE_UNKNOWN"), inventory.getPreparationReasons());
+        assertTrue(inventory.getCandidates().isEmpty());
+    }
+
+    @Test
+    public void aMalformedObservationTimeIsAMalformedInventory() {
+        Map<String, Object> state = agentState();
+        state.put("observedAt", "yesterday");
+        try {
+            MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);
+            fail("a malformed time must not be passed on");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("WRITEBACK_OBSERVED_AT_MALFORMED", expected.getMessage());
+        }
     }
 
     @Test
     public void preservesExactLongCapacityAndRejectsRoundedDouble() {
         Map<String, Object> candidate = new LinkedHashMap<>();
+        candidate.put("state", "PREPARED");
         candidate.put("capacityBytes", new BigInteger("9007199254740993"));
-        assertEquals(Long.valueOf(9007199254740993L),
-                MemoryWritebackBackendCandidateInventory.fromMap(candidate).getCapacityBytes());
+        assertEquals(Long.valueOf(9007199254740993L), MemoryWritebackBackendCandidateInventory.fromMap(candidate).getSize());
         candidate.put("capacityBytes", 9007199254740992d);
         try {
             MemoryWritebackBackendCandidateInventory.fromMap(candidate);
@@ -161,25 +155,8 @@ public class MemoryWritebackBackendInventoryTest {
     }
 
     @Test
-    public void preservesMissingNullAndEmptyCandidateSemantics() {
-        Map<String, Object> state = new LinkedHashMap<>();
-        state.put("hostUuid", HOST);
-        MemoryWritebackBackendInventory missing = MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);
-        assertNull(missing.getCandidates());
-        assertEquals(Boolean.FALSE, missing.getCandidatesFieldPresent());
-        state.put("candidates", null);
-        MemoryWritebackBackendInventory explicitNull = MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);
-        assertNull(explicitNull.getCandidates());
-        assertEquals(Boolean.TRUE, explicitNull.getCandidatesFieldPresent());
-        state.put("candidates", new ArrayList<Map<String, Object>>());
-        MemoryWritebackBackendInventory empty = MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);
-        assertTrue(empty.getCandidates().isEmpty());
-        assertEquals(Boolean.TRUE, empty.getCandidatesFieldPresent());
-    }
-
-    @Test
     public void rejectsMismatchedHostIdentityBeforeProjectingState() {
-        Map<String, Object> state = new LinkedHashMap<>();
+        Map<String, Object> state = agentState();
         state.put("hostUuid", "another-host");
         try {
             MemoryWritebackBackendInventory.fromAgentState(HOST, HOST, state);

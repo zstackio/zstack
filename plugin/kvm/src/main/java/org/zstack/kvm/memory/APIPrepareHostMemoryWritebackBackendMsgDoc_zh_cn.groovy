@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """清空并绑定物理机上的一块空盘作为ZRAM写回后端（以长任务提交）。参数取自GetHostMemoryWritebackBackends，用于确认要清空的正是该设备；后端自动填写版本与控制标识，与该物理机上的其他内存优化操作按提交顺序执行。准备失败时长任务失败并给出原因。"""
+    desc """清空并绑定物理机上的一块空盘作为ZRAM写回盘（以长任务提交）。candidateId取自GetHostMemoryWritebackBackends；管理节点在清空前向物理机核对该盘仍存在且可以准备，否则长任务以MEMORY_BACKEND_PREPARATION_INVALID失败并给出原因。会清空该盘，调用前应由界面二次确认。与该物理机上的其他内存优化操作按提交顺序执行。"""
 
     rest {
         request {
@@ -33,45 +33,9 @@ doc {
 				column {
 					name "candidateId"
 					enclosedIn "prepareHostMemoryWritebackBackend"
-					desc "GetHostMemoryWritebackBackends返回的候选设备identity"
+					desc "GetHostMemoryWritebackBackends返回的candidates[].id"
 					location "body"
 					type "String"
-					optional false
-					since "5.5.48"
-				}
-				column {
-					name "expectedHostBootId"
-					enclosedIn "prepareHostMemoryWritebackBackend"
-					desc "GetHostMemoryWritebackBackends返回的bootId，物理机重启后需重新查询"
-					location "body"
-					type "String"
-					optional false
-					since "5.5.48"
-				}
-				column {
-					name "expectedPoolGeneration"
-					enclosedIn "prepareHostMemoryWritebackBackend"
-					desc "GetHostMemoryWritebackBackends返回的poolGeneration（首次使用为none）"
-					location "body"
-					type "String"
-					optional false
-					since "5.5.48"
-				}
-				column {
-					name "backendCapacityBytes"
-					enclosedIn "prepareHostMemoryWritebackBackend"
-					desc "候选设备的整盘容量（capacityBytes），单位字节"
-					location "body"
-					type "long"
-					optional false
-					since "5.5.48"
-				}
-				column {
-					name "resetConfirmed"
-					enclosedIn "prepareHostMemoryWritebackBackend"
-					desc "确认清空该设备，必须为true"
-					location "body"
-					type "boolean"
 					optional false
 					since "5.5.48"
 				}

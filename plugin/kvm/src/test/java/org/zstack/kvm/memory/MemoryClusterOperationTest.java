@@ -347,33 +347,56 @@ public class MemoryClusterOperationTest {
         assertEquals("host1:resume:active", repository.plans.get(0));
     }
 
+    private static final String CANDIDATE = "candidate:" + String.join("", Collections.nCopies(64, "a"));
+
     private MemoryHostOperationMsg preparation() {
-        MemoryBackendPreparation preparation = new MemoryBackendPreparation();
-        preparation.setCandidateId("candidate:" + String.join("", Collections.nCopies(64, "a")));
-        preparation.setExpectedHostBootId("d339587c-b015-4745-8091-d00521319861");
-        preparation.setExpectedPoolGeneration("none");
-        preparation.setBackendCapacityBytes(10737418240L); preparation.setResetConfirmed(true);
         MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
-        msg.setHostUuid("host1"); msg.setAction("prepareWritebackBackend"); msg.setPreparation(preparation);
+        msg.setHostUuid("host1"); msg.setAction("prepareWritebackBackend"); msg.setCandidateId(CANDIDATE);
         msg.setAccountUuid("account"); msg.setUserUuid("user"); msg.setTimeout(7200000L);
         return msg;
+    }
+
+    /** The Host's disk inventory the preparation reads first, then the Agent's answers to the preparation. */
+    private void scriptPreparation(MemoryAgentResponse... prepareReplies) {
+        MemoryAgentResponse inventory = reply("Succeeded", null, null);
+        inventory.state.put("bootId", "d339587c-b015-4745-8091-d00521319861");
+        inventory.state.put("poolGeneration", "none");
+        inventory.state.put("preparationReasons", Collections.emptyList());
+        Map<String, Object> candidate = new LinkedHashMap<>();
+        candidate.put("identity", CANDIDATE); candidate.put("state", "NEEDS_OFFLINE_PREPARATION");
+        candidate.put("capacityBytes", 10737418240L);
+        inventory.state.put("candidates", Collections.singletonList(candidate));
+        manager.script("host1", "writeback-backends", inventory);
+        manager.script("host1", "writeback-backends", prepareReplies);
+    }
+
+    private List<Map<String, Object>> prepareCommands() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> command : manager.commands) {
+            if ("prepare".equals(command.get("action"))) { result.add(command); }
+        }
+        return result;
     }
 
     @Test public void preparationIsResentUntilTheBackendIsBoundToTheHost() throws Exception {
         setup();
         MemoryAgentResponse done = reply("Succeeded", null, null);
         done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
-        manager.script("host1", "writeback-backends", reply("Converging", "BACKEND_PREPARING", 1L), done);
+        scriptPreparation(reply("Converging", "BACKEND_PREPARING", 1L), done);
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
 
         assertEquals(Collections.singletonList("success"), manager.outcomes);
         assertEquals(BACKEND, repository.preparedBackend);
         assertEquals(10737418240L, repository.preparedCapacity);
-        Map<String, Object> first = manager.commands.get(0), second = manager.commands.get(1);
-        assertEquals("prepare", first.get("action"));
+        assertNull("the inventory is read before anything is reset", manager.commands.get(0).get("action"));
+        Map<String, Object> first = prepareCommands().get(0), second = prepareCommands().get(1);
         assertEquals(first.get("generation"), second.get("generation"));
-        assertEquals("candidate:" + String.join("", Collections.nCopies(64, "a")), first.get("candidateId"));
+        assertEquals(CANDIDATE, first.get("candidateId"));
+        assertEquals("the Host's own boot is the expected one", "d339587c-b015-4745-8091-d00521319861",
+                first.get("expectedHostBootId"));
+        assertEquals("none", first.get("expectedPoolGeneration"));
+        assertEquals("the whole disk backs writeback", 10737418240L, first.get("backendCapacityBytes"));
         assertEquals(true, first.get("resetConfirmed"));
         assertTrue(repository.plans.contains("host1:prepareWritebackBackend:null"));
         assertEquals("the prepared backend reaches the Host in its next generation", "apply",
@@ -386,7 +409,7 @@ public class MemoryClusterOperationTest {
         repository.controls.put("host1", "drained");
         MemoryAgentResponse done = reply("Succeeded", null, null);
         done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
-        manager.script("host1", "writeback-backends", done);
+        scriptPreparation(done);
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
 
@@ -405,7 +428,7 @@ public class MemoryClusterOperationTest {
         repository.zramOff.add("host1");
         MemoryAgentResponse done = reply("Succeeded", null, null);
         done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
-        manager.script("host1", "writeback-backends", done);
+        scriptPreparation(done);
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
 
@@ -425,26 +448,35 @@ public class MemoryClusterOperationTest {
         assertEquals(1, manager.commands.size());
         MemoryAgentResponse prepared = reply("Succeeded", null, null);
         prepared.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
-        manager.script("host1", "writeback-backends", prepared);
+        scriptPreparation(prepared);
         invokeHostOperation(manager, preparation());
         assertEquals("nothing is prepared while an apply is in flight", 1, manager.commands.size());
         manager.held.poll().accept(reply("Succeeded", null, null));
         manager.deferred.poll().run();
-        assertEquals("prepare", manager.commands.get(1).get("action"));
+        assertEquals(1, prepareCommands().size());
     }
 
     @Test public void preparationWithoutAReportedBackendFails() throws Exception {
         setup();
-        manager.script("host1", "writeback-backends", reply("Succeeded", null, null));
+        scriptPreparation(reply("Succeeded", null, null));
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
         assertEquals(Collections.singletonList("Failed: BACKEND_RESOURCE_UNREPORTED"), manager.outcomes);
         assertNull(repository.preparedBackend);
     }
 
+    @Test public void aDiskTheHostNoLongerOffersIsNotReset() throws Exception {
+        setup();
+        manager.script("host1", "writeback-backends", reply("Succeeded", null, null));
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+        assertEquals(Collections.singletonList("MEMORY_BACKEND_PREPARATION_INVALID: CANDIDATE_NOT_FOUND"), manager.outcomes);
+        assertTrue("nothing is reset", prepareCommands().isEmpty());
+    }
+
     @Test public void aPreparationTheAgentRejectsIsAnInvalidPreparation() throws Exception {
         setup();
-        manager.script("host1", "writeback-backends", reply("Failed", "WRITEBACK_CANDIDATE_NOT_UNIQUE", null));
+        scriptPreparation(reply("Failed", "WRITEBACK_CANDIDATE_NOT_UNIQUE", null));
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
         assertEquals(Collections.singletonList("MEMORY_BACKEND_PREPARATION_INVALID: WRITEBACK_CANDIDATE_NOT_UNIQUE"),
@@ -453,11 +485,12 @@ public class MemoryClusterOperationTest {
 
     @Test public void anUnreachableAgentIsNotAnInvalidPreparation() throws Exception {
         setup();
-        for (int i = 0; i < MemoryRepository.FAILURES_BEFORE_FAILED; i++) {
-            MemoryAgentResponse unreachable = reply(null, "AGENT_UNREACHABLE", null);
-            unreachable.setSuccess(false);
-            manager.script("host1", "writeback-backends", unreachable);
+        MemoryAgentResponse[] unreachable = new MemoryAgentResponse[MemoryRepository.FAILURES_BEFORE_FAILED];
+        for (int i = 0; i < unreachable.length; i++) {
+            unreachable[i] = reply(null, "AGENT_UNREACHABLE", null);
+            unreachable[i].setSuccess(false);
         }
+        scriptPreparation(unreachable);
         manager.hostBus = bus(replies, manager);
         MemoryHostOperationMsg msg = preparation(); msg.setTimeout(TimeUnit.HOURS.toMillis(1));
         invokeHostOperation(manager, msg);
@@ -466,7 +499,7 @@ public class MemoryClusterOperationTest {
 
     @Test public void aPreparationTheAgentCouldNotCompleteIsAFailedOperation() throws Exception {
         setup();
-        manager.script("host1", "writeback-backends", reply("Failed", "BACKEND_MAINTENANCE_FAILED", null));
+        scriptPreparation(reply("Failed", "BACKEND_MAINTENANCE_FAILED", null));
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
         assertEquals(Collections.singletonList("Failed: BACKEND_MAINTENANCE_FAILED"), manager.outcomes);
