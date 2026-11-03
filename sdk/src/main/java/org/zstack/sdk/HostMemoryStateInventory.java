@@ -36,14 +36,6 @@ public class HostMemoryStateInventory  {
         return this.reason;
     }
 
-    public java.util.Map capabilities;
-    public void setCapabilities(java.util.Map capabilities) {
-        this.capabilities = capabilities;
-    }
-    public java.util.Map getCapabilities() {
-        return this.capabilities;
-    }
-
     public java.util.List allowedActions;
     public void setAllowedActions(java.util.List allowedActions) {
         this.allowedActions = allowedActions;

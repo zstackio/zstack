@@ -13,7 +13,6 @@ public class HostMemoryStateInventory {
     private String status;
     private String featureState;
     private String reason;
-    private Map<String, Object> capabilities;
     private List<String> allowedActions;
     private String activeJobUuid;
     private Long lastObservedAt;
@@ -26,7 +25,6 @@ public class HostMemoryStateInventory {
         inventory.status = vo.getStatus();
         inventory.featureState = vo.getFeatureState();
         inventory.reason = vo.getReason();
-        inventory.capabilities = vo.getCapabilities() == null ? null : JSONObjectUtil.toObject(vo.getCapabilities(), LinkedHashMap.class);
         inventory.allowedActions = vo.getAllowedActions() == null ? Collections.emptyList()
                 : JSONObjectUtil.toObject(vo.getAllowedActions(), ArrayList.class);
         inventory.activeJobUuid = vo.getActiveJobUuid();
@@ -47,7 +45,6 @@ public class HostMemoryStateInventory {
         inventory.setHostUuid("1234567890abcdef1234567890abcdef");
         inventory.setStatus("Applied");
         inventory.setFeatureState("Active");
-        inventory.setCapabilities(Collections.singletonMap("zram", true));
         inventory.setAllowedActions(Arrays.asList("query", "pause", "drain"));
         inventory.setLastObservedAt(1791583200000L);
         return inventory;
@@ -61,8 +58,6 @@ public class HostMemoryStateInventory {
     public void setFeatureState(String value) { featureState = value; }
     public String getReason() { return reason; }
     public void setReason(String value) { reason = value; }
-    public Map<String, Object> getCapabilities() { return capabilities; }
-    public void setCapabilities(Map<String, Object> value) { capabilities = value; }
     public List<String> getAllowedActions() { return allowedActions; }
     public void setAllowedActions(List<String> value) { allowedActions = value; }
     public String getActiveJobUuid() { return activeJobUuid; }

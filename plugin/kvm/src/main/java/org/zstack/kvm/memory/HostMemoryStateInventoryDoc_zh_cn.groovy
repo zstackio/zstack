@@ -8,7 +8,6 @@ doc {
     field { name "status"; desc "Applied（已生效）、Applying（已下发待返回）、Converging（同步中：等待条件或重发中）或Failed（连续失败或被拒绝，reason为原因码）。"; type "String"; since "5.5.48" }
     field { name "featureState"; desc "Active、Disabled、Paused、Unknown或Unsupported；观测过期时为Unknown。"; type "String"; since "5.5.48" }
     field { name "reason"; desc "阻塞或失败原因。"; type "String"; since "5.5.48" }
-    field { name "capabilities"; desc "ksm、ksmZeroPages、zram、writeback是否支持及不支持的原因。"; type "Map"; since "5.5.48" }
     field { name "allowedActions"; desc "当前可执行的操作，前端据此显示按钮。"; type "List"; since "5.5.48" }
     field { name "activeJobUuid"; desc "正在该物理机上执行的内存优化长任务UUID；没有时为空。"; type "String"; since "5.5.48" }
     field { name "lastObservedAt"; desc "最近一次观测时间，Unix epoch毫秒。"; type "Long"; since "5.5.48" }

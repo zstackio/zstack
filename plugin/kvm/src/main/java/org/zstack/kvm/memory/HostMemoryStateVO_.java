@@ -11,7 +11,6 @@ public class HostMemoryStateVO_ {
     public static volatile SingularAttribute<HostMemoryStateVO, String> status;
     public static volatile SingularAttribute<HostMemoryStateVO, String> featureState;
     public static volatile SingularAttribute<HostMemoryStateVO, String> reason;
-    public static volatile SingularAttribute<HostMemoryStateVO, String> capabilities;
     public static volatile SingularAttribute<HostMemoryStateVO, String> allowedActions;
     public static volatile SingularAttribute<HostMemoryStateVO, String> activeJobUuid;
     public static volatile SingularAttribute<HostMemoryStateVO, Long> lastObservedAt;
