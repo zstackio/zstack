@@ -66,6 +66,11 @@ public final class MemorySummaryRules {
             JsonObject savings = object(json, "savings");
             // A POJO default must never turn an absent producer schema into a supported one.
             if (savings == null || !savings.has("formulaVersion") || !savings.has("quality")) { continue; }
+            if (string(savings, "quality") == null) {
+                // A quality that is not a name cannot be read; the other Hosts are still summarized.
+                unreadable.putIfAbsent(host.getHostUuid(), UNREADABLE_SAMPLE);
+                continue;
+            }
             HostMetrics sample = parseMetrics(savings, now);
             if (sample == null) { continue; }
             bucket = Math.max(bucket, sample.sampleTime / windowMillis);
@@ -196,8 +201,7 @@ public final class MemorySummaryRules {
     private static HostMetrics parseMetrics(JsonObject s, long now) {
         if (!"mechanism-estimate-v1".equals(string(s, "formulaVersion"))
                 || !s.has("sampleTime") || !s.get("sampleTime").isJsonPrimitive()
-                || !s.has("quality") || !("Fresh".equals(s.get("quality").getAsString())
-                || "Partial".equals(s.get("quality").getAsString()))) return null;
+                || !("Fresh".equals(string(s, "quality")) || "Partial".equals(string(s, "quality")))) return null;
         HostMetrics m = new HostMetrics(); Long timestamp = number(s, "sampleTime");
         if (timestamp == null) return null;
         m.sampleTime = timestamp;

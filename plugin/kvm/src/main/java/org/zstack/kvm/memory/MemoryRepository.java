@@ -2,8 +2,6 @@ package org.zstack.kvm.memory;
 
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.NestedExceptionUtils;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
@@ -30,9 +28,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -297,27 +293,10 @@ public class MemoryRepository {
      * Recompute the desired configuration; a change starts a new generation.
      * An operator operation is always recorded as a task carrying its
      * generation, also when the configuration is already the desired one.
+     * Of two first plans of a Host, the one that inserts its state second fails;
+     * its caller plans again (next scan, next observation or the operator).
      */
     public Planned plan(String host, String control, String action, String actor, License license, Origin origin) {
-        try {
-            return planOnce(host, control, action, actor, license, origin);
-        } catch (DataIntegrityViolationException | PersistenceException e) {
-            // Two first plans of a Host may both insert its state; the later one plans again on the row the first made.
-            if (!duplicatePrimaryKey(e)) { throw e; }
-            return planOnce(host, control, action, actor, license, origin);
-        }
-    }
-
-    /** MySQL's duplicate primary key, matched as DatabaseFacadeImpl matches it. */
-    static boolean duplicatePrimaryKey(RuntimeException e) {
-        Throwable root = NestedExceptionUtils.getRootCause(e);
-        if (!(root instanceof SQLIntegrityConstraintViolationException)) { return false; }
-        SQLIntegrityConstraintViolationException violation = (SQLIntegrityConstraintViolationException) root;
-        return violation.getErrorCode() == 1062 && "23000".equals(violation.getSQLState())
-                && String.valueOf(violation.getMessage()).contains("PRIMARY");
-    }
-
-    private Planned planOnce(String host, String control, String action, String actor, License license, Origin origin) {
         return transaction(em -> {
             validateResource(em, "Host", host);
             MemoryStateVO state = lockState(em, host);

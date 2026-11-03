@@ -333,7 +333,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         void finished(String resource, String failure) {
             if (failure != null) { failures.put(resource, failure); }
             if (pending.decrementAndGet() == 0 && !failures.isEmpty()) {
-                errors.accept(String.format("%s: %d failed and are tried again at the next observation: %s",
+                errors.accept(String.format("%s: %d failed and are tried again: %s",
                         what, failures.size(), new TreeMap<>(failures)));
             }
         }
@@ -474,6 +474,9 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         Map<String, Object> query = new LinkedHashMap<>();
         query.put("hostUuid", host); query.put("operationUuid", operation);
         query.put("resourceUuid", inv.getUuid());
+        // A failed notification is logged with its VM, Host and operation; the next observation binds again.
+        Round round = new Round(String.format("VM memory optimization %s on Host[%s] (operation %s)",
+                action, host, operation), 1);
         manager.call(host, "state", query, response -> {
             // VM-scoped Agent mutations are generation guarded. If the VM is no
             // longer visible, retain the uncertainty instead of revoking a
@@ -485,17 +488,25 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             } else if ("revoke".equals(action) && identity.authoritative) {
                 generation = lifecycleGenerations.get(inv.getUuid());
             }
-            if (generation == null) { return; }
+            if (generation == null) {
+                // A VM proven absent with no generation left has nothing to revoke.
+                boolean nothingToRevoke = "revoke".equals(action) && identity.authoritative;
+                round.finished(inv.getUuid(), nothingToRevoke ? null : identity.authoritative
+                        ? "VM_INSTANCE_NOT_FOUND" : "VM_IDENTITY_UNKNOWN: " + MemoryOptimizationManager.failure(response));
+                return;
+            }
             Map<String, Object> command = new LinkedHashMap<>();
             command.put("hostUuid", host); command.put("operationUuid", operation);
             command.put("resourceUuid", inv.getUuid()); command.put("scope", "VM");
             command.put("action", action); command.put("expectedInstanceGeneration", generation);
             String expected = generation;
             manager.call(host, "vm-efficiency", command, reply -> {
+                boolean succeeded = MemoryResultRules.succeeded(operation, reply);
                 // A failed revoke keeps the generation, so the next stop or destroy revokes it again.
-                if ("revoke".equals(action) && MemoryResultRules.succeeded(operation, reply)) {
+                if ("revoke".equals(action) && succeeded) {
                     lifecycleGenerations.remove(inv.getUuid(), expected);
                 }
+                round.finished(inv.getUuid(), succeeded ? null : MemoryOptimizationManager.failure(reply));
             });
         });
     }
@@ -506,11 +517,16 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         Map<String, Object> query = new LinkedHashMap<>();
         query.put("hostUuid", host); query.put("operationUuid", "vm-lifecycle-snapshot-" + inv.getUuid());
         query.put("resourceUuid", inv.getUuid());
+        Round round = new Round(String.format("VM memory optimization generation before stop on Host[%s]", host), 1);
         manager.call(host, "state", query, response -> {
             VmIdentity identity = vmIdentity(response, inv.getUuid());
             if (identity.present && identity.generation != null) {
                 lifecycleGenerations.put(inv.getUuid(), identity.generation);
             }
+            // Without it the revoke after the stop has no generation to use.
+            round.finished(inv.getUuid(), identity.present && identity.generation != null ? null
+                    : identity.authoritative ? "VM_INSTANCE_NOT_FOUND"
+                    : "VM_IDENTITY_UNKNOWN: " + MemoryOptimizationManager.failure(response));
         });
     }
 
@@ -602,19 +618,21 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             @Override public void success() { reconcilingHolds.remove(hold.operationUuid); completion.success(); }
             @Override public void fail(ErrorCode errorCode) { reconcilingHolds.remove(hold.operationUuid); completion.fail(errorCode); }
         };
-        startRecovery(hold, running, confirmedHost, done);
+        startRecovery(hold, confirmedHost, done);
     }
 
     /*
      * Each recovery step takes the recovery's Completion: an exception in a step fails it
      * (AsyncSafeAspect), which frees the hold for a retry.
      */
-    private void startRecovery(MemoryMigrationVO hold, boolean running, String confirmedHost, Completion done) {
-        locateVm(hold, (source, target) -> recoverLocated(hold, running, confirmedHost, source, target, done));
+    private void startRecovery(MemoryMigrationVO hold, String confirmedHost, Completion done) {
+        locateVm(hold, (source, target) -> recoverLocated(hold, confirmedHost, source, target, done));
     }
 
-    private void recoverLocated(MemoryMigrationVO hold, boolean running, String confirmedHost,
+    /** No confirmed Host means the operator confirms a stopped VM. */
+    private void recoverLocated(MemoryMigrationVO hold, String confirmedHost,
                                 VmIdentity source, VmIdentity target, Completion done) {
+        boolean running = confirmedHost != null;
         // The side that is bound needs its instance generation; a target without a pool needs none.
         boolean onSource = source.present && source.generation != null
                 && target.authoritative && !target.present;
@@ -631,28 +649,32 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         if (!running) { releaseRecoveredHold(hold, done); return; }
         if (confirmedHost.equals(hold.sourceHostUuid)) {
             hold.sourceInstanceGeneration = source.generation; record(hold);
-            rebind(recoveryOperation(hold), Side.SOURCE,
-                    rebound -> releaseIfConfirmed(hold, rebound, "Source VM rebinding remains unknown", done));
+            rebind(recoveryOperation(hold), Side.SOURCE, rebound -> {
+                if (rebound) { releaseRecoveredHold(hold, done); } else { done.fail(unknown("Source VM rebinding")); }
+            });
             return;
         }
         if (target.generation != null) { hold.targetInstanceGeneration = target.generation; record(hold); }
         MemoryMigrationVO operation = recoveryOperation(hold);
         // A target without a service-owned pool has nothing to bind.
         if (managedZram(hold.targetHostUuid)) {
-            rebind(operation, Side.TARGET, rebound -> targetRecovered(hold, operation, rebound, done));
+            rebind(operation, Side.TARGET, rebound -> {
+                if (rebound) { targetRebound(hold, operation, done); } else { done.fail(unknown("Target VM binding")); }
+            });
         } else {
-            targetRecovered(hold, operation, true, done);
+            targetRebound(hold, operation, done);
         }
     }
 
-    private void targetRecovered(MemoryMigrationVO hold, MemoryMigrationVO operation, boolean rebound, Completion done) {
-        if (!rebound) { done.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
+    private void targetRebound(MemoryMigrationVO hold, MemoryMigrationVO operation, Completion done) {
         if (!hostExists(hold.sourceHostUuid)) { releaseRecoveredHold(hold, done); return; }
-        revoke(operation, revoked -> releaseIfConfirmed(hold, revoked, "Source VM revocation remains unknown", done));
+        revoke(operation, revoked -> {
+            if (revoked) { releaseRecoveredHold(hold, done); } else { done.fail(unknown("Source VM revocation")); }
+        });
     }
 
-    private void releaseIfConfirmed(MemoryMigrationVO hold, boolean confirmed, String unknown, Completion done) {
-        if (confirmed) { releaseRecoveredHold(hold, done); } else { done.fail(error("MEMORY_RESULT_UNKNOWN", unknown)); }
+    private ErrorCode unknown(String step) {
+        return error("MEMORY_RESULT_UNKNOWN", step + " remains unknown");
     }
 
     /**

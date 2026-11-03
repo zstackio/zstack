@@ -146,6 +146,17 @@ public class MemorySummaryRulesTest {
         MemoryStateVO partial = sample("a", now, ""); partial.setState(partial.getState().replace("Fresh", "Partial"));
         assertNull(MemorySummaryRules.summarize(Arrays.asList("a"), Arrays.asList(partial), now).getTotalSavedEstimateBytes());
     }
+    @Test public void aQualityThatIsNotANameMakesOnlyThatSampleUnreadable() {
+        for (String quality : Arrays.asList("null", "{}", "[]")) {
+            MemoryStateVO broken = sample("a", now, ""); broken.setState(broken.getState().replace("\"Fresh\"", quality));
+            Map<String, String> unreadable = new LinkedHashMap<>();
+            MemorySummaryInventory result = MemorySummaryRules.summarize(Arrays.asList("a", "b"),
+                    Arrays.asList(broken, sample("b", now, "")), now, unreadable);
+            assertEquals("quality " + quality, Collections.singleton("a"), unreadable.keySet());
+            assertEquals("quality " + quality, 1, result.getCoveredHosts());
+            assertEquals("quality " + quality, Long.valueOf(150), result.getTotalSavedEstimateBytes());
+        }
+    }
     @Test public void staleAndOtherWindowsDoNotFabricateFullCoverage() {
         MemorySummaryInventory result = MemorySummaryRules.summarize(Arrays.asList("a", "b", "c"),
                 Arrays.asList(sample("a", now, ""), sample("b", now - 30000, ""), sample("c", now - 100000, "")), now);
