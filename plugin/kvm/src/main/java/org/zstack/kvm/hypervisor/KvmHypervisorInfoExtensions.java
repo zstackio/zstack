@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -38,7 +39,8 @@ public class KvmHypervisorInfoExtensions implements
         KVMStopVmExtensionPoint,
         VmAfterExpungeExtensionPoint,
         KVMHostConnectExtensionPoint,
-        VmInstanceMigrateExtensionPoint
+        VmInstanceMigrateExtensionPoint,
+        KVMAgentHttpTimeoutExtensionPoint
 {
     private static final CLogger logger = Utils.getLogger(KvmHypervisorInfoExtensions.class);
 
@@ -46,6 +48,11 @@ public class KvmHypervisorInfoExtensions implements
     private KvmHypervisorInfoManager manager;
     @Autowired
     private CloudBus bus;
+
+    @Override
+    public Set<String> agentHttpPathsWithShortTimeout() {
+        return Collections.singleton(KVMConstant.GET_VIRTUALIZER_INFO_PATH);
+    }
 
     @Override
     public void afterReceiveVmDeviceInfoResponse(VmInstanceInventory vm, VmDevicesInfoResponse rsp, VmInstanceSpec spec) {

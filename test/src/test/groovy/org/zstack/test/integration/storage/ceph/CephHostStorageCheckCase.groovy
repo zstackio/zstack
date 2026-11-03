@@ -9,6 +9,7 @@ import org.zstack.header.rest.BeforeAsyncJsonPostInterceptor
 import org.zstack.header.rest.RESTFacade
 import org.zstack.header.storage.primary.PrimaryStorageConstant
 import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg
 import org.zstack.sdk.HostInventory
@@ -86,8 +87,9 @@ class CephHostStorageCheckCase extends SubCase {
             restf = bean(RESTFacade.class)
             testConnectivityCheckTimeoutRejectsValuesBelowOneSecond()
             testCheckNotSerializedAcrossHosts()
-            testConnectivityCheckUsesConfiguredTimeoutBeforeSend()
-            testConnectivityCheckUsesRemainingDeadlineBeforeSend()
+            testConnectivityCheckUsesConfiguredHttpTimeout()
+            testConnectivityCheckUsesRemainingDeadlineBeforeHttpCall()
+            testVirtualizerQueryUsesConfiguredTimeout()
         }
     }
 
@@ -140,7 +142,7 @@ class CephHostStorageCheckCase extends SubCase {
                 "stuck host check did not complete after its simulator was released"
     }
 
-    void testConnectivityCheckUsesConfiguredTimeoutBeforeSend() {
+    void testConnectivityCheckUsesConfiguredHttpTimeout() {
         def host1 = env.inventoryByName("host1") as HostInventory
         long originalTimeout = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class)
         long expectedTimeout = TimeUnit.SECONDS.toMillis(2)
@@ -154,12 +156,12 @@ class CephHostStorageCheckCase extends SubCase {
         }
 
         assert actualTimeout == expectedTimeout :
-                "real ReconnectHost Ceph check did not use agent.connectivityCheck.timeout before CloudBus send: " +
+                "real ReconnectHost Ceph HTTP call did not use agent.connectivityCheck.timeout: " +
                         "expected=${expectedTimeout}ms actual=${actualTimeout}ms"
         updateConnectivityCheckTimeout(originalTimeout)
     }
 
-    void testConnectivityCheckUsesRemainingDeadlineBeforeSend() {
+    void testConnectivityCheckUsesRemainingDeadlineBeforeHttpCall() {
         def host1 = env.inventoryByName("host1") as HostInventory
         long originalTimeout = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class)
         long remaining = TimeUnit.SECONDS.toMillis(15)
@@ -171,9 +173,81 @@ class CephHostStorageCheckCase extends SubCase {
         }
 
         assert actualTimeout >= remaining - TimeUnit.SECONDS.toMillis(5) && actualTimeout <= remaining :
-                "Ceph check exceeded the parent remaining deadline before CloudBus send: " +
+                "Ceph HTTP call exceeded the parent remaining deadline: " +
                         "expected=[${remaining - TimeUnit.SECONDS.toMillis(5)},${remaining}]ms actual=${actualTimeout}ms"
         updateConnectivityCheckTimeout(originalTimeout)
+    }
+
+    void testVirtualizerQueryUsesConfiguredTimeout() {
+        def host = env.inventoryByName("host1") as HostInventory
+        String path = KVMConstant.GET_VIRTUALIZER_INFO_PATH
+        Closure originalSimulator = env.getSimulator(path)
+        long originalTimeout = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class)
+        CountDownLatch entered = new CountDownLatch(1)
+        CountDownLatch release = new CountDownLatch(1)
+        CountDownLatch exited = new CountDownLatch(1)
+        AtomicLong captured = new AtomicLong(-1)
+        Runnable close = restf.installBeforeAsyncJsonPostInterceptor(new BeforeAsyncJsonPostInterceptor() {
+            @Override
+            void beforeAsyncJsonPost(String url, Object body, TimeUnit unit, long timeout) {
+                if (url.endsWith(path)) {
+                    captured.set(unit.toMillis(timeout))
+                }
+            }
+
+            @Override
+            void beforeAsyncJsonPost(String url, String body, TimeUnit unit, long timeout) {
+                if (url.endsWith(path)) {
+                    captured.set(unit.toMillis(timeout))
+                }
+            }
+        })
+
+        try {
+            updateConnectivityCheckTimeout(2)
+            env.simulator(path) { HttpEntity<String> e ->
+                entered.countDown()
+                try {
+                    release.await(40, TimeUnit.SECONDS)
+                    return originalSimulator.call(e)
+                } finally {
+                    exited.countDown()
+                }
+            }
+
+            long start = System.nanoTime()
+            expect(AssertionError.class) {
+                reconnectHost {
+                    uuid = host.uuid
+                    apiTimeout = 30L
+                }
+            }
+            long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
+            assert entered.count == 0 :
+                    "virtualizer query must reach the agent while Host is Connecting: remaining=${entered.count}"
+            assert captured.get() == 2000L :
+                    "virtualizer HTTP timeout must use connectivity config instead of parent timeout: expected=2000ms actual=${captured.get()}ms"
+            assert elapsed < 15000L :
+                    "missing virtualizer callback must fail before the 30s API timeout: expected<15000ms actual=${elapsed}ms"
+
+            release.countDown()
+            assert exited.await(10, TimeUnit.SECONDS) :
+                    "virtualizer simulator must exit after callback release: remaining=${exited.count}"
+            env.simulator(path, originalSimulator)
+            updateConnectivityCheckTimeout(5)
+            captured.set(-1)
+            reconnectHost {
+                uuid = host.uuid
+                apiTimeout = 30L
+            }
+            assert captured.get() == 5000L :
+                    "reconnect must recover after query timeout and read the updated config: expected=5000ms actual=${captured.get()}ms"
+        } finally {
+            release.countDown()
+            env.simulator(path, originalSimulator)
+            close.run()
+            updateConnectivityCheckTimeout(originalTimeout)
+        }
     }
 
     private void sendKvmConnectivityCheck(String hostUuid, long timeout, long messageDeadline) {
@@ -198,7 +272,7 @@ class CephHostStorageCheckCase extends SubCase {
             }
         })
         assert done.await(10, TimeUnit.SECONDS) :
-                "direct KVM connectivity check did not complete while verifying the pre-send timeout hook"
+                "direct KVM connectivity check did not complete while verifying the HTTP timeout"
     }
 
     private long captureConnectivityCheckTimeout(String hostUuid, Closure trigger) {
