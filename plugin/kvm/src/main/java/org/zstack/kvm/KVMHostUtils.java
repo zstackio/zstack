@@ -1,16 +1,21 @@
 package org.zstack.kvm;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -19,6 +24,33 @@ import static org.zstack.core.Platform.operr;
  */
 public class KVMHostUtils {
     private static final CLogger logger = CLoggerImpl.getLogger(KVMHostUtils.class);
+
+    public static final long LIBVIRT_RESTART_ECHO_TIMEOUT_VM_THRESHOLD = 100;
+    public static final long LIBVIRT_RESTART_ECHO_TIMEOUT_PER_VM_SECONDS = 1;
+    public static final long LIBVIRT_RESTART_ECHO_TIMEOUT_MAX_SECONDS = 180;
+
+    public static boolean shouldRestartLibvirtdDuringDeploy(String init, String restartLibvirtd) {
+        return "true".equalsIgnoreCase(init) || "true".equalsIgnoreCase(restartLibvirtd);
+    }
+
+    public static long countVmsForLibvirtRestartEchoTimeout(String hostUuid) {
+        return Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.hostUuid, hostUuid)
+                .notEq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                .count();
+    }
+
+    public static long calculateLibvirtRestartEchoTimeoutMillis(long vmCount) {
+        long defaultTimeoutSeconds = CoreGlobalProperty.REST_FACADE_ECHO_TIMEOUT;
+        if (vmCount <= LIBVIRT_RESTART_ECHO_TIMEOUT_VM_THRESHOLD) {
+            return TimeUnit.SECONDS.toMillis(defaultTimeoutSeconds);
+        }
+
+        long maxExtraSeconds = Math.max(0, LIBVIRT_RESTART_ECHO_TIMEOUT_MAX_SECONDS - defaultTimeoutSeconds);
+        long extraVmCount = vmCount - LIBVIRT_RESTART_ECHO_TIMEOUT_VM_THRESHOLD;
+        long extraSeconds = Math.min(extraVmCount * LIBVIRT_RESTART_ECHO_TIMEOUT_PER_VM_SECONDS, maxExtraSeconds);
+        return TimeUnit.SECONDS.toMillis(defaultTimeoutSeconds + extraSeconds);
+    }
 
     public static boolean shouldContinueReconnectOnAnsibleFailure(boolean isNewAdded, ErrorCode errorCode) {
         return !isNewAdded && isLibvirtSocketMaskSystemdTimeout(errorCode);
