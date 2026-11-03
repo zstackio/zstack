@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check, pack and sign ZStack feature plugin packages (.zpkg).
 
-  check --plugin-dir DIR --platform-lib WEB-INF/lib [--jdeps-output FILE] [--allowlist FILE]
+  check --plugin-dir DIR --platform-lib WEB-INF/lib [--jdeps-output FILE] [--allowlist FILE] [--bff-dir DIR]
   pack  --plugin-dir DIR --out DIR
   sign  --package PKG --key PRIVATE_KEY_PEM
 
@@ -147,7 +147,7 @@ def _agent_import_allowed(module):
     return any(module == m or module.startswith(m + '.') for m in AGENT_ALLOWED_MODULES)
 
 
-def check(stage, platform_lib, allowlist, jdeps_output=None):
+def check(stage, platform_lib, allowlist, jdeps_output=None, bff_dir=None):
     with open(os.path.join(stage, DESCRIPTOR)) as f:
         desc = yaml.safe_load(f)
     problems = []
@@ -188,7 +188,7 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
     for f, module in agent_imports(stage):
         if not _agent_import_allowed(module):
             problems.append('disallowed-agent-import: %s in %s' % (module, f))
-    return problems + ui_problems(stage, desc)
+    return problems + ui_problems(stage, desc) + bff_problems(stage, desc, bff_dir)
 
 
 def ui_problems(stage, desc):
@@ -224,6 +224,36 @@ def ui_problems(stage, desc):
     keys = set().union(*messages)
     problems += ['ui-i18n: %s' % k for k in sorted(keys)
                  if not k.startswith(pid + '.') or any(k not in m for m in messages)]
+    return problems
+
+
+def _pascal(pid):
+    return ''.join(w[:1].upper() + w[1:] for w in pid.split('-') if w)
+
+
+def bff_problems(stage, desc, bff_dir):
+    """GraphQL names of the plugin's BFF module (SDK spec 7.3): types start with the plugin id in PascalCase, root
+    fields in camelCase, and no type takes a name of the platform's schema. bff_dir is the cloud BFF package of
+    zstack-ui-next, whose node_modules load the module and whose src/schema.gql lists the platform's names."""
+    if 'bff' not in (desc.get('ui') or {}):
+        return []
+    if not bff_dir:
+        return ['ui-bff: --bff-dir is needed to check the GraphQL names of ui/bff/']
+    module = os.path.join(stage, 'ui', 'bff', 'index.js')
+    r = subprocess.run(['node', os.path.join(HERE, 'bff_names.js'), module, bff_dir],
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    if r.returncode != 0:
+        lines = [l for l in r.stderr.splitlines() if l.strip()]
+        reason = next((l for l in lines if 'Error' in l), lines[-1] if lines else 'exit %d' % r.returncode)
+        return ['ui-bff: cannot load ui/bff/index.js: %s' % reason.strip()]
+    names = json.loads(r.stdout)
+    with open(os.path.join(bff_dir, 'src', 'schema.gql')) as f:
+        taken = set(re.findall(r'^(?:type|input|enum|union|interface|scalar) (\w+)', f.read(), re.M))
+    pascal = _pascal(desc['id'])
+    camel = pascal[:1].lower() + pascal[1:]
+    problems = ['ui-graphql: %s' % n for n in names['types'] if not n.startswith(pascal)]
+    problems += ['ui-graphql: %s' % n for n in names['fields'] if not n.startswith(camel)]
+    problems += ['ui-graphql-taken: %s' % n for n in names['types'] if n.startswith(pascal) and n in taken]
     return problems
 
 
@@ -318,6 +348,7 @@ def main():
     c.add_argument('--platform-lib', required=True, help='WEB-INF/lib of the platform the plugin is built for')
     c.add_argument('--jdeps-output', help='use this jdeps -verbose:class output instead of running jdeps')
     c.add_argument('--allowlist', default=os.path.join(HERE, 'allowlist-v1.txt'))
+    c.add_argument('--bff-dir', help='packages/products/cloud/bff of zstack-ui-next, needed for a plugin with ui/bff/')
     p = sub.add_parser('pack')
     p.add_argument('--plugin-dir', required=True)
     p.add_argument('--out', required=True)
@@ -333,7 +364,7 @@ def main():
     try:
         stage = staging(args.plugin_dir, tmp)
         if args.command == 'check':
-            problems = check(stage, args.platform_lib, args.allowlist, args.jdeps_output)
+            problems = check(stage, args.platform_lib, args.allowlist, args.jdeps_output, args.bff_dir)
             for problem in problems:
                 print(problem)
             sys.exit(1 if problems else 0)

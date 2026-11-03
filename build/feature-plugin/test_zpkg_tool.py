@@ -252,6 +252,82 @@ class TestUiCheck(CheckCase):
                                                                  files={'ui/bff/other.js': ''}))
 
 
+BFF_DIR = os.environ.get('ZPKG_TEST_BFF_DIR', '/mnt/sda/rearch/work/zstack-ui-next/packages/products/cloud/bff')
+BFF_MODULE = """
+const { Module } = require("@nestjs/common");
+const g = require("@nestjs/graphql");
+const { QueryAdvance } = require("@zstack/bff-plugin-sdk");
+const VmSampleKind = { A: "A" };
+g.registerEnumType(VmSampleKind, { name: %(enum)s });
+class VmSampleTask {}
+g.Field(() => String)(VmSampleTask.prototype, "name");
+g.ObjectType(%(type)s)(VmSampleTask);
+class VmSampleInput {}
+g.Field(() => String)(VmSampleInput.prototype, "name");
+g.InputType(%(input)s)(VmSampleInput);
+class VmSampleAction extends QueryAdvance {}
+class VmSampleResolver { tasks() { return []; } }
+g.Query(() => [VmSampleTask], { name: %(query)s })(VmSampleResolver.prototype, "tasks",
+    Object.getOwnPropertyDescriptor(VmSampleResolver.prototype, "tasks"));
+g.Resolver()(VmSampleResolver);
+class VmSampleModule {}
+Module({ providers: [VmSampleAction, VmSampleResolver] })(VmSampleModule);
+module.exports = { default: VmSampleModule };
+"""
+
+
+@unittest.skipUnless(shutil.which('node') and os.path.isdir(os.path.join(BFF_DIR, 'node_modules')),
+                     'needs node and the cloud BFF of zstack-ui-next')
+class TestBffNames(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def names(self, **names):
+        values = dict(enum='VmSampleKind', type='VmSampleTask', input='VmSampleInput', query='vmSampleTasks')
+        values.update(names)
+        stage = os.path.join(self.tmp, 'stage')
+        os.makedirs(os.path.join(stage, 'ui', 'bff'))
+        with open(os.path.join(stage, 'ui', 'bff', 'index.js'), 'w') as f:
+            f.write(BFF_MODULE % dict((k, '"%s"' % v) for k, v in values.items()))
+        return zpkg_tool.bff_problems(stage, {'id': 'vm', 'ui': {'bff': 'ui/bff/'}}, BFF_DIR)
+
+    def test_prefixed_names_pass(self):
+        self.assertEqual([], self.names())
+
+    def test_unprefixed_input_type(self):
+        # input types, enums and unions register only when the BFF builds its schema, the BFF cannot check them early
+        self.assertEqual(['ui-graphql: Task'], self.names(input='Task'))
+
+    def test_unprefixed_enum(self):
+        self.assertEqual(['ui-graphql: Kind'], self.names(enum='Kind'))
+
+    def test_unprefixed_query(self):
+        self.assertEqual(['ui-graphql: tasks'], self.names(query='tasks'))
+
+    def test_name_the_platform_has(self):
+        self.assertEqual(['ui-graphql-taken: VmNicResourceConfig'], self.names(type='VmNicResourceConfig'))
+
+    def test_module_that_cannot_load(self):
+        stage = os.path.join(self.tmp, 'stage')
+        os.makedirs(os.path.join(stage, 'ui', 'bff'))
+        with open(os.path.join(stage, 'ui', 'bff', 'index.js'), 'w') as f:
+            f.write('throw new Error("boom");')
+        problems = zpkg_tool.bff_problems(stage, {'id': 'vm', 'ui': {'bff': 'ui/bff/'}}, BFF_DIR)
+        self.assertEqual(1, len(problems))
+        self.assertIn('ui-bff: ', problems[0])
+        self.assertIn('boom', problems[0])
+
+    def test_bff_dir_is_required(self):
+        self.assertEqual(['ui-bff: --bff-dir is needed to check the GraphQL names of ui/bff/'],
+                         zpkg_tool.bff_problems(self.tmp, {'id': 'vm', 'ui': {'bff': 'ui/bff/'}}, None))
+
+    def test_no_bff_no_check(self):
+        self.assertEqual([], zpkg_tool.bff_problems(self.tmp, {'id': 'vm', 'ui': {'remote': 'ui/remote/'}}, None))
+
+
 class TestAllowlist(unittest.TestCase):
     def test_allowlist_entries_exist(self):
         allow, deny = zpkg_tool.load_allowlist(ALLOWLIST)
