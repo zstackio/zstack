@@ -613,7 +613,6 @@ public class MemoryRepository {
         }
         row.setReason(trim(reason));
         row.setFeatureState(featureState(observed, zramWanted && zramSupported(observed) ? ZramExpectation.RUNNING : ZramExpectation.NONE));
-        row.setCapabilities(state.getCapabilities());
         row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), state.getStatus(), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
         if (created) { em.persist(row); }

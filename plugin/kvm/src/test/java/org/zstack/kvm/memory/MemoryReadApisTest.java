@@ -91,4 +91,20 @@ public class MemoryReadApisTest {
         assertEquals(java.util.Arrays.asList("query", "resume"),
                 MemoryRepository.allowedActions("active", MemoryRepository.SUCCEEDED, Collections.singletonMap("control", "drained")));
     }
+
+    @Test public void supportedCapabilitiesBecomeHostTagsAndUnknownOnesKeepThem() {
+        Map<String, Object> capabilities = new LinkedHashMap<>();
+        capabilities.put("supported", true); capabilities.put("ksm", true); capabilities.put("ksmZeroPages", false);
+        capabilities.put("zram", true); capabilities.put("writeback", null); capabilities.put("service", true);
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("capabilities", capabilities);
+        assertEquals(new TreeSet<>(Arrays.asList("ksm", "zram")), MemoryOptimizationManager.supportedCapabilities(state));
+        capabilities.put("supported", false); capabilities.put("ksm", false); capabilities.put("zram", false);
+        assertEquals("an unsupported Host has no capability tag",
+                Collections.emptySet(), MemoryOptimizationManager.supportedCapabilities(state));
+        capabilities.put("supported", null);
+        assertNull("capabilities the Agent could not discover leave the tags as they are",
+                MemoryOptimizationManager.supportedCapabilities(state));
+        assertNull(MemoryOptimizationManager.supportedCapabilities(Collections.emptyMap()));
+    }
 }

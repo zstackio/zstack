@@ -46,6 +46,10 @@ public class KVMSystemTags {
 
     public static SystemTag VIRTIO_SCSI = new SystemTag("capability:virtio-scsi", HostVO.class);
     public static SystemTag IOTHREAD_VQ_MAPPING = new SystemTag("capability::iothread-vq-mapping", HostVO.class);
+    public static SystemTag MEMORY_KSM = new SystemTag("capability::memory-ksm", HostVO.class);
+    public static SystemTag MEMORY_KSM_ZERO_PAGES = new SystemTag("capability::memory-ksm-zero-pages", HostVO.class);
+    public static SystemTag MEMORY_ZRAM = new SystemTag("capability::memory-zram", HostVO.class);
+    public static SystemTag MEMORY_ZRAM_WRITEBACK = new SystemTag("capability::memory-zram-writeback", HostVO.class);
 
     public static final String L2_BRIDGE_NAME_TOKEN = "name";
     public static PatternedSystemTag L2_BRIDGE_NAME = new PatternedSystemTag(String.format("kvm::bridge::{%s}", L2_BRIDGE_NAME_TOKEN), L2NetworkVO.class);

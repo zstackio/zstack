@@ -27,11 +27,6 @@ public class HostMemoryStateVO {
     public void setReason(String value) { reason = value; }
 
     @Column(columnDefinition = "TEXT")
-    private String capabilities;
-    public String getCapabilities() { return capabilities; }
-    public void setCapabilities(String value) { capabilities = value; }
-
-    @Column(columnDefinition = "TEXT")
     private String allowedActions;
     public String getAllowedActions() { return allowedActions; }
     public void setAllowedActions(String value) { allowedActions = value; }

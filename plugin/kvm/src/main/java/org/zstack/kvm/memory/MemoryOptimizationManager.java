@@ -46,6 +46,9 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.utils.FieldUtils;
+import org.zstack.kvm.KVMSystemTags;
+import org.zstack.tag.SystemTag;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -82,6 +85,16 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Hosts preparing a writeback backend; their apply waits for it. */
     private final Set<String> preparing = ConcurrentHashMap.newKeySet();
     private final Set<String> observingHosts = ConcurrentHashMap.newKeySet();
+    /** The supported capabilities last written as each Host's system tags by this node. */
+    private final Map<String, Set<String>> capabilityTags = new ConcurrentHashMap<>();
+    /** Host system tags of the memory capabilities, as KVM's capability::iothread-vq-mapping. */
+    private static final Map<String, SystemTag> CAPABILITY_TAGS = new LinkedHashMap<>();
+    static {
+        CAPABILITY_TAGS.put("ksm", KVMSystemTags.MEMORY_KSM);
+        CAPABILITY_TAGS.put("ksmZeroPages", KVMSystemTags.MEMORY_KSM_ZERO_PAGES);
+        CAPABILITY_TAGS.put("zram", KVMSystemTags.MEMORY_ZRAM);
+        CAPABILITY_TAGS.put("writeback", KVMSystemTags.MEMORY_ZRAM_WRITEBACK);
+    }
     // Hosts and resources whose configuration change is committed but not yet planned; true keeps a ZRAM re-enable.
     private final Map<String, ZramChange> unplannedHosts = new ConcurrentHashMap<>();
     private final Map<String, ZramChange> unplannedResources = new ConcurrentHashMap<>();
@@ -941,6 +954,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 try {
                     if (response == null || !response.isSuccess() || response.state == null) { return; }
                     repository.observe(host, response);
+                    syncCapabilityTags(host, response.state);
                     lifecycleHooks.reconcileObservedBindings(host, response);
                     lifecycleHooks.reconcileUnknownMigrationHolds(host);
                 } catch (RuntimeException e) {
@@ -953,6 +967,32 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             observingHosts.remove(host);
             logger.warn(String.format("Host[%s] memory observation could not be sent; periodic scan will retry", host), e);
         }
+    }
+
+    /** The capabilities a sample reports as supported, or null when the Agent could not discover them. */
+    static Set<String> supportedCapabilities(Map<String, Object> state) {
+        Object value = state == null ? null : state.get("capabilities");
+        if (!(value instanceof Map) || ((Map<?, ?>) value).get("supported") == null) { return null; }
+        Map<?, ?> capabilities = (Map<?, ?>) value;
+        return CAPABILITY_TAGS.keySet().stream().filter(key -> Boolean.TRUE.equals(capabilities.get(key)))
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /** A Host has the tag of each capability it supports; unknown capabilities keep the tags as they are. */
+    private void syncCapabilityTags(String host, Map<String, Object> state) {
+        Set<String> supported = supportedCapabilities(state);
+        if (supported == null || supported.equals(capabilityTags.get(host))) { return; }
+        CAPABILITY_TAGS.forEach((key, tag) -> {
+            if (supported.contains(key)) {
+                SystemTagCreator creator = tag.newSystemTagCreator(host);
+                creator.inherent = false;
+                creator.ignoreIfExisting = true;
+                creator.create();
+            } else {
+                tag.delete(host);
+            }
+        });
+        capabilityTags.put(host, supported);
     }
 
     private Map<String, Object> command(String host, String operation) {
