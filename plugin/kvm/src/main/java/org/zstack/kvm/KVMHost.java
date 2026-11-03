@@ -4420,6 +4420,20 @@ public class KVMHost extends HostBase implements Host {
         }
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
+        if ((platform.equals(ImagePlatform.Windows.toString()) ||
+             platform.equals(ImagePlatform.WindowsVirtio.toString()))) {
+            if (cmd.getNics() != null) {
+                for (NicTO nicTo : cmd.getNics()) {
+                    if (VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE.equals(nicTo.getType()) &&
+                        !VmNicDriverType.VIRTIO.toString().equalsIgnoreCase(nicTo.getDriverType())) {
+                        logger.warn(String.format("Force updating nic[%s] driver from [%s] to [virtio] for " +
+                                        "Windows vhostuser compatibility.",
+                                nicTo.getUuid(), nicTo.getDriverType()));
+                        nicTo.setDriverType(VmNicDriverType.VIRTIO.toString());
+                    }
+                }
+            }
+        }
 
         for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
             CdRomTO cdRomTO = new CdRomTO();
