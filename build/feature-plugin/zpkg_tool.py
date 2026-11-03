@@ -195,7 +195,8 @@ def ui_problems(stage, desc):
     """Format problems of the ui part, the same rules zstack-ctl applies before installing."""
     ui = desc.get('ui') or {}
     if not ui:
-        return []
+        # zstack-ctl deploys ui/ files by their path, undeclared they would skip every check below
+        return ['ui-field: ui'] if os.path.isdir(os.path.join(stage, 'ui')) else []
     pid = desc['id']
     problems = ['ui-field: %s' % k for k in sorted(ui) if UI_PATHS.get(k) != ui[k]]
 

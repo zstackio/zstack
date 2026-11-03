@@ -241,6 +241,12 @@ class TestUiCheck(CheckCase):
     def test_missing_manifest(self):
         self.assertIn('ui-missing: ui/remote/mf-manifest.json', self.ui_stage(files={'ui/remote/mf-manifest.json': None}))
 
+    def test_ui_files_need_a_declared_ui_part(self):
+        stage = os.path.join(self.tmp, 'undeclared-ui')
+        os.makedirs(os.path.join(stage, 'ui', 'remote'))
+        open(os.path.join(stage, 'ui', 'remote', 'mf-manifest.json'), 'w').close()
+        self.assertEqual(['ui-field: ui'], zpkg_tool.ui_problems(stage, {'id': 'tpm'}))
+
     def test_declared_bff_needs_index(self):
         self.assertIn('ui-missing: ui/bff/index.js', self.ui_stage(ui=dict(UI_PART, bff='ui/bff/'),
                                                                  files={'ui/bff/other.js': ''}))
