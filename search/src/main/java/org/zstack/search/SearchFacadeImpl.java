@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.search.SearchErrorHandler;
 import org.zstack.core.search.SearchGlobalProperty;
+import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -18,6 +20,9 @@ import org.zstack.header.search.SearchConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @ Author : yh.w
@@ -32,6 +37,9 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
+
+    private Future<Void> recoveryTask;
+    private boolean indexesBuiltOnVip;
 
     @Override
     public void handleMessage(Message msg) {
@@ -59,7 +67,7 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
             @Override
             public Void call() throws Exception {
                 APIRefreshSearchIndexesReply reply = new APIRefreshSearchIndexesReply();
-                refreshSearchIndexes();
+                refreshSearchIndexes(false);
                 bus.reply(msg, reply);
                 return null;
             }
@@ -82,22 +90,23 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
     }
 
     @Transactional(readOnly = true)
-    private void createSearchIndexes() {
+    private boolean createSearchIndexes() {
         try {
             if (!Platform.isVIPNode()) {
                 logger.info("current managementNode is not vip node, skip refresh search indexes");
-                return;
+                return false;
             }
 
             if (!SearchGlobalProperty.SearchAutoRegister) {
                 logger.info("search module has been disabled, skip refresh search indexes");
-                return;
+                return false;
             }
 
             StopWatch watch = Utils.getStopWatch();
             watch.start();
             logger.info("start refresh search indexes");
             FullTextEntityManager textEntityManager = getFullTextEntityManager();
+            long errorsBeforeIndexing = SearchErrorHandler.getErrorCount();
             //required typesToIndexInParallel * (threadsToLoadObjects + 1) jdbc connections
             textEntityManager.createIndexer()
                     //.typesToIndexInParallel(2), default 1
@@ -132,14 +141,20 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
                     .idFetchSize(150)
                     .startAndWait();
             watch.stop();
+            if (SearchErrorHandler.getErrorCount() != errorsBeforeIndexing) {
+                logger.warn("refresh search indexes failed: Hibernate Search reported indexing errors");
+                return false;
+            }
             logger.info(String.format("refresh search indexes success, cost %d ms", watch.getLapse()));
+            return true;
         } catch (Throwable e) {
             logger.warn("a unhandled exception happened", e);
             Thread.currentThread().interrupt();
+            return false;
         }
     }
 
-    private void refreshSearchIndexes() {
+    private void refreshSearchIndexes(boolean onlyOnVipChange) {
         thdf.syncSubmit(new SyncTask<Void>() {
             @Override
             public String getName() {
@@ -148,7 +163,13 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
 
             @Override
             public Void call() throws Exception {
-                createSearchIndexes();
+                if (!Platform.isVIPNode()) {
+                    indexesBuiltOnVip = false;
+                    return null;
+                }
+                if (SearchGlobalProperty.SearchAutoRegister && (!onlyOnVipChange || !indexesBuiltOnVip)) {
+                    indexesBuiltOnVip = createSearchIndexes();
+                }
                 return null;
             }
 
@@ -171,12 +192,36 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
 
     @Override
     public boolean start() {
-        refreshSearchIndexes();
+        refreshSearchIndexes(false);
+        recoveryTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return 30;
+            }
+
+            @Override
+            public String getName() {
+                return "recover-search-indexes-on-vip";
+            }
+
+            @Override
+            public void run() {
+                refreshSearchIndexes(true);
+            }
+        });
         return true;
     }
 
     @Override
     public boolean stop() {
+        if (recoveryTask != null) {
+            recoveryTask.cancel(true);
+        }
         return true;
     }
 
