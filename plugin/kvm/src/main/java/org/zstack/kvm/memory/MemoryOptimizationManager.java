@@ -33,6 +33,8 @@ import org.zstack.header.longjob.LongJobInventory;
 import org.zstack.header.longjob.SubmitLongJobMsg;
 import org.zstack.header.longjob.SubmitLongJobReply;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.*;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.zql.ASTNode;
@@ -64,7 +66,8 @@ import java.util.stream.Collectors;
  * desired configuration and finish when the Host reaches that generation.
  */
 public class MemoryOptimizationManager extends AbstractService implements ManagementNodeReadyExtensionPoint,
-        HostAfterConnectedExtensionPoint, GlobalConfigInitExtensionPoint, MarshalZQLASTTreeExtensionPoint {
+        ManagementNodeChangeListener, HostAfterConnectedExtensionPoint, GlobalConfigInitExtensionPoint,
+        MarshalZQLASTTreeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(MemoryOptimizationManager.class);
     @Autowired private CloudBus bus;
     @Autowired private ThreadFacade thdf;
@@ -185,6 +188,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     @Override public void managementNodeReady() {
+        clearTakenOverJobs();
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override public TimeUnit getTimeUnit() { return TimeUnit.SECONDS; }
             @Override public long getInterval() { return 5; }
@@ -451,7 +455,23 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         bus.reply(msg, reply);
     }
 
+    /** LongJobs running on this node, by job; their Host markers survive a takeover. */
+    private final Set<String> runningJobs = ConcurrentHashMap.newKeySet();
+
+    @Override public void nodeJoin(ManagementNodeInventory inv) { }
+    @Override public void iAmDead(ManagementNodeInventory inv) { }
+    @Override public void iJoin(ManagementNodeInventory inv) { }
+
+    /** Hosts of a node that left are managed here from now on. */
+    @Override public void nodeLeft(ManagementNodeInventory inv) { clearTakenOverJobs(); }
+
+    private void clearTakenOverJobs() {
+        repository.clearActiveJobs(repository.hostsWithState().stream().filter(destMaker::isManagedByUs)
+                .collect(Collectors.toList()), new ArrayList<>(runningJobs));
+    }
+
     private void markActiveJob(String host, String job, String previous) {
+        if (job != null) { runningJobs.add(job); } else if (previous != null) { runningJobs.remove(previous); }
         try {
             repository.setActiveJob(host, job, previous);
         } catch (RuntimeException e) {
