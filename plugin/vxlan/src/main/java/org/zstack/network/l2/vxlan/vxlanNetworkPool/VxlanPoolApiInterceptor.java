@@ -80,6 +80,10 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVxlanVtepMsg msg) {
+        if (msg.getVtepIp() == null || !NetworkUtils.isIpv4Address(msg.getVtepIp())) {
+            throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 VTEP address", msg.getVtepIp()));
+        }
+
         long count = Q.New(VtepVO.class).eq(VtepVO_.hostUuid, msg.getHostUuid()).eq(VtepVO_.poolUuid, msg.getPoolUuid()).count();
         if (count > 0) {
             throw new ApiMessageInterceptionException(argerr("vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",
