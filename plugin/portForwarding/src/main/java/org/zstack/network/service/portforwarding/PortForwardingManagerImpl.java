@@ -746,7 +746,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             } catch (OperationFailureException e) {
                 evt.setError(e.getErrorCode());
                 bus.publish(evt);
-                syncChain.next();
                 return;
             }
         }
