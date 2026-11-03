@@ -655,7 +655,17 @@ public class MemoryClusterOperationTest {
                     if ("send".equals(method.getName()) && args.length == 2 && args[0] instanceof MemoryHostOperationMsg) {
                         pending.put((Message) args[0], (CloudBusCallBack) args[1]);
                         ((Manager) manager).hostTimeouts.add(((MemoryHostOperationMsg) args[0]).getTimeout());
-                        manager.handleMessage((Message) args[0]);
+                        try {
+                            invokeHostOperation(manager, (MemoryHostOperationMsg) args[0]);
+                        } catch (java.lang.reflect.InvocationTargetException e) {
+                            // As @MessageSafe on handleMessage does: a rejection is replied with its business error.
+                            if (!(e.getCause() instanceof MemoryOperationException)) { throw e.getCause(); }
+                            MemoryOperationException rejected = (MemoryOperationException) e.getCause();
+                            ErrorCode error = new ErrorCode(); error.setCode(rejected.getCode()); error.setDetails(rejected.getMessage());
+                            MessageReply reply = new MessageReply(); reply.setError(error);
+                            CloudBusCallBack callback = pending.remove(args[0]);
+                            if (callback != null) { callback.run(reply); }
+                        }
                     } else if ("reply".equals(method.getName()) || "replyErrorByMessageType".equals(method.getName())) {
                         MessageReply reply = args[1] instanceof MessageReply ? (MessageReply) args[1] : new MessageReply();
                         if (args[1] instanceof ErrorCode) { reply.setError((ErrorCode) args[1]); }

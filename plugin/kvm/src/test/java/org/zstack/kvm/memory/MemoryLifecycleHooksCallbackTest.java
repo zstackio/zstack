@@ -338,6 +338,22 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("Released", repository.hold.status);
     }
 
+    @Test public void aRecoveryStepThatFailsAnswersTheOperationAndFreesTheHoldForARetry() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown";
+        PlacementManager manager = new PlacementManager();
+        manager.instances.put("host-a", "instance-restarted");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        repository.failedMerges = 1;
+        String[] failure = {null};
+        assertFalse("a recovery whose step failed is not a success", recover(hooks, "host-a", failure));
+        assertNotNull("the operation is answered with the failure", failure[0]);
+        failure[0] = null;
+        assertTrue("the hold is not left as being reconciled: " + failure[0], recover(hooks, "host-a", failure));
+        assertEquals("Released", repository.hold.status);
+    }
+
     @Test public void operatorRecoversAMigratedVmAndAStoppedVm() throws Exception {
         FakeRepository repository = heldMigration();
         repository.hold.status = "Unknown"; repository.vmHost = "host-b";
@@ -578,10 +594,15 @@ public class MemoryLifecycleHooksCallbackTest {
 
     private static class FakeRepository extends MemoryRepository {
         MemoryMigrationVO hold;
+        int failedMerges;
         private final EntityManager entityManager = (EntityManager) Proxy.newProxyInstance(
                 EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, (proxy, method, args) -> {
                     if ("find".equals(method.getName()) && args != null && args.length >= 2
                             && args[0] == MemoryMigrationVO.class) { return hold; }
+                    if ("merge".equals(method.getName()) && failedMerges > 0) {
+                        failedMerges--;
+                        throw new MemoryOperationException("MEMORY_TEST_DATABASE_UNAVAILABLE", "database unavailable");
+                    }
                     if ("merge".equals(method.getName())) { hold = (MemoryMigrationVO) args[0]; return hold; }
                     if ("flush".equals(method.getName())) { return null; }
                     if (method.getReturnType().isPrimitive()) {

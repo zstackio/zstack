@@ -32,6 +32,8 @@ public class MemoryWritebackManagerCallbackTest {
     private static final String HOST = "093d46206e694835b4a218449eb1bc7c";
     private static Object previousLoader;
     private static boolean loaderReplaced;
+    private static Object exceptionSafe;
+    private static Object previousExceptionSafeErrors;
 
     @BeforeClass
     public static void initializeErrorCodeFixture() throws Exception {
@@ -58,10 +60,26 @@ public class MemoryWritebackManagerCallbackTest {
                         && args.length == 1 && args[0] == ErrorFacade.class ? errorFacade : null);
         loaderField.set(null, loader);
         loaderReplaced = true;
+        // @ExceptionSafe turns an exception into an internal error value through the platform ErrorFacade.
+        exceptionSafe = Class.forName("org.zstack.core.aspect.ExceptionSafeAspect").getMethod("aspectOf").invoke(null);
+        Field errors = exceptionSafe.getClass().getDeclaredField("errf");
+        errors.setAccessible(true);
+        previousExceptionSafeErrors = errors.get(exceptionSafe);
+        errors.set(exceptionSafe, Proxy.newProxyInstance(ErrorFacade.class.getClassLoader(), new Class<?>[]{ErrorFacade.class},
+                (proxy, method, args) -> {
+                    if (!"throwableToInternalError".equals(method.getName())) { return null; }
+                    ErrorCode internal = new ErrorCode(); internal.setCode("SYS.1006"); internal.setDetails(String.valueOf(args[0]));
+                    return internal;
+                }));
     }
 
     @AfterClass
     public static void restoreErrorCodeFixture() throws Exception {
+        if (exceptionSafe != null) {
+            Field errors = exceptionSafe.getClass().getDeclaredField("errf");
+            errors.setAccessible(true);
+            errors.set(exceptionSafe, previousExceptionSafeErrors);
+        }
         if (loaderReplaced) {
             Field loaderField = Platform.class.getDeclaredField("loader");
             loaderField.setAccessible(true);
@@ -133,11 +151,17 @@ public class MemoryWritebackManagerCallbackTest {
     public void summaryFailsWhenNoMonitoringNodeAnswers() throws Exception {
         Capture capture = new Capture();
         MemoryOptimizationManager manager = manager(capture);
-        monitoring(manager, now -> { throw new IllegalStateException("MEMORY_PROMETHEUS_QUERY_UNAVAILABLE"); });
-        invokeSummary(manager);
-        assertEquals(1, capture.errors.get());
-        assertEquals("MEMORY_MONITORING_QUERY_UNAVAILABLE", capture.error.get().getCode());
-        assertNull(capture.summary.get());
+        monitoring(manager, now -> {
+            throw new MemoryOperationException("MEMORY_MONITORING_QUERY_UNAVAILABLE", "No management node answered the memory monitoring query");
+        });
+        try {
+            invokeSummary(manager);
+            fail("a summary without monitoring answers must fail");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            // handleMessage is @MessageSafe: the business error reaches the caller with its code.
+            assertEquals("MEMORY_MONITORING_QUERY_UNAVAILABLE", ((MemoryOperationException) e.getCause()).getCode());
+        }
+        assertNull("cached Agent metrics are not a fallback", capture.summary.get());
     }
 
     private static Map<String, Object> savings(long now) {

@@ -1,8 +1,5 @@
 package org.zstack.kvm.memory;
 
-import java.math.BigDecimal;
-import java.time.DateTimeException;
-import java.time.Instant;
 import java.util.*;
 
 /** The disks of a Host that can back ZRAM writeback, and whether a preparation can start now. */
@@ -124,12 +121,13 @@ public class MemoryWritebackBackendInventory {
         if (text == null) {
             return null;
         }
-        try {
-            return Instant.parse(text).toEpochMilli();
-        } catch (DateTimeException malformed) {
-            throw new IllegalArgumentException("WRITEBACK_OBSERVED_AT_MALFORMED", malformed);
+        Long millis = MemoryObservationRules.epochMillis(text);
+        if (millis == null) {
+            throw new IllegalArgumentException("WRITEBACK_OBSERVED_AT_MALFORMED");
         }
+        return millis;
     }
+
     static Long exactLong(Object value) {
         if (value == null) {
             return null;
@@ -137,23 +135,15 @@ public class MemoryWritebackBackendInventory {
         if (!(value instanceof Number)) {
             throw new IllegalArgumentException("WRITEBACK_INTEGER_FIELD_MALFORMED");
         }
-        if (value instanceof Double || value instanceof Float) {
-            double number = ((Number) value).doubleValue();
-            double maxExactlyRepresentable = value instanceof Float ? 16777215d : 9007199254740991d;
-            if (!Double.isFinite(number) || number != Math.rint(number)
-                    || number > maxExactlyRepresentable) {
-                throw new IllegalArgumentException("WRITEBACK_INTEGER_PRECISION_UNSAFE");
-            }
+        Long exact = MemoryObservationRules.exactLong(value);
+        if (exact == null) {
+            throw new IllegalArgumentException(value instanceof Double || value instanceof Float
+                    ? "WRITEBACK_INTEGER_PRECISION_UNSAFE" : "WRITEBACK_INTEGER_FIELD_MALFORMED");
         }
-        try {
-            long exact = new BigDecimal(value.toString()).longValueExact();
-            if (exact < 0) {
-                throw new IllegalArgumentException("WRITEBACK_INTEGER_FIELD_MALFORMED");
-            }
-            return exact;
-        } catch (ArithmeticException | NumberFormatException invalid) {
-            throw new IllegalArgumentException("WRITEBACK_INTEGER_FIELD_MALFORMED", invalid);
+        if (exact < 0) {
+            throw new IllegalArgumentException("WRITEBACK_INTEGER_FIELD_MALFORMED");
         }
+        return exact;
     }
 
     static List<String> strings(Object value) {

@@ -7,6 +7,7 @@ import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator.ZramChange;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -14,6 +15,8 @@ import org.zstack.core.config.GlobalConfigInitExtensionPoint;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.Q;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.Task;
@@ -21,9 +24,10 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
@@ -168,35 +172,33 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         return GlobalConfig.valueOf(definition);
     }
 
-    @Override public void afterHostConnected(HostInventory host) {
+    @Override @ExceptionSafe
+    public void afterHostConnected(HostInventory host) {
         if (host == null || host.getUuid() == null || host.getUuid().trim().isEmpty()
                 || !"Connected".equals(host.getStatus())
                 || !KVMConstant.KVM_HYPERVISOR_TYPE.equals(host.getHypervisorType())) {
             return;
         }
         final String hostUuid = host.getUuid();
-        try {
-            // Host connection callbacks run in the connection flow; only enqueue work here.
-            thdf.submit(new Task<Void>() {
-                @Override public String getName() { return "memory-host-connected-" + hostUuid; }
-                @Override public Void call() {
-                    try {
-                        // The Host may have rebooted or been reinstalled: send its generation again.
-                        repository.plan(hostUuid, null, "connect", "system:memory-host-connect", license(), Origin.SYSTEM);
-                        repository.resend(hostUuid);
-                        deliver(hostUuid);
-                    } catch (RuntimeException e) {
-                        // The Host keeps its last applied configuration; the next observation sends it again.
-                        logger.error(String.format("Unable to plan memory configuration of connected Host[%s]", hostUuid), e);
-                    }
-                    observe(hostUuid);
-                    return null;
-                }
-            });
-        } catch (RuntimeException e) {
-            logger.warn(String.format("Unable to enqueue memory configuration after Host[%s] connected; periodic scan will retry",
-                    hostUuid), e);
-        }
+        // Host connection callbacks run in the connection flow; only enqueue work here.
+        thdf.submit(new Task<Void>() {
+            @Override public String getName() { return "memory-host-connected-" + hostUuid; }
+            @Override public Void call() {
+                planConnected(hostUuid);
+                observe(hostUuid);
+                return null;
+            }
+        });
+    }
+
+    /** The Host may have rebooted or been reinstalled: send its generation again. */
+    @ExceptionSafe @Deferred
+    void planConnected(String host) {
+        // The Host keeps its last applied configuration; the next observation sends it again.
+        Defer.guard(() -> logger.error(String.format("Unable to plan memory configuration of connected Host[%s]", host)));
+        repository.plan(host, null, "connect", "system:memory-host-connect", license(), Origin.SYSTEM);
+        repository.resend(host);
+        deliver(host);
     }
 
     @Override public void managementNodeReady() {
@@ -213,40 +215,35 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    @Override public void handleMessage(Message message) {
-        try {
-            if (message instanceof APIMessage) {
-                checkReadAuthorization((APIMessage) message);
-            }
-            if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
-            else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
-            else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
-            else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
-            else if (message instanceof APIPrepareHostMemoryWritebackBackendMsg) {
-                APIPrepareHostMemoryWritebackBackendEvent event = new APIPrepareHostMemoryWritebackBackendEvent(message.getId());
-                submitLongJob((APICreateMessage) message, event, event::setInventory);
-            } else if (message instanceof APIRecoverVmMemoryMigrationHoldMsg) {
-                APIRecoverVmMemoryMigrationHoldEvent event = new APIRecoverVmMemoryMigrationHoldEvent(message.getId());
-                submitLongJob((APICreateMessage) message, event, event::setInventory);
-            } else if (message instanceof MemoryVmMigrationHoldRecoveryMsg) {
-                recoverMigrationHold((MemoryVmMigrationHoldRecoveryMsg) message);
-            }
-            else if (message instanceof APIPauseMemoryOptimizationMsg) {
-                APIPauseMemoryOptimizationEvent event = new APIPauseMemoryOptimizationEvent(message.getId());
-                submitLongJob((APICreateMessage) message, event, event::setInventory);
-            } else if (message instanceof APIResumeMemoryOptimizationMsg) {
-                APIResumeMemoryOptimizationEvent event = new APIResumeMemoryOptimizationEvent(message.getId());
-                submitLongJob((APICreateMessage) message, event, event::setInventory);
-            } else if (message instanceof APIDrainMemoryOptimizationMsg) {
-                APIDrainMemoryOptimizationEvent event = new APIDrainMemoryOptimizationEvent(message.getId());
-                submitLongJob((APICreateMessage) message, event, event::setInventory);
-            }
-            else { bus.dealWithUnknownMessage(message); }
-        } catch (MemoryOperationException e) {
-            bus.replyErrorByMessageType(message, e.toErrorCode());
-        } catch (IllegalArgumentException e) {
-            bus.replyErrorByMessageType(message, new MemoryOperationException("MEMORY_INVALID_REQUEST", e.getMessage()).toErrorCode());
+    @Override @MessageSafe
+    public void handleMessage(Message message) {
+        if (message instanceof APIMessage) {
+            checkReadAuthorization((APIMessage) message);
         }
+        if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
+        else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
+        else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
+        else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
+        else if (message instanceof APIPrepareHostMemoryWritebackBackendMsg) {
+            APIPrepareHostMemoryWritebackBackendEvent event = new APIPrepareHostMemoryWritebackBackendEvent(message.getId());
+            submitLongJob((APICreateMessage) message, event, event::setInventory);
+        } else if (message instanceof APIRecoverVmMemoryMigrationHoldMsg) {
+            APIRecoverVmMemoryMigrationHoldEvent event = new APIRecoverVmMemoryMigrationHoldEvent(message.getId());
+            submitLongJob((APICreateMessage) message, event, event::setInventory);
+        } else if (message instanceof MemoryVmMigrationHoldRecoveryMsg) {
+            recoverMigrationHold((MemoryVmMigrationHoldRecoveryMsg) message);
+        }
+        else if (message instanceof APIPauseMemoryOptimizationMsg) {
+            APIPauseMemoryOptimizationEvent event = new APIPauseMemoryOptimizationEvent(message.getId());
+            submitLongJob((APICreateMessage) message, event, event::setInventory);
+        } else if (message instanceof APIResumeMemoryOptimizationMsg) {
+            APIResumeMemoryOptimizationEvent event = new APIResumeMemoryOptimizationEvent(message.getId());
+            submitLongJob((APICreateMessage) message, event, event::setInventory);
+        } else if (message instanceof APIDrainMemoryOptimizationMsg) {
+            APIDrainMemoryOptimizationEvent event = new APIDrainMemoryOptimizationEvent(message.getId());
+            submitLongJob((APICreateMessage) message, event, event::setInventory);
+        }
+        else { bus.dealWithUnknownMessage(message); }
     }
 
     /**
@@ -281,11 +278,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if ("HostMemoryState".equalsIgnoreCase(entity)) {
                 APIQueryHostMemoryStateMsg request = new APIQueryHostMemoryStateMsg();
                 request.setSession(ZQLContext.getAPISession());
-                try {
-                    checkReadAuthorization(request);
-                } catch (MemoryOperationException denied) {
-                    throw new OperationFailureException(denied.toErrorCode());
-                }
+                checkReadAuthorization(request);
                 return;
             }
             // Conditions/values are interface-typed and joins are lists: getChildren()
@@ -406,6 +399,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** One Host's operation on its owner; the reply carries the Host outcome. */
+    @Deferred
     private void hostOperation(MemoryHostOperationMsg msg) {
         String host = msg.getHostUuid();
         String actor = msg.getAccountUuid() + ":" + msg.getUserUuid();
@@ -413,31 +407,27 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (msg.getJobUuid() != null) { markActiveJob(host, null, msg.getJobUuid()); }
             replyHostOperation(msg, outcome);
         };
-        if (msg.getJobUuid() != null) { markActiveJob(host, msg.getJobUuid(), null); }
+        if (msg.getJobUuid() != null) {
+            markActiveJob(host, msg.getJobUuid(), null);
+            // A rejected operation ends here: handleMessage replies its error.
+            Defer.guard(() -> markActiveJob(host, null, msg.getJobUuid()));
+        }
         // Reply before the caller times out; the Host keeps converging afterwards.
         long deadline = System.currentTimeMillis() + Math.max(msg.getTimeout() - HOST_STEP_REPLY_MARGIN, HOST_STEP_MIN_WAIT);
-        try {
-            requireLicense();
-            repository.targets("Host", host);
-            if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
-                MemoryBackendPreparationRules.validate(msg.getCandidateId());
-                prepareBackend(host, msg.getCandidateId(), actor, deadline, finish);
-                return;
-            }
-            String control = PAUSE.equals(msg.getAction()) ? "paused" : RESUME.equals(msg.getAction()) ? "active"
-                    : DRAIN.equals(msg.getAction()) ? "drained" : null;
-            if (control == null) { throw new MemoryOperationException("MEMORY_INVALID_ACTION", "Unknown Host operation " + msg.getAction()); }
-            // A Host without a pool has nothing to drain; holding it paused keeps one from forming.
-            if ("drained".equals(control) && !repository.hasPool(host)) { control = "paused"; }
-            MemoryRepository.Planned planned = repository.plan(host, control, msg.getAction(), actor, License.VALID, Origin.OPERATOR);
-            waiters.put(planned.task, new Waiter(host, deadline, finish));
-        } catch (MemoryOperationException e) {
-            finish.accept(e.getCode() + ": " + e.getMessage());
-            return;
-        } catch (RuntimeException e) {
-            finish.accept("Failed: " + e.getMessage());
+        requireLicense();
+        repository.targets("Host", host);
+        if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
+            MemoryBackendPreparationRules.validate(msg.getCandidateId());
+            prepareBackend(host, msg.getCandidateId(), actor, deadline, finish);
             return;
         }
+        String control = PAUSE.equals(msg.getAction()) ? "paused" : RESUME.equals(msg.getAction()) ? "active"
+                : DRAIN.equals(msg.getAction()) ? "drained" : null;
+        if (control == null) { throw new MemoryOperationException("MEMORY_INVALID_ACTION", "Unknown Host operation " + msg.getAction()); }
+        // A Host without a pool has nothing to drain; holding it paused keeps one from forming.
+        if ("drained".equals(control) && !repository.hasPool(host)) { control = "paused"; }
+        MemoryRepository.Planned planned = repository.plan(host, control, msg.getAction(), actor, License.VALID, Origin.OPERATOR);
+        waiters.put(planned.task, new Waiter(host, deadline, finish));
         deliver(host);
         completeWaiters();
     }
@@ -469,11 +459,13 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     private void markActiveJob(String host, String job, String previous) {
         if (job != null) { runningJobs.add(job); } else if (previous != null) { runningJobs.remove(previous); }
-        try {
-            repository.setActiveJob(host, job, previous);
-        } catch (RuntimeException e) {
-            logger.warn(String.format("unable to record the memory LongJob of Host[%s]; it is display-only", host), e);
-        }
+        recordActiveJob(host, job, previous);
+    }
+
+    @ExceptionSafe @Deferred
+    void recordActiveJob(String host, String job, String previous) {
+        Defer.guard(() -> logger.warn(String.format("unable to record the memory LongJob of Host[%s]; it is display-only", host)));
+        repository.setActiveJob(host, job, previous);
     }
 
     private static final class Waiter {
@@ -484,106 +476,100 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** Finishes the operations whose task reached a final status. */
-    private void completeWaiters() {
+    @ExceptionSafe @Deferred
+    void completeWaiters() {
         if (waiters.isEmpty()) { return; }
         long now = System.currentTimeMillis();
-        Map<String, MemoryTaskVO> tasks = null;
-        Set<String> connected = Collections.emptySet();
+        // An operation past its deadline is still answered: its caller must not wait for the database.
+        Defer.guard(() -> {
+            logger.error("Unable to read memory operation status; operations past their deadline are answered as unknown");
+            for (String uuid : new ArrayList<>(waiters.keySet())) {
+                Waiter waiting = waiters.get(uuid);
+                if (waiting != null && waiting.deadline <= now) { answer(uuid, "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNREADABLE"); }
+            }
+        });
+        Map<String, MemoryTaskVO> tasks = repository.tasks(new ArrayList<>(waiters.keySet()));
+        Set<String> connected = new HashSet<>(repository.connectedHosts());
         // A converging task has no reason until it finishes; the Host state records why it is still converging.
         Map<String, String> reasons = new HashMap<>();
-        try {
-            tasks = repository.tasks(new ArrayList<>(waiters.keySet()));
-            connected = new HashSet<>(repository.connectedHosts());
-            List<String> expired = waiters.values().stream().filter(w -> w.deadline <= now).map(w -> w.host)
-                    .distinct().collect(Collectors.toList());
-            for (MemoryStateVO state : repository.allStates(expired)) {
-                if (state.getReason() != null) { reasons.put(state.getHostUuid(), state.getReason()); }
-            }
-        } catch (RuntimeException e) {
-            // An operation past its deadline is still answered: its caller must not wait for the database.
-            logger.error("Unable to read memory operation status; operations past their deadline are answered as unknown", e);
+        List<String> expired = waiters.values().stream().filter(w -> w.deadline <= now).map(w -> w.host)
+                .distinct().collect(Collectors.toList());
+        for (MemoryStateVO state : repository.allStates(expired)) {
+            if (state.getReason() != null) { reasons.put(state.getHostUuid(), state.getReason()); }
         }
         for (String uuid : new ArrayList<>(waiters.keySet())) {
-            MemoryTaskVO task = tasks == null ? null : tasks.get(uuid);
+            MemoryTaskVO task = tasks.get(uuid);
             Waiter waiting = waiters.get(uuid);
             if (waiting == null) { continue; }
             // A disconnected Host is sent its generation when it reconnects; do not hold the operation for it.
-            String outcome = tasks == null
-                    ? (waiting.deadline <= now ? "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNREADABLE" : null)
-                    : task == null ? "Failed: operation record not found"
+            String outcome = task == null ? "Failed: operation record not found"
                     : MemoryRepository.SUCCEEDED.equals(task.getStatus()) ? "success"
                     : !MemoryRepository.CONVERGING.equals(task.getStatus())
                     ? task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason())
                     : !connected.contains(waiting.host) ? "MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED"
                     : waiting.deadline <= now ? "MEMORY_RESULT_CONVERGING: " + reasons.getOrDefault(waiting.host, "APPLYING") : null;
-            if (outcome == null) { continue; }
-            Waiter waiter = waiters.remove(uuid);
-            if (waiter == null) { continue; }
-            try { waiter.done.accept(outcome); }
-            catch (RuntimeException e) { logger.warn(String.format("Unable to reply memory operation[%s]", uuid), e); }
+            if (outcome != null) { answer(uuid, outcome); }
         }
+    }
+
+    /** Each operation is answered once; one that cannot be replied does not hold the others. */
+    @ExceptionSafe @Deferred
+    void answer(String uuid, String outcome) {
+        Waiter waiter = waiters.remove(uuid);
+        if (waiter == null) { return; }
+        Defer.guard(() -> logger.warn(String.format("Unable to reply memory operation[%s]", uuid)));
+        waiter.done.accept(outcome);
     }
 
     /**
      * Sends a Host its current generation. The Agent converges as far as it
      * can and reports Succeeded, Converging (send again later) or Failed.
      */
-    private void deliver(String host) {
+    @ExceptionSafe @Deferred
+    void deliver(String host) {
         // Registered before looking at preparing, as a preparation registers before looking at delivering.
         if (!delivering.add(host)) { return; }
-        if (preparing.contains(host)) { delivering.remove(host); return; }
-        MemoryRepository.Delivery delivery;
-        try {
-            delivery = repository.pending(host);
-        } catch (RuntimeException e) {
+        // Until the Agent is called, a failure frees the Host for the next scan.
+        Defer.guard(() -> {
             delivering.remove(host);
-            logger.warn(String.format("Unable to read the memory configuration of Host[%s]", host), e);
-            return;
-        }
+            logger.warn(String.format("Unable to send the memory configuration of Host[%s]; the next scan retries", host));
+        });
+        if (preparing.contains(host)) { delivering.remove(host); return; }
+        MemoryRepository.Delivery delivery = repository.pending(host);
         if (delivery == null) { delivering.remove(host); return; }
         Map<String, Object> command = command(host, Platform.getUuid());
         command.put("generation", delivery.generation);
         command.put("desired", delivery.desired);
-        Consumer<MemoryAgentResponse> recorded = response -> {
-            try {
-                repository.record(host, delivery.generation, response);
-            } catch (RuntimeException e) {
-                logger.error(String.format("Unable to record the memory apply result of Host[%s] or report its events", host), e);
-            } finally {
-                delivering.remove(host);
-                completeWaiters();
-            }
-        };
-        try {
-            call(host, "apply", command, recorded);
-        } catch (RuntimeException e) {
-            recorded.accept(transportFailure(command, e.getMessage()));
-        }
+        call(host, "apply", command, response -> recordApply(host, delivery.generation, response));
+    }
+
+    @ExceptionSafe @Deferred
+    void recordApply(String host, long generation, MemoryAgentResponse response) {
+        Defer.defer(() -> {
+            delivering.remove(host);
+            completeWaiters();
+        });
+        Defer.guard(() -> logger.error(String.format(
+                "Unable to record the memory apply result of Host[%s] or report its events", host)));
+        repository.record(host, generation, response);
     }
 
     /** Prepares the selected disk, resending until the Agent finishes, then binds it to the Host. */
+    @Deferred
     private void prepareBackend(String host, String candidateId, String actor, long deadline,
                                 Consumer<String> finish) {
         if (!preparing.add(host)) {
             throw new MemoryOperationException("MEMORY_HOST_BUSY", "A writeback backend is already being prepared on this Host");
         }
-        long generation;
-        String task;
-        try {
-            generation = repository.plan(host, null, "connect", actor, License.VALID, Origin.SYSTEM).generation;
-            task = repository.startTask(host, MemoryBackendPreparationRules.ACTION, actor, generation);
-        } catch (RuntimeException e) {
-            preparing.remove(host);
-            throw e;
-        }
+        // A preparation that does not start leaves the Host free for the next one.
+        Defer.guard(() -> preparing.remove(host));
+        long generation = repository.plan(host, null, "connect", actor, License.VALID, Origin.SYSTEM).generation;
+        String task = repository.startTask(host, MemoryBackendPreparationRules.ACTION, actor, generation);
+        AtomicBoolean answered = new AtomicBoolean();
         Consumer<String> done = outcome -> {
+            if (!answered.compareAndSet(false, true)) { return; }
             preparing.remove(host);
-            try {
-                repository.finishTask(task, "success".equals(outcome) ? MemoryRepository.SUCCEEDED : MemoryRepository.FAILED,
-                        "success".equals(outcome) ? null : outcome);
-            } catch (RuntimeException e) {
-                logger.warn(String.format("Unable to record the backend preparation of Host[%s]", host), e);
-            }
+            recordPreparation(host, task, outcome);
             deliver(host);
             finish.accept(outcome);
         };
@@ -620,6 +606,13 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
+    @ExceptionSafe @Deferred
+    void recordPreparation(String host, String task, String outcome) {
+        Defer.guard(() -> logger.warn(String.format("Unable to record the backend preparation of Host[%s]", host)));
+        repository.finishTask(task, "success".equals(outcome) ? MemoryRepository.SUCCEEDED : MemoryRepository.FAILED,
+                "success".equals(outcome) ? null : outcome);
+    }
+
     /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
     private void afterApplyInFlight(String host, long deadline, Runnable then, Consumer<String> done) {
         if (!delivering.contains(host)) { then.run(); return; }
@@ -629,45 +622,49 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     private void sendPrepare(String host, Map<String, Object> command, long capacity, String actor, long deadline,
                              int failures, Consumer<String> done) {
-        call(host, "writeback-backends", command, response -> {
-            try {
-                if (response != null && response.isSuccess() && MemoryRepository.SUCCEEDED.equals(response.status)) {
-                    Object receipt = response.state == null ? null : response.state.get("maintenance");
-                    Object resource = receipt instanceof Map ? ((Map<?, ?>) receipt).get("backend_resource_uuid") : null;
-                    if (!(resource instanceof String) || ((String) resource).isEmpty()) {
-                        done.accept("Failed: BACKEND_RESOURCE_UNREPORTED");
-                        return;
-                    }
-                    repository.recordPreparedBackend(host, (String) resource, capacity);
-                    // The preparation reset the drained pool; a Host whose configuration still wants ZRAM activates it.
-                    boolean resume = repository.isDrained(host) && repository.wantsZram(host);
-                    repository.plan(host, resume ? "active" : null, MemoryBackendPreparationRules.ACTION, actor, license(), Origin.SYSTEM);
-                    done.accept("success");
-                    return;
-                }
-                boolean converging = response != null && response.isSuccess() && MemoryRepository.CONVERGING.equals(response.status);
-                boolean unreachable = response == null || response.status == null;
-                if (!converging && !(unreachable && failures + 1 < MemoryRepository.FAILURES_BEFORE_FAILED)) {
-                    // The Agent refused this request on this Host; a step it could not complete is a failure.
-                    boolean refused = !unreachable && MemoryRepository.FAILED.equals(response.status)
-                            && response.reasonCode != null && !"BACKEND_MAINTENANCE_FAILED".equals(response.reasonCode);
-                    done.accept(refused ? "MEMORY_BACKEND_PREPARATION_INVALID: " + response.reasonCode
-                            : "Failed: " + (response == null ? "AGENT_UNREACHABLE"
-                            : response.reasonCode != null ? response.reasonCode : response.reason));
-                    return;
-                }
-                long delay = converging ? TimeUnit.SECONDS.toMillis(response.retryAfterSeconds == null ? 5
-                        : Math.max(1, response.retryAfterSeconds)) : MemoryRepository.retryDelay(failures + 1);
-                if (System.currentTimeMillis() + delay > deadline) {
-                    done.accept("MEMORY_RESULT_CONVERGING: " + (response == null ? null : response.reasonCode));
-                    return;
-                }
-                thdf.submitTimeoutTask(() -> sendPrepare(host, command, capacity, actor, deadline,
-                        converging ? 0 : failures + 1, done), TimeUnit.MILLISECONDS, delay);
-            } catch (RuntimeException e) {
-                done.accept("Failed: " + e.getMessage());
+        call(host, "writeback-backends", command,
+                response -> preparationReplied(host, command, capacity, actor, deadline, failures, done, response));
+    }
+
+    /** The Agent's answer to one preparation request: bind the backend, ask again later, or finish. */
+    @ExceptionSafe @Deferred
+    void preparationReplied(String host, Map<String, Object> command, long capacity, String actor, long deadline,
+                            int failures, Consumer<String> done, MemoryAgentResponse response) {
+        // The operation is answered even when the answer cannot be recorded.
+        Defer.guard(() -> done.accept("Failed: the preparation result could not be recorded"));
+        if (response != null && response.isSuccess() && MemoryRepository.SUCCEEDED.equals(response.status)) {
+            Object receipt = response.state == null ? null : response.state.get("maintenance");
+            Object resource = receipt instanceof Map ? ((Map<?, ?>) receipt).get("backend_resource_uuid") : null;
+            if (!(resource instanceof String) || ((String) resource).isEmpty()) {
+                done.accept("Failed: BACKEND_RESOURCE_UNREPORTED");
+                return;
             }
-        });
+            repository.recordPreparedBackend(host, (String) resource, capacity);
+            // The preparation reset the drained pool; a Host whose configuration still wants ZRAM activates it.
+            boolean resume = repository.isDrained(host) && repository.wantsZram(host);
+            repository.plan(host, resume ? "active" : null, MemoryBackendPreparationRules.ACTION, actor, license(), Origin.SYSTEM);
+            done.accept("success");
+            return;
+        }
+        boolean converging = response != null && response.isSuccess() && MemoryRepository.CONVERGING.equals(response.status);
+        boolean unreachable = response == null || response.status == null;
+        if (!converging && !(unreachable && failures + 1 < MemoryRepository.FAILURES_BEFORE_FAILED)) {
+            // The Agent refused this request on this Host; a step it could not complete is a failure.
+            boolean refused = !unreachable && MemoryRepository.FAILED.equals(response.status)
+                    && response.reasonCode != null && !"BACKEND_MAINTENANCE_FAILED".equals(response.reasonCode);
+            done.accept(refused ? "MEMORY_BACKEND_PREPARATION_INVALID: " + response.reasonCode
+                    : "Failed: " + (response == null ? "AGENT_UNREACHABLE"
+                    : response.reasonCode != null ? response.reasonCode : response.reason));
+            return;
+        }
+        long delay = converging ? TimeUnit.SECONDS.toMillis(response.retryAfterSeconds == null ? 5
+                : Math.max(1, response.retryAfterSeconds)) : MemoryRepository.retryDelay(failures + 1);
+        if (System.currentTimeMillis() + delay > deadline) {
+            done.accept("MEMORY_RESULT_CONVERGING: " + (response == null ? null : response.reasonCode));
+            return;
+        }
+        thdf.submitTimeoutTask(() -> sendPrepare(host, command, capacity, actor, deadline,
+                converging ? 0 : failures + 1, done), TimeUnit.MILLISECONDS, delay);
     }
 
     /**
@@ -675,36 +672,34 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
      * new generation. Re-enabling ZRAM is the configuration form of resuming
      * a drained Host.
      */
+    @ExceptionSafe @Deferred
     public void standardConfigurationChanged(String resourceUuid, ZramChange change) {
         String key = resourceUuid == null ? GLOBAL_RESOURCE : resourceUuid;
         // A re-enable of the same resource still waiting for its Hosts is carried by this change.
         ZramChange zram = change.or(unplannedResources.remove(key));
-        List<String> hosts;
-        try {
-            hosts = repository.standardConfigurationTargets(resourceUuid);
-        } catch (RuntimeException e) {
+        Defer.guard(() -> {
             unplannedResources.merge(key, zram, ZramChange::or);
             logger.error(String.format("Unable to list the Hosts of resource[%s] for its memory configuration; the next scan retries",
-                    resourceUuid), e);
-            return;
-        }
+                    resourceUuid));
+        });
+        List<String> hosts = repository.standardConfigurationTargets(resourceUuid);
         for (String host : hosts) { planConfiguration(host, zram); }
     }
 
-    private void planConfiguration(String host, ZramChange change) {
+    @ExceptionSafe @Deferred
+    void planConfiguration(String host, ZramChange change) {
         // A retry keeps an earlier re-enable, so a drained Host still resumes.
         ZramChange zram = change.or(unplannedHosts.get(host));
-        try {
-            // Only while its configuration still wants ZRAM: a later disable keeps the Host drained.
-            boolean resume = zram == ZramChange.REENABLED && repository.isDrained(host) && repository.wantsZram(host);
-            repository.plan(host, resume ? "active" : null, resume ? RESUME : "configure",
-                    "system:standard-config", license(), Origin.SYSTEM);
-            unplannedHosts.remove(host);
-            if (destMaker.isManagedByUs(host)) { deliver(host); }
-        } catch (RuntimeException e) {
+        Defer.guard(() -> {
             unplannedHosts.merge(host, zram, ZramChange::or);
-            logger.error(String.format("Unable to plan the memory configuration of Host[%s]; the next scan retries", host), e);
-        }
+            logger.error(String.format("Unable to plan the memory configuration of Host[%s]; the next scan retries", host));
+        });
+        // Only while its configuration still wants ZRAM: a later disable keeps the Host drained.
+        boolean resume = zram == ZramChange.REENABLED && repository.isDrained(host) && repository.wantsZram(host);
+        repository.plan(host, resume ? "active" : null, resume ? RESUME : "configure",
+                "system:standard-config", license(), Origin.SYSTEM);
+        unplannedHosts.remove(host);
+        if (destMaker.isManagedByUs(host)) { deliver(host); }
     }
 
     /** A committed configuration change is planned by the next scans, not left for a Host reconnect. */
@@ -736,32 +731,30 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         "Writeback device observation unavailable; no storage was modified").toErrorCode());
                 return;
             }
-            try {
-                APIGetHostMemoryWritebackBackendsReply reply = new APIGetHostMemoryWritebackBackendsReply();
-                reply.setInventory(MemoryWritebackBackendInventory.fromAgentState(
-                        msg.getHostUuid(), response.hostUuid, response.state));
-                bus.reply(msg, reply);
-            } catch (IllegalArgumentException malformed) {
+            ErrorableValue<MemoryWritebackBackendInventory> inventory = backendInventory(msg.getHostUuid(), response);
+            if (!inventory.isSuccess()) {
                 bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_BACKEND_QUERY_UNAVAILABLE",
                         "Writeback device observation is malformed; no storage was modified").toErrorCode());
+                return;
             }
+            APIGetHostMemoryWritebackBackendsReply reply = new APIGetHostMemoryWritebackBackendsReply();
+            reply.setInventory(inventory.result);
+            bus.reply(msg, reply);
         });
+    }
+
+    /** The Agent inventory as the API shows it; an inventory the Agent malformed is an error value. */
+    @ExceptionSafe
+    ErrorableValue<MemoryWritebackBackendInventory> backendInventory(String host, MemoryAgentResponse response) {
+        return ErrorableValue.of(MemoryWritebackBackendInventory.fromAgentState(host, response.hostUuid, response.state));
     }
 
     private void summary(APIGetMemorySummaryMsg msg) {
         APIGetMemorySummaryReply reply = new APIGetMemorySummaryReply();
         List<String> hosts = repository.summaryTargets(msg.getHostUuids(), msg.getZoneUuid());
         long now = System.currentTimeMillis();
-        MemoryHostSavingsSamples measured;
-        try {
-            measured = hostMetricSamples(hosts, now);
-        } catch (RuntimeException e) {
-            // Cached Agent metrics are not a fallback.
-            logger.warn("Memory monitoring query failed on every management node", e);
-            bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_MONITORING_QUERY_UNAVAILABLE",
-                    "No management node answered the memory monitoring query").toErrorCode());
-            return;
-        }
+        // Cached Agent metrics are not a fallback: an unavailable monitoring query fails the summary.
+        MemoryHostSavingsSamples measured = hostMetricSamples(hosts, now);
         Map<String, Map<String, Object>> samples = measured.getHosts();
         List<MemoryStateVO> current = repository.allStates(hosts);
         List<MemoryStateVO> states = current.stream()
@@ -787,36 +780,35 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         return samples == null ? new MemoryHostSavingsSamples(null, null) : samples;
     }
 
-    private void tick() {
+    @ExceptionSafe @Deferred
+    void tick() {
         if (!ticking.compareAndSet(false, true)) { return; }
-        try {
-            long now = System.currentTimeMillis();
-            Set<String> connected = new HashSet<>(repository.connectedHosts());
-            planUnplanned();
-            for (String host : repository.dueHosts(now)) {
-                if (connected.contains(host) && destMaker.isManagedByUs(host)) { deliver(host); }
+        Defer.defer(() -> ticking.set(false));
+        Defer.guard(() -> logger.error("Memory optimization scan failed; the next scan retries"));
+        long now = System.currentTimeMillis();
+        Set<String> connected = new HashSet<>(repository.connectedHosts());
+        planUnplanned();
+        for (String host : repository.dueHosts(now)) {
+            if (connected.contains(host) && destMaker.isManagedByUs(host)) { deliver(host); }
+        }
+        completeWaiters();
+        boolean observation = now - lastObservation >= TimeUnit.SECONDS.toMillis(30);
+        if (observation) {
+            lastObservation = now;
+            observeRuntime(connected);
+            // Each management node keeps the public state of the Hosts it manages, as it observes them.
+            // A Host whose stored configuration cannot be read gets it written again by a new plan.
+            for (String unreadable : repository.refreshHostStates(repository.hostsWithState().stream()
+                    .filter(destMaker::isManagedByUs).collect(Collectors.toList()))) {
+                planConfiguration(unreadable, ZramChange.NONE);
             }
-            completeWaiters();
-            boolean observation = now - lastObservation >= TimeUnit.SECONDS.toMillis(30);
-            if (observation) {
-                lastObservation = now;
-                observeRuntime(connected);
-                // Each management node keeps the public state of the Hosts it manages, as it observes them.
-                // A Host whose stored configuration cannot be read gets it written again by a new plan.
-                for (String unreadable : repository.refreshHostStates(repository.hostsWithState().stream()
-                        .filter(destMaker::isManagedByUs).collect(Collectors.toList()))) {
-                    planConfiguration(unreadable, ZramChange.NONE);
-                }
-            }
-            if (now - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {
-                lastHistoryPurge = now;
-                repository.purgeHistory(now);
-            }
-            // Last: a license that cannot be read skips only this scan's license change.
-            if (observation) { planLicenseChange(); }
-        } catch (Exception e) {
-            logger.error("Memory optimization scan failed; the next scan retries", e);
-        } finally { ticking.set(false); }
+        }
+        if (now - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {
+            lastHistoryPurge = now;
+            repository.purgeHistory(now);
+        }
+        // Last: a license that cannot be read skips only this scan's license change.
+        if (observation) { planLicenseChange(); }
     }
 
     private void observeRuntime(Set<String> connected) {
@@ -827,26 +819,26 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** A read-only state sample: public state, service events and VM bindings follow it. */
+    @ExceptionSafe @Deferred
     void observe(String host) {
         if (host == null || host.trim().isEmpty() || !observingHosts.add(host)) { return; }
-        try {
-            call(host, "state", command(host, Platform.getUuid()), response -> {
-                try {
-                    if (response == null || !response.isSuccess() || response.state == null) { return; }
-                    repository.observe(host, response);
-                    syncCapabilityTags(host, response.state);
-                    lifecycleHooks.reconcileObservedBindings(host, response);
-                    lifecycleHooks.reconcileUnknownMigrationHolds(host);
-                } catch (RuntimeException e) {
-                    logger.error(String.format("Host[%s] memory observation failed; periodic scan will retry", host), e);
-                } finally {
-                    observingHosts.remove(host);
-                }
-            });
-        } catch (RuntimeException e) {
+        Defer.guard(() -> {
             observingHosts.remove(host);
-            logger.warn(String.format("Host[%s] memory observation could not be sent; periodic scan will retry", host), e);
-        }
+            logger.warn(String.format("Host[%s] memory observation could not be sent; periodic scan will retry", host));
+        });
+        call(host, "state", command(host, Platform.getUuid()), response -> recordObservation(host, response));
+    }
+
+    /** A read-only sample: public state, capability tags, VM bindings and migration holds follow it. */
+    @ExceptionSafe @Deferred
+    void recordObservation(String host, MemoryAgentResponse response) {
+        Defer.defer(() -> observingHosts.remove(host));
+        Defer.guard(() -> logger.error(String.format("Host[%s] memory observation failed; periodic scan will retry", host)));
+        if (response == null || !response.isSuccess() || response.state == null) { return; }
+        repository.observe(host, response);
+        syncCapabilityTags(host, response.state);
+        lifecycleHooks.reconcileObservedBindings(host, response);
+        lifecycleHooks.reconcileUnknownMigrationHolds(host);
     }
 
     /** The capabilities a sample reports as supported, or null when the Agent could not discover them. */
@@ -911,15 +903,19 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                             host, action, reply.getError()));
                     response = transportFailure(dispatchedCommand, reply.getError() == null ? null : reply.getError().getDetails());
                 } else if (reply instanceof KVMHostAsyncHttpCallReply) {
-                    try { response = ((KVMHostAsyncHttpCallReply) reply).toResponse(MemoryAgentResponse.class); }
-                    catch (RuntimeException e) {
-                        logger.warn("Invalid memory Agent response", e);
-                        response = transportFailure(dispatchedCommand, "Invalid Agent response: " + e.getMessage());
-                    }
+                    ErrorableValue<MemoryAgentResponse> decoded = agentResponse((KVMHostAsyncHttpCallReply) reply);
+                    response = decoded.isSuccess() ? decoded.result : transportFailure(dispatchedCommand,
+                            "Invalid Agent response: " + decoded.error.getDetails());
                 }
                 completion.accept(response);
             }
         });
+    }
+
+    /** The Agent's answer; one that is not a memory response is an error value. */
+    @ExceptionSafe
+    ErrorableValue<MemoryAgentResponse> agentResponse(KVMHostAsyncHttpCallReply reply) {
+        return ErrorableValue.of(reply.toResponse(MemoryAgentResponse.class));
     }
 
     static boolean readOnlyAgentQuery(String action) {

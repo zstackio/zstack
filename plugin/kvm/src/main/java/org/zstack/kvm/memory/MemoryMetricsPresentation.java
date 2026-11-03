@@ -2,7 +2,6 @@ package org.zstack.kvm.memory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,12 +19,15 @@ final class MemoryMetricsPresentation {
         MemoryStateVO copy = gson.fromJson(gson.toJson(source), MemoryStateVO.class);
         JsonObject state = new JsonObject();
         if (source.getState() != null) {
-            try {
-                state = new JsonParser().parse(source.getState()).getAsJsonObject();
-            } catch (RuntimeException invalid) {
+            com.google.gson.JsonElement parsed = MemoryObservationRules.readJson(source.getState(),
+                    com.google.gson.JsonElement.class, String.format(
+                            "Host[%s] memory observation is unreadable; only its savings are used", source.getHostUuid()));
+            if (parsed != null && parsed.isJsonObject()) {
+                state = parsed.getAsJsonObject();
+            } else if (parsed != null) {
                 // The savings come from Prometheus and still count; the damaged observation is reported.
-                logger.error(String.format("Host[%s] memory observation is unreadable; only its savings are used",
-                        source.getHostUuid()), invalid);
+                logger.error(String.format("Host[%s] memory observation is not an object; only its savings are used",
+                        source.getHostUuid()));
             }
         }
         state.add("savings", gson.toJsonTree(savings == null ? Collections.emptyMap() : savings));

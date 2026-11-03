@@ -5,12 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.zstack.header.host.HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.ExceptionDSL;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 /** Service failures and recoveries reported by a Host memory sample. */
 public final class MemoryObservationRules {
-    private static final CLogger logger = Utils.getLogger(MemoryObservationRules.class);
     private static final long MAX_SAFE_DOUBLE_INTEGER = 9007199254740991L;
     private static final int MAX_SAFE_FLOAT_INTEGER = 16777215;
 
@@ -28,26 +27,19 @@ public final class MemoryObservationRules {
         if (current == null || current.getDesired() == null || response == null || !response.isSuccess()
                 || response.state == null || response.hostUuid != null && !host.equals(response.hostUuid)) { return result; }
         Map<String, Object> state = response.state;
-        Long sampled = nullableLong(state.get("sampleTime"));
+        Long sampled = exactLong(state.get("sampleTime"));
         long ttl = MemoryOptimizationGlobalConfig.displayTtlMillis();
         if (sampled == null || sampled > now + 5000 || now - sampled >= ttl || !"active".equals(state.get("control"))) {
             return result;
         }
-        Map<?, ?> desired;
-        try { desired = org.zstack.utils.gson.JSONObjectUtil.toObject(current.getDesired(), java.util.LinkedHashMap.class); }
-        catch (com.google.gson.JsonParseException invalid) {
-            // The unreadable configuration is planned again; until then its services are not compared.
-            logger.error(String.format("Host[%s] stored memory configuration is unreadable; its service events are not reported", host), invalid);
-            return result;
-        }
+        // An unreadable configuration is planned again; until then its services are not compared.
+        Map<?, ?> desired = readJson(current.getDesired(), java.util.LinkedHashMap.class, String.format(
+                "Host[%s] stored memory configuration is unreadable; its service events are not reported", host));
+        if (desired == null) { return result; }
         if (!"active".equals(desired.get("control"))) { return result; }
-        Map<?, ?> previous;
-        try { previous = previousSample == null ? null : org.zstack.utils.gson.JSONObjectUtil.toObject(previousSample, java.util.LinkedHashMap.class); }
-        catch (com.google.gson.JsonParseException invalid) {
-            // This sample replaces the unreadable one, so the next comparison is exact again.
-            logger.error(String.format("Host[%s] previous memory sample is unreadable; this sample is compared with none", host), invalid);
-            previous = null;
-        }
+        // This sample replaces an unreadable one, so the next comparison is exact again.
+        Map<?, ?> previous = previousSample == null ? null : readJson(previousSample, java.util.LinkedHashMap.class,
+                String.format("Host[%s] previous memory sample is unreadable; this sample is compared with none", host));
         Map<?, ?> ksm = map(state.get("ksm"));
         Map<?, ?> previousKsm = previous == null ? null : map(previous.get("ksm"));
         if (Boolean.TRUE.equals(field(desired.get("ksm"), "enabled")) && ksm != null) {
@@ -116,75 +108,97 @@ public final class MemoryObservationRules {
         Map<?, ?> after = map(returned.get("after"));
         if (before == null || after == null || !"native_host_device".equals(before.get("quality"))
                 || !"native_host_device".equals(after.get("quality"))) { return false; }
-        try {
-            java.time.Instant until = java.time.OffsetDateTime.parse((String) health.get("backoff_until")).toInstant();
-            java.time.Instant started = java.time.OffsetDateTime.parse((String) before.get("observed_at")).toInstant();
-            java.time.Instant ended = java.time.OffsetDateTime.parse((String) returned.get("returned_at")).toInstant();
-            java.time.Instant observed = java.time.OffsetDateTime.parse((String) state.get("observed_at")).toInstant();
-            // idle marking also has a successful return: require real committed writeback progress.
-            Long oldPages = nullableLong(before.get("committed_writeback_pages_total"));
-            Long newPages = nullableLong(after.get("committed_writeback_pages_total"));
-            if (oldPages == null || oldPages < 0 || newPages == null || newPages <= oldPages
-                    || !started.isAfter(until) || ended.isBefore(started) || observed.isBefore(ended)) { return false; }
-            for (String counter : new String[]{"read_errors", "write_errors"}) {
-                Long previous = nullableLong(before.get(counter));
-                Long current = nullableLong(after.get(counter));
-                if (previous == null || previous < 0 || !previous.equals(current)) { return false; }
-            }
-            return true;
-        } catch (RuntimeException malformed) { return false; }
+        Long until = epochMillis(health.get("backoff_until"));
+        Long started = epochMillis(before.get("observed_at"));
+        Long ended = epochMillis(returned.get("returned_at"));
+        Long observed = epochMillis(state.get("observed_at"));
+        // idle marking also has a successful return: require real committed writeback progress.
+        Long oldPages = exactLong(before.get("committed_writeback_pages_total"));
+        Long newPages = exactLong(after.get("committed_writeback_pages_total"));
+        if (until == null || started == null || ended == null || observed == null
+                || oldPages == null || oldPages < 0 || newPages == null || newPages <= oldPages
+                || started <= until || ended < started || observed < ended) { return false; }
+        for (String counter : new String[]{"read_errors", "write_errors"}) {
+            Long previous = exactLong(before.get(counter));
+            Long current = exactLong(after.get(counter));
+            if (previous == null || previous < 0 || !previous.equals(current)) { return false; }
+        }
+        return true;
     }
 
     private static Map<?, ?> map(Object value) {
         return value instanceof Map ? (Map<?, ?>) value : null;
     }
 
-    private static Long nullableLong(Object value) {
-        if (value == null) {
-            return null;
+    private static final java.util.regex.Pattern DECIMAL = java.util.regex.Pattern.compile("-?\\d+(\\.\\d+)?([eE][+-]?\\d{1,4})?");
+    private static final java.util.regex.Pattern RFC3339 = java.util.regex.Pattern.compile(
+            "(\\d{4})-(\\d{2})-(\\d{2})[Tt](\\d{2}):(\\d{2})(?::(\\d{2})(\\.\\d{1,9})?)?([Zz]|([+-])(\\d{2}):(\\d{2}))");
+
+    /** The value a JSON text holds, or null when it cannot be read; why is logged with the context. */
+    static <T> T readJson(String text, Class<T> type, String context) {
+        List<T> read = new ArrayList<>(1);
+        ExceptionDSL.exceptionSafe(() -> read.add(JSONObjectUtil.toObject(text, type)), context);
+        return read.isEmpty() ? null : read.get(0);
+    }
+
+    /** The exact signed long a JSON number holds, or null when it is absent or not an exact integer. */
+    static Long exactLong(Object value) {
+        if (value instanceof Long || value instanceof Integer || value instanceof Short || value instanceof Byte) {
+            return ((Number) value).longValue();
         }
-        if (!(value instanceof Number)) {
-            throw new IllegalArgumentException("Metric is not numeric");
-        }
-        try {
-            if (value instanceof Double) {
-                double number = (Double) value;
-                if (!Double.isFinite(number) || number != Math.rint(number)
-                        || Math.abs(number) > MAX_SAFE_DOUBLE_INTEGER) {
-                    throw new IllegalArgumentException("Unsafe floating-point metric");
-                }
-            } else if (value instanceof Float) {
-                float number = (Float) value;
-                if (!Float.isFinite(number) || number != Math.rint(number)
-                        || Math.abs(number) > MAX_SAFE_FLOAT_INTEGER) {
-                    throw new IllegalArgumentException("Unsafe floating-point metric");
-                }
-            }
+        if (value instanceof Double || value instanceof Float) {
+            double number = ((Number) value).doubleValue();
+            double safe = value instanceof Float ? MAX_SAFE_FLOAT_INTEGER : MAX_SAFE_DOUBLE_INTEGER;
             // Signed long is intentional: do not clamp valid negative differences/savings to zero.
-            return new BigDecimal(value.toString()).longValueExact();
-        } catch (ArithmeticException | NumberFormatException invalidNumber) {
-            throw new IllegalArgumentException("Metric is not an exact signed long", invalidNumber);
+            return Double.isFinite(number) && number == Math.rint(number) && Math.abs(number) <= safe ? (long) number : null;
         }
+        if (!(value instanceof Number) || !DECIMAL.matcher(value.toString()).matches()) { return null; }
+        BigDecimal number = new BigDecimal(value.toString());
+        if (number.signum() == 0) { return 0L; }
+        boolean whole = number.stripTrailingZeros().scale() <= 0;
+        boolean inRange = number.compareTo(BigDecimal.valueOf(Long.MIN_VALUE)) >= 0
+                && number.compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) <= 0;
+        return whole && inRange ? number.longValue() : null;
+    }
+
+    /** The exact long a decimal text spells, or null when it is not one. */
+    static Long parseExactLong(String text) {
+        return text != null && DECIMAL.matcher(text).matches() ? exactLong(new BigDecimal(text)) : null;
+    }
+
+    /** The epoch milliseconds of an RFC 3339 time (seconds may be left out), or null when the value is not one. */
+    public static Long epochMillis(Object value) {
+        java.util.regex.Matcher time = value instanceof String ? RFC3339.matcher((String) value) : null;
+        if (time == null || !time.matches()) { return null; }
+        int year = Integer.parseInt(time.group(1)), month = Integer.parseInt(time.group(2)), day = Integer.parseInt(time.group(3));
+        // Java's ISO-8601 text leaves out zero seconds.
+        int hour = Integer.parseInt(time.group(4)), minute = Integer.parseInt(time.group(5));
+        int second = time.group(6) == null ? 0 : Integer.parseInt(time.group(6));
+        if (month < 1 || month > 12 || day < 1 || day > java.time.YearMonth.of(year, month).lengthOfMonth()
+                || hour > 23 || minute > 59 || second > 59) { return null; }
+        String fraction = time.group(7) == null ? "" : time.group(7).substring(1);
+        int nanos = fraction.isEmpty() ? 0 : Integer.parseInt((fraction + "00000000").substring(0, 9));
+        int offsetSeconds = 0;
+        if (time.group(9) != null) {
+            int offsetHours = Integer.parseInt(time.group(10)), offsetMinutes = Integer.parseInt(time.group(11));
+            if (offsetHours > 18 || offsetMinutes > 59 || offsetHours == 18 && offsetMinutes > 0) { return null; }
+            offsetSeconds = ("-".equals(time.group(9)) ? -1 : 1) * (offsetHours * 3600 + offsetMinutes * 60);
+        }
+        return java.time.OffsetDateTime.of(year, month, day, hour, minute, second, nanos,
+                java.time.ZoneOffset.ofTotalSeconds(offsetSeconds)).toInstant().toEpochMilli();
     }
 
     private static String observationFailure(Object value, long now, long ttl) {
         if (!(value instanceof String)) {
             return "SAMPLE_TIME_MISSING";
         }
-        try {
-            long sampled;
-            try {
-                sampled = java.time.Instant.parse((String) value).toEpochMilli();
-            } catch (java.time.DateTimeException utcParseFailure) {
-                // Some supported JDK 8 builds parse RFC3339 offsets more reliably through OffsetDateTime.
-                sampled = java.time.OffsetDateTime.parse((String) value).toInstant().toEpochMilli();
-            }
-            if (sampled > now + 5000) {
-                return "SAMPLE_TIME_AHEAD";
-            }
-            return now - sampled >= ttl ? "SAMPLE_EXPIRED" : null;
-        } catch (java.time.DateTimeException | ArithmeticException invalid) {
+        Long sampled = epochMillis(value);
+        if (sampled == null) {
             return "SAMPLE_TIME_INVALID";
         }
+        if (sampled > now + 5000) {
+            return "SAMPLE_TIME_AHEAD";
+        }
+        return now - sampled >= ttl ? "SAMPLE_EXPIRED" : null;
     }
 }

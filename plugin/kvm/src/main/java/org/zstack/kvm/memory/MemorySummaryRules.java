@@ -1,9 +1,8 @@
 package org.zstack.kvm.memory;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.math.BigDecimal;
 import java.util.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -58,20 +57,19 @@ public final class MemorySummaryRules {
             if (!expected.contains(host.getHostUuid())) { continue; }
             byHost.put(host.getHostUuid(), host);
             if (host.getState() == null) { continue; }
-            try {
-                JsonObject json = new JsonParser().parse(host.getState()).getAsJsonObject();
-                if (!json.has("savings") || !json.get("savings").isJsonObject()) { continue; }
-                JsonObject savings = json.getAsJsonObject("savings");
-                // A POJO default must never turn an absent producer schema into a supported one.
-                if (!savings.has("formulaVersion") || !savings.has("quality")) { continue; }
-                HostMetrics sample = parseMetrics(savings, now);
-                if (sample == null) { continue; }
-                bucket = Math.max(bucket, sample.sampleTime / windowMillis);
-                samples.put(host.getHostUuid(), sample);
-            } catch (RuntimeException e) {
+            JsonObject json = storedObject(host.getState());
+            if (json == null) {
                 // A sample that cannot be read stays missing; the Host is named once for the summary's error.
-                unreadable.putIfAbsent(host.getHostUuid(), String.valueOf(e));
+                unreadable.putIfAbsent(host.getHostUuid(), UNREADABLE_SAMPLE);
+                continue;
             }
+            JsonObject savings = object(json, "savings");
+            // A POJO default must never turn an absent producer schema into a supported one.
+            if (savings == null || !savings.has("formulaVersion") || !savings.has("quality")) { continue; }
+            HostMetrics sample = parseMetrics(savings, now);
+            if (sample == null) { continue; }
+            bucket = Math.max(bucket, sample.sampleTime / windowMillis);
+            samples.put(host.getHostUuid(), sample);
         }
         MemorySummaryInventory result = new MemorySummaryInventory();
         result.setExpectedHosts(expected.size()); result.setQuality("Unknown");
@@ -151,9 +149,15 @@ public final class MemorySummaryRules {
         /** A sum that overflows is unknown: it reports no value and no covered Host. */
         void add(long next) {
             if (overflow) { return; }
-            try { value = Math.addExact(value, next); count++; }
-            catch (ArithmeticException e) { value = 0; count = 0; overflow = true; }
+            Long sum = addOrNull(value, next);
+            if (sum == null) { value = 0; count = 0; overflow = true; } else { value = sum; count++; }
         }
+    }
+
+    /** a + b, or null when the sum overflows a long. */
+    static Long addOrNull(long a, long b) {
+        long sum = a + b;
+        return ((a ^ sum) & (b ^ sum)) < 0 ? null : sum;
     }
     private static Aggregate aggregate(Map<String, HostMetrics> samples, long bucket, int metric) {
         Aggregate result = new Aggregate();
@@ -217,31 +221,36 @@ public final class MemorySummaryRules {
                 && seriesUsable(s, "zram", m.zram)
                 && m.ordinary >= 0 && m.zero >= 0 && m.total >= 0;
         if (m.totalSeries) {
-            try {
-                if (Math.addExact(m.ordinary, m.zero) != m.total || s.get("totalSavedEstimateBytes") == null
-                        || s.get("zramBytes") == null) m.totalSeries = false;
-                else { Long saved = number(s, "totalSavedEstimateBytes"); if (saved == null || Math.addExact(m.total, m.zram) != saved) m.totalSeries = false; else m.saved = saved; }
-            } catch (ArithmeticException overflow) { m.totalSeries = false; }
+            Long ksm = addOrNull(m.ordinary, m.zero);
+            Long saved = number(s, "totalSavedEstimateBytes");
+            Long expected = addOrNull(m.total, m.zram);
+            if (ksm == null || !ksm.equals(m.total) || s.get("totalSavedEstimateBytes") == null || s.get("zramBytes") == null
+                    || saved == null || !saved.equals(expected)) { m.totalSeries = false; } else { m.saved = saved; }
         }
-        try {
-            boolean splitMatches = m.zramNormal != null && m.zramWriteback != null && m.zram != null
-                    && Math.addExact(m.zramNormal, m.zramWriteback) == m.zram;
-            m.zramSplitObserved = splitMatches
-                    && (!m.metricQualityPresent || "observed".equalsIgnoreCase(quality(q, "zram")));
-            m.zramSplitDisabled = splitMatches && m.zramNormal == 0 && m.zramWriteback == 0 && m.zram == 0
-                    && "disabled".equalsIgnoreCase(quality(q, "zram"));
-        } catch (ArithmeticException overflow) {
-            m.zramSplitObserved = false;
-            m.zramSplitDisabled = false;
-        }
+        Long split = m.zramNormal == null || m.zramWriteback == null ? null : addOrNull(m.zramNormal, m.zramWriteback);
+        boolean splitMatches = split != null && split.equals(m.zram);
+        m.zramSplitObserved = splitMatches
+                && (!m.metricQualityPresent || "observed".equalsIgnoreCase(quality(q, "zram")));
+        m.zramSplitDisabled = splitMatches && m.zramNormal == 0 && m.zramWriteback == 0 && m.zram == 0
+                && "disabled".equalsIgnoreCase(quality(q, "zram"));
         return m;
     }
     private static Long number(JsonObject o, String key) {
         if (o == null || !o.has(key) || !o.get(key).isJsonPrimitive() || !o.getAsJsonPrimitive(key).isNumber()) return null;
-        try {
-            BigDecimal decimal = new BigDecimal(o.get(key).getAsString());
-            return decimal.stripTrailingZeros().scale() <= 0 ? decimal.longValueExact() : null;
-        } catch (RuntimeException e) { return null; }
+        return MemoryObservationRules.parseExactLong(o.get(key).getAsString());
+    }
+
+    private static final String UNREADABLE_SAMPLE = "the stored sample is not a JSON object";
+
+    /** A value present but not an exact number makes the whole sample unreadable. */
+    private static boolean malformedNumber(JsonObject o, String key) {
+        return o != null && o.has(key) && !o.get(key).isJsonNull() && number(o, key) == null;
+    }
+
+    /** The JSON object a stored sample holds, or null when it cannot be read as one. */
+    private static JsonObject storedObject(String json) {
+        JsonElement element = MemoryObservationRules.readJson(json, JsonElement.class, "stored memory sample is unreadable");
+        return element != null && element.isJsonObject() ? element.getAsJsonObject() : null;
     }
     private static String quality(JsonObject q, String key) { return q == null ? null : string(q, key); }
     /** A value is usable without a metricQuality, or with its quality observed; a metricQuality that is not an object observes nothing. */
@@ -268,69 +277,68 @@ public final class MemorySummaryRules {
             // to claim that optimization is currently enabled or disabled.
             increment(counts, "stale"); return;
         }
-        Map<String, Integer> hostCounts = new HashMap<>();
-        try {
-            JsonObject state = new JsonParser().parse(host.getState()).getAsJsonObject();
-            JsonObject caps = object(state, "capabilities");
-            JsonObject ksm = object(state, "ksm");
-            JsonObject zram = object(state, "zram");
-            JsonObject savings = object(state, "savings");
-            boolean classified = false;
-            String control = string(state, "control");
-            if ("paused".equals(control) || "drained".equals(control)) {
-                increment(hostCounts, "paused"); classified = true;
-            }
-            if (Boolean.TRUE.equals(boolObject(state, "inventoryComplete"))
-                    && state.has("vms") && state.get("vms").isJsonObject()
-                    && state.getAsJsonObject("vms").entrySet().isEmpty()) {
-                increment(hostCounts, "noRunningVms"); classified = true;
-            }
-            String reason = string(caps, "zramReasonCode");
-            if (reason == null) { reason = string(caps, "reasonCode"); }
-            boolean zramUnavailable = Boolean.FALSE.equals(boolObject(caps, "zram"));
-            if (Boolean.FALSE.equals(boolObject(caps, "supported"))
-                    || (zramUnavailable && reason != null && reason.startsWith("UNSUPPORTED_"))) {
-                increment(hostCounts, "unsupported"); classified = true;
-            }
-            JsonObject hostFeedback = object(object(zram, "status"), "host");
-            boolean explicitConditions = Boolean.FALSE.equals(boolObject(hostFeedback, "safe"))
-                    || "CONDITIONS_UNMET".equals(reason)
-                    || "HOST_FEEDBACK_UNSAFE".equals(string(hostFeedback, "reason"))
-                    || "HOST_FEEDBACK_UNSAFE".equals(reason);
-            if (explicitConditions) {
-                increment(hostCounts, "conditionsUnmet"); classified = true;
-            }
-            if (Boolean.TRUE.equals(boolObject(caps, "rebootRequired"))) {
-                increment(hostCounts, "rebootRequired"); classified = true;
-            }
-            Boolean ksmEnabled = boolObject(ksm, "enabled");
-            Boolean zramEnabled = boolObject(zram, "efficiencyEnabled");
-            boolean enabled = Boolean.TRUE.equals(ksmEnabled) || Boolean.TRUE.equals(zramEnabled);
-            if (Boolean.FALSE.equals(ksmEnabled) && Boolean.FALSE.equals(zramEnabled)) {
-                increment(hostCounts, "disabled"); classified = true;
-            }
-            // An observation the Agent could not read reports its reason.
-            boolean zramObserved = !"absent".equals(string(zram, "serviceState"));
-            if (string(ksm, "reason") != null || zramObserved && string(zram, "reason") != null
-                    || "error".equalsIgnoreCase(string(savings, "quality"))) {
-                increment(hostCounts, "error"); classified = true;
-            }
-            if (enabled && "Fresh".equals(string(savings, "quality"))
-                    && savings.has("sampleTime") && !savings.get("sampleTime").isJsonNull()
-                    && savings.get("sampleTime").getAsLong() <= now + 5000
-                    && now - savings.get("sampleTime").getAsLong() < MemoryOptimizationGlobalConfig.displayTtlMillis()
-                    && savings.has("totalSavedEstimateBytes")
-                    && savings.get("totalSavedEstimateBytes").isJsonPrimitive()) {
-                long saved = savings.get("totalSavedEstimateBytes").getAsLong();
-                increment(hostCounts, saved <= 0L ? "enabledNoSavings" : "active"); classified = true;
-            }
-            if (!classified) { increment(hostCounts, "unknown"); }
-            // Counted only once the whole sample is classified.
-            hostCounts.forEach((key, value) -> counts.merge(key, value, Integer::sum));
-        } catch (RuntimeException e) {
-            unreadable.putIfAbsent(host.getHostUuid(), String.valueOf(e));
+        JsonObject state = storedObject(host.getState());
+        JsonObject stored = object(state, "savings");
+        if (state == null || malformedNumber(stored, "sampleTime") || malformedNumber(stored, "totalSavedEstimateBytes")) {
+            // A sample that cannot be read is counted once, as unknown, and named for the summary's error.
+            unreadable.putIfAbsent(host.getHostUuid(), state == null ? UNREADABLE_SAMPLE : "a saving of the stored sample is not an exact number");
             increment(counts, "unknown");
+            return;
         }
+        Map<String, Integer> hostCounts = new HashMap<>();
+        JsonObject caps = object(state, "capabilities");
+        JsonObject ksm = object(state, "ksm");
+        JsonObject zram = object(state, "zram");
+        JsonObject savings = object(state, "savings");
+        boolean classified = false;
+        String control = string(state, "control");
+        if ("paused".equals(control) || "drained".equals(control)) {
+            increment(hostCounts, "paused"); classified = true;
+        }
+        if (Boolean.TRUE.equals(boolObject(state, "inventoryComplete"))
+                && state.has("vms") && state.get("vms").isJsonObject()
+                && state.getAsJsonObject("vms").entrySet().isEmpty()) {
+            increment(hostCounts, "noRunningVms"); classified = true;
+        }
+        String reason = string(caps, "zramReasonCode");
+        if (reason == null) { reason = string(caps, "reasonCode"); }
+        boolean zramUnavailable = Boolean.FALSE.equals(boolObject(caps, "zram"));
+        if (Boolean.FALSE.equals(boolObject(caps, "supported"))
+                || (zramUnavailable && reason != null && reason.startsWith("UNSUPPORTED_"))) {
+            increment(hostCounts, "unsupported"); classified = true;
+        }
+        JsonObject hostFeedback = object(object(zram, "status"), "host");
+        boolean explicitConditions = Boolean.FALSE.equals(boolObject(hostFeedback, "safe"))
+                || "CONDITIONS_UNMET".equals(reason)
+                || "HOST_FEEDBACK_UNSAFE".equals(string(hostFeedback, "reason"))
+                || "HOST_FEEDBACK_UNSAFE".equals(reason);
+        if (explicitConditions) {
+            increment(hostCounts, "conditionsUnmet"); classified = true;
+        }
+        if (Boolean.TRUE.equals(boolObject(caps, "rebootRequired"))) {
+            increment(hostCounts, "rebootRequired"); classified = true;
+        }
+        Boolean ksmEnabled = boolObject(ksm, "enabled");
+        Boolean zramEnabled = boolObject(zram, "efficiencyEnabled");
+        boolean enabled = Boolean.TRUE.equals(ksmEnabled) || Boolean.TRUE.equals(zramEnabled);
+        if (Boolean.FALSE.equals(ksmEnabled) && Boolean.FALSE.equals(zramEnabled)) {
+            increment(hostCounts, "disabled"); classified = true;
+        }
+        // An observation the Agent could not read reports its reason.
+        boolean zramObserved = !"absent".equals(string(zram, "serviceState"));
+        if (string(ksm, "reason") != null || zramObserved && string(zram, "reason") != null
+                || "error".equalsIgnoreCase(string(savings, "quality"))) {
+            increment(hostCounts, "error"); classified = true;
+        }
+        Long sampleTime = number(savings, "sampleTime");
+        Long saved = number(savings, "totalSavedEstimateBytes");
+        if (enabled && "Fresh".equals(string(savings, "quality")) && sampleTime != null && saved != null
+                && sampleTime <= now + 5000 && now - sampleTime < MemoryOptimizationGlobalConfig.displayTtlMillis()) {
+            increment(hostCounts, saved <= 0L ? "enabledNoSavings" : "active"); classified = true;
+        }
+        if (!classified) { increment(hostCounts, "unknown"); }
+        // Counted only once the whole sample is classified.
+        hostCounts.forEach((key, value) -> counts.merge(key, value, Integer::sum));
     }
 
     private static void increment(Map<String, Integer> counts, String key) {
