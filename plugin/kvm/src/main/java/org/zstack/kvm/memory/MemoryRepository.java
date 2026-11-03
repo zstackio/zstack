@@ -1,9 +1,9 @@
 package org.zstack.kvm.memory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
@@ -30,6 +30,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
@@ -84,21 +85,23 @@ public class MemoryRepository {
     // ---------------------------------------------------------------- scope
 
     private void validateResource(EntityManager em, String scope, String resource) {
-        if ("Global".equals(scope)) {
-            if (!"global".equals(resource)) { throw error("MEMORY_INVALID_SCOPE", "Global resource must be global"); }
-        } else if ("Cluster".equals(scope)) {
-            if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(clusterHypervisor(resource))) {
-                throw error("MEMORY_INVALID_SCOPE", "Expected an existing KVM Cluster");
-            }
-        } else if ("Host".equals(scope)) {
-            if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(hostHypervisor(resource))) {
-                throw error("MEMORY_INVALID_SCOPE", "Expected an existing KVM Host");
-            }
-        } else if ("VM".equals(scope)) {
-            if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, resource).isExists()) {
-                throw error("MEMORY_INVALID_SCOPE", "VM does not exist");
-            }
-        } else { throw error("MEMORY_INVALID_SCOPE", "Unknown memory scope"); }
+        String refusal = resourceRefusal(scope, resource);
+        if (refusal != null) { throw error("MEMORY_INVALID_SCOPE", refusal); }
+    }
+
+    /** Why the resource of the scope cannot be targeted, or null when it can. */
+    private static String resourceRefusal(String scope, String resource) {
+        if ("Global".equals(scope)) { return "global".equals(resource) ? null : "Global resource must be global"; }
+        if ("Cluster".equals(scope)) {
+            return KVMConstant.KVM_HYPERVISOR_TYPE.equals(clusterHypervisor(resource)) ? null : "Expected an existing KVM Cluster";
+        }
+        if ("Host".equals(scope)) {
+            return KVMConstant.KVM_HYPERVISOR_TYPE.equals(hostHypervisor(resource)) ? null : "Expected an existing KVM Host";
+        }
+        if ("VM".equals(scope)) {
+            return Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, resource).isExists() ? null : "VM does not exist";
+        }
+        return "Unknown memory scope";
     }
 
     private static boolean nonKvm(EntityManager em, String scope, String resource) {
@@ -176,13 +179,22 @@ public class MemoryRepository {
 
     /** Standard memory configuration is stored by GlobalConfig (no resource) or a Host/Cluster ResourceConfig. */
     private String standardScope(EntityManager em, String resourceUuid) {
+        String scope = standardScopeOrNull(resourceUuid);
+        if (scope == null) { throw error("MEMORY_INVALID_SCOPE", NOT_HOST_OR_CLUSTER); }
+        return scope;
+    }
+
+    private static final String NOT_HOST_OR_CLUSTER = "Memory configuration requires a KVM Host or Cluster";
+
+    /** Global, Host or Cluster; null for any other resource. */
+    private static String standardScopeOrNull(String resourceUuid) {
         if (resourceUuid == null) { return "Global"; }
         // Only the registry discriminator is needed; materializing JOINED
         // ResourceVO exceeds MariaDB's join limit in the full product.
         String resourceType = Q.New(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
         if (HostVO.class.getSimpleName().equals(resourceType)) { return "Host"; }
         if (org.zstack.header.cluster.ClusterVO.class.getSimpleName().equals(resourceType)) { return "Cluster"; }
-        throw error("MEMORY_INVALID_SCOPE", "Memory configuration requires a KVM Host or Cluster");
+        return null;
     }
 
     private static MemoryStandardField.Scope scopeOf(String scope) {
@@ -190,18 +202,15 @@ public class MemoryRepository {
                 : "Cluster".equals(scope) ? MemoryStandardField.Scope.CLUSTER : MemoryStandardField.Scope.HOST;
     }
 
-    /** Scope check of one standard value before GlobalConfig/ResourceConfig persists it. */
-    public void validateStandardChange(MemoryStandardField field, String resourceUuid, String newValue) {
-        transaction(em -> {
-            String scope = standardScope(em, resourceUuid);
-            if (!field.allows(scopeOf(scope))) {
-                throw error("MEMORY_INVALID_SCOPE", field.path() + " does not support " + scope);
-            }
+    /** Why a standard value cannot be stored on the resource, or null when it can. */
+    public String standardChangeRefusal(MemoryStandardField field, String resourceUuid) {
+        return transaction(em -> {
+            String scope = standardScopeOrNull(resourceUuid);
+            if (scope == null) { return NOT_HOST_OR_CLUSTER; }
+            if (!field.allows(scopeOf(scope))) { return field.path() + " does not support " + scope; }
             // The legacy host.ksm switch was settable on any Host or Cluster before memory optimization.
-            if (field != MemoryStandardField.KSM_ENABLED || !nonKvm(em, scope, resourceUuid)) {
-                validateResource(em, scope, resourceUuid == null ? "global" : resourceUuid);
-            }
-            return null;
+            if (field == MemoryStandardField.KSM_ENABLED && nonKvm(em, scope, resourceUuid)) { return null; }
+            return resourceRefusal(scope, resourceUuid == null ? "global" : resourceUuid);
         });
     }
 
@@ -292,7 +301,7 @@ public class MemoryRepository {
     public Planned plan(String host, String control, String action, String actor, License license, Origin origin) {
         try {
             return planOnce(host, control, action, actor, license, origin);
-        } catch (RuntimeException e) {
+        } catch (DataIntegrityViolationException | PersistenceException e) {
             // Two first plans of a Host may both insert its state; the later one plans again on the row the first made.
             if (!duplicatePrimaryKey(e)) { throw e; }
             return planOnce(host, control, action, actor, license, origin);
@@ -579,12 +588,10 @@ public class MemoryRepository {
         boolean fresh = state.getLastSampleTime() != null
                 && System.currentTimeMillis() - state.getLastSampleTime() < MemoryOptimizationGlobalConfig.displayTtlMillis();
         if (fresh && state.getState() != null) {
-            try { observed = JSONObjectUtil.toObject(state.getState(), LinkedHashMap.class); }
-            catch (JsonParseException invalid) {
-                logger.error(String.format("Host[%s] stored memory observation is unreadable; it is shown as Unknown",
-                        state.getHostUuid()), invalid);
-                observationUnreadable = true;
-            }
+            Map<String, Object> read = MemoryObservationRules.readJson(state.getState(), LinkedHashMap.class, String.format(
+                    "Host[%s] stored memory observation is unreadable; it is shown as Unknown", state.getHostUuid()));
+            observationUnreadable = read == null;
+            observed = observationUnreadable ? Collections.emptyMap() : read;
         }
         Map<String, Object> desired = storedDesired(state);
         boolean zramWanted = desired != null && Boolean.TRUE.equals(field(desired.get("zram"), "enabled"));
@@ -621,12 +628,8 @@ public class MemoryRepository {
     @SuppressWarnings("unchecked")
     static Map<String, Object> storedDesired(MemoryStateVO state) {
         if (state.getDesired() == null) { return Collections.emptyMap(); }
-        try { return JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class); }
-        catch (JsonParseException invalid) {
-            logger.error(String.format("Host[%s] stored memory configuration is unreadable; it is planned again",
-                    state.getHostUuid()), invalid);
-            return null;
-        }
+        return MemoryObservationRules.readJson(state.getDesired(), LinkedHashMap.class, String.format(
+                "Host[%s] stored memory configuration is unreadable; it is planned again", state.getHostUuid()));
     }
 
     /** A Host that reports it cannot run ZRAM runs without it; the Agent leaves it unmanaged. */
@@ -752,13 +755,14 @@ public class MemoryRepository {
         if (!"ACTIVE".equals(observed.get("state")) || !Boolean.TRUE.equals(observed.get("active"))
                 || !(resource instanceof String) || !(recorded instanceof String) || resource.equals(recorded)
                 || !(recordedCapacity instanceof Long)) { return; }
-        try {
-            if (!recordedCapacity.equals(MemoryWritebackBackendInventory.exactLong(observed.get("capacity_bytes")))) { return; }
-            recordPreparedBackend(em, host, (String) resource, (Long) recordedCapacity);
-            logger.info(String.format("Host[%s] writeback backend %s is now %s", host, recorded, resource));
-        } catch (IllegalArgumentException invalid) {
-            logger.warn(String.format("Host[%s] reported an invalid writeback backend %s", host, observed), invalid);
+        Long capacity = MemoryObservationRules.exactLong(observed.get("capacity_bytes"));
+        if (capacity == null || !MemoryStandardField.isBackendResource((String) resource)) {
+            logger.warn(String.format("Host[%s] reported an invalid writeback backend %s", host, observed));
+            return;
         }
+        if (!recordedCapacity.equals(capacity)) { return; }
+        recordPreparedBackend(em, host, (String) resource, (Long) recordedCapacity);
+        logger.info(String.format("Host[%s] writeback backend %s is now %s", host, recorded, resource));
     }
 
     // ----------------------------------------------------- migration holds

@@ -5,7 +5,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.kvm.KVMGlobalConfig;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -76,20 +75,24 @@ public enum MemoryStandardField {
                 if (!(value instanceof Boolean)) { throw incompatible(value); }
                 return value;
             case LONG:
-                if (!(value instanceof Number)) { throw incompatible(value); }
-                try { return new BigDecimal(value.toString()).longValueExact(); }
-                catch (ArithmeticException | NumberFormatException e) { throw incompatible(value); }
+                Long number = MemoryObservationRules.exactLong(value);
+                if (number == null) { throw incompatible(value); }
+                return number;
             case STRING:
                 if (!(value instanceof String)) { throw incompatible(value); }
                 String text = (String) value;
-                if ("writeback.backendResourceUuid".equals(path)
-                        && !text.matches("(?i)[0-9a-f]{32}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")) {
+                if ("writeback.backendResourceUuid".equals(path) && !isBackendResource(text)) {
                     throw new IllegalArgumentException("writeback.backendResourceUuid must be a UUID");
                 }
                 if (text.length() > 128) { throw new IllegalArgumentException("memory config string exceeds 128 characters"); }
                 return value;
             default: throw new IllegalStateException("unknown type " + kind);
         }
+    }
+
+    /** Whether the text is a writeback backend resource UUID, dashed or not. */
+    static boolean isBackendResource(String text) {
+        return text != null && text.matches("(?i)[0-9a-f]{32}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}");
     }
 
     private IllegalArgumentException incompatible(Object value) {

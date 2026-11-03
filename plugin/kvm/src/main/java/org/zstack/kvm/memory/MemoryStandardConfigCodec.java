@@ -1,7 +1,5 @@
 package org.zstack.kvm.memory;
 
-import java.math.BigDecimal;
-
 /** Strict conversion between memory-policy scalar paths and standard config strings. */
 public final class MemoryStandardConfigCodec {
     private MemoryStandardConfigCodec() { }
@@ -18,21 +16,24 @@ public final class MemoryStandardConfigCodec {
         MemoryStandardField field = MemoryStandardField.forPath(path);
         if (value == null || value.trim().isEmpty()) { return null; }
         if (field.isFeatureSwitch() && "none".equalsIgnoreCase(value.trim())) { return null; }
-        try {
-            switch (field.kind()) {
-                case BOOLEAN:
-                    if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) { throw malformed(path, value); }
-                    return Boolean.parseBoolean(value);
-                case LONG: return new BigDecimal(value).longValueExact();
-                case STRING:
-                    Object checked = field.normalize(value);
-                    return checked;
-                default: throw new IllegalStateException("unknown memory field type");
-            }
-        } catch (ArithmeticException | NumberFormatException e) { throw malformed(path, value); }
+        String problem = problem(path, value);
+        if (problem != null) { throw new IllegalArgumentException(problem); }
+        switch (field.kind()) {
+            case BOOLEAN: return Boolean.parseBoolean(value);
+            case LONG: return MemoryObservationRules.parseExactLong(value);
+            case STRING: return field.normalize(value);
+            default: throw new IllegalStateException("unknown memory field type");
+        }
     }
 
-    private static IllegalArgumentException malformed(String path, String value) {
-        return new IllegalArgumentException("invalid value for memory field " + path + ": " + value);
+    /** Why the stored text is not a value of the field, or null when it is (blank and none included). */
+    static String problem(String path, String value) {
+        MemoryStandardField field = MemoryStandardField.forPath(path);
+        if (value == null || value.trim().isEmpty() || field.isFeatureSwitch() && "none".equalsIgnoreCase(value.trim())) {
+            return null;
+        }
+        boolean valid = field.kind() == MemoryStandardField.Kind.BOOLEAN ? "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)
+                : field.kind() != MemoryStandardField.Kind.LONG || MemoryObservationRules.parseExactLong(value) != null;
+        return valid ? null : "invalid value for memory field " + path + ": " + value;
     }
 }

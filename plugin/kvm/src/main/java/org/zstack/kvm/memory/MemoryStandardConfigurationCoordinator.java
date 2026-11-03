@@ -8,15 +8,12 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.function.BiConsumer;
 
 /** Hooks standard memory configuration into the existing GlobalConfig/ResourceConfig extension points. */
 public final class MemoryStandardConfigurationCoordinator {
-    private static final CLogger logger = Utils.getLogger(MemoryStandardConfigurationCoordinator.class);
     private final MemoryRepository repository;
     private final PluginRegistry registry;
     private final ThreadFacade thdf;
@@ -54,15 +51,15 @@ public final class MemoryStandardConfigurationCoordinator {
 
     /** Pure scalar validation. Cross-field rules are checked against the stored candidate in validateChange. */
     public static void validateScalar(MemoryStandardField field, String value) {
-        try {
-            if (value == null || value.trim().isEmpty()) {
-                throw new IllegalArgumentException("Blank memory configuration is not an override; delete the resource override to inherit");
-            }
-            Object decoded = MemoryStandardConfigCodec.decode(field.path(), value);
-            if (decoded instanceof Long && ((Long) decoded < 4096 || (Long) decoded % 4096 != 0)) {
-                throw new IllegalArgumentException(field.path() + " must be a positive 4KiB-aligned byte count");
-            }
-        } catch (IllegalArgumentException invalid) { throw new GlobalConfigException(invalid.getMessage(), invalid); }
+        if (value == null || value.trim().isEmpty()) {
+            throw new GlobalConfigException("Blank memory configuration is not an override; delete the resource override to inherit");
+        }
+        String problem = MemoryStandardConfigCodec.problem(field.path(), value);
+        if (problem != null) { throw new GlobalConfigException(problem); }
+        Object decoded = MemoryStandardConfigCodec.decode(field.path(), value);
+        if (decoded instanceof Long && ((Long) decoded < 4096 || (Long) decoded % 4096 != 0)) {
+            throw new GlobalConfigException(field.path() + " must be a positive 4KiB-aligned byte count");
+        }
     }
 
     /** The prepared backend is recorded by PrepareHostMemoryWritebackBackend, not set as configuration. */
@@ -82,11 +79,8 @@ public final class MemoryStandardConfigurationCoordinator {
                 throw new GlobalConfigException("A valid Cloud License is required for memory configuration changes");
             }
         }
-        try {
-            repository.validateStandardChange(field, resourceUuid, newValue);
-        } catch (IllegalArgumentException invalid) {
-            throw new GlobalConfigException(invalid.getMessage(), invalid);
-        }
+        String refusal = repository.standardChangeRefusal(field, resourceUuid);
+        if (refusal != null) { throw new GlobalConfigException(refusal); }
     }
 
     /** Whether a committed change turns ZRAM back on: a drained Host resumes only for such a change. */
@@ -107,11 +101,8 @@ public final class MemoryStandardConfigurationCoordinator {
         thdf.submit(new Task<Void>() {
             @Override public String getName() { return "memory-standard-config-changed"; }
             @Override public Void call() {
-                try {
-                    changed.accept(resourceUuid, zram);
-                } catch (RuntimeException e) {
-                    logger.error(String.format("unable to plan the memory configuration for resource[%s]", resourceUuid), e);
-                }
+                // standardConfigurationChanged keeps an unplanned resource for the next scan.
+                changed.accept(resourceUuid, zram);
                 return null;
             }
         });

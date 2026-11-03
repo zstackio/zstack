@@ -1,11 +1,13 @@
 package org.zstack.kvm.memory;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
@@ -66,8 +68,9 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
 
     static boolean hasPoolGeneration(String raw) {
         if (raw == null || raw.trim().isEmpty()) { return false; }
-        try { return hasPoolGeneration(new JsonParser().parse(raw)); }
-        catch (RuntimeException ignored) { return false; }
+        com.google.gson.JsonElement element = MemoryObservationRules.readJson(raw, com.google.gson.JsonElement.class,
+                "memory pool generation is unreadable");
+        return element != null && hasPoolGeneration(element);
     }
 
     private static boolean hasPoolGeneration(com.google.gson.JsonElement element) {
@@ -457,13 +460,11 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     @Override public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) { }
 
     /** The VM operation does not depend on its memory binding; the next observation binds it again. */
-    private static void safely(VmInstanceInventory inv, Runnable binding) {
-        try {
-            binding.run();
-        } catch (RuntimeException e) {
-            logger.error(String.format("VM[%s] memory optimization binding was not updated; the next observation binds it again",
-                    inv.getUuid()), e);
-        }
+    @ExceptionSafe @Deferred
+    static void safely(VmInstanceInventory inv, Runnable binding) {
+        Defer.guard(() -> logger.error(String.format(
+                "VM[%s] memory optimization binding was not updated; the next observation binds it again", inv.getUuid())));
+        binding.run();
     }
 
     private void lifecycleBinding(VmInstanceInventory inv, String action) {
@@ -601,46 +602,57 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             @Override public void success() { reconcilingHolds.remove(hold.operationUuid); completion.success(); }
             @Override public void fail(ErrorCode errorCode) { reconcilingHolds.remove(hold.operationUuid); completion.fail(errorCode); }
         };
-        try {
-            locateVm(hold, (source, target) -> {
-                // The side that is bound needs its instance generation; a target without a pool needs none.
-                boolean onSource = source.present && source.generation != null
-                        && target.authoritative && !target.present;
-                boolean onTarget = target.present && (target.generation != null || !managedZram(hold.targetHostUuid))
-                        && source.authoritative && !source.present;
-                boolean nowhere = source.authoritative && !source.present && target.authoritative && !target.present;
-                boolean confirmed = !running ? nowhere : confirmedHost.equals(hold.sourceHostUuid) ? onSource : onTarget;
-                if (!confirmed) {
-                    done.fail(error("MEMORY_INVALID_REQUEST", String.format("Hosts do not show the VM only %s: source %s,"
-                            + " target %s", running ? "on Host[" + confirmedHost + "]" : "stopped",
-                            describe(source), describe(target))));
-                    return;
-                }
-                if (!running) { releaseRecoveredHold(hold, done); return; }
-                if (confirmedHost.equals(hold.sourceHostUuid)) {
-                    hold.sourceInstanceGeneration = source.generation; record(hold);
-                    rebind(recoveryOperation(hold), Side.SOURCE, rebound -> {
-                        if (rebound) { releaseRecoveredHold(hold, done); }
-                        else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM rebinding remains unknown")); }
-                    });
-                    return;
-                }
-                if (target.generation != null) { hold.targetInstanceGeneration = target.generation; record(hold); }
-                MemoryMigrationVO operation = recoveryOperation(hold);
-                Consumer<Boolean> afterBind = rebound -> {
-                    if (!rebound) { done.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
-                    if (!hostExists(hold.sourceHostUuid)) { releaseRecoveredHold(hold, done); return; }
-                    revoke(operation, revoked -> {
-                        if (revoked) { releaseRecoveredHold(hold, done); }
-                        else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM revocation remains unknown")); }
-                    });
-                };
-                // A target without a service-owned pool has nothing to bind.
-                if (managedZram(hold.targetHostUuid)) { rebind(operation, Side.TARGET, afterBind); } else { afterBind.accept(true); }
-            });
-        } catch (RuntimeException e) {
-            done.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold recovery failed: " + e.getMessage()));
+        startRecovery(hold, running, confirmedHost, done);
+    }
+
+    /*
+     * Each recovery step takes the recovery's Completion: an exception in a step fails it
+     * (AsyncSafeAspect), which frees the hold for a retry.
+     */
+    private void startRecovery(MemoryMigrationVO hold, boolean running, String confirmedHost, Completion done) {
+        locateVm(hold, (source, target) -> recoverLocated(hold, running, confirmedHost, source, target, done));
+    }
+
+    private void recoverLocated(MemoryMigrationVO hold, boolean running, String confirmedHost,
+                                VmIdentity source, VmIdentity target, Completion done) {
+        // The side that is bound needs its instance generation; a target without a pool needs none.
+        boolean onSource = source.present && source.generation != null
+                && target.authoritative && !target.present;
+        boolean onTarget = target.present && (target.generation != null || !managedZram(hold.targetHostUuid))
+                && source.authoritative && !source.present;
+        boolean nowhere = source.authoritative && !source.present && target.authoritative && !target.present;
+        boolean confirmed = !running ? nowhere : confirmedHost.equals(hold.sourceHostUuid) ? onSource : onTarget;
+        if (!confirmed) {
+            done.fail(error("MEMORY_INVALID_REQUEST", String.format("Hosts do not show the VM only %s: source %s,"
+                    + " target %s", running ? "on Host[" + confirmedHost + "]" : "stopped",
+                    describe(source), describe(target))));
+            return;
         }
+        if (!running) { releaseRecoveredHold(hold, done); return; }
+        if (confirmedHost.equals(hold.sourceHostUuid)) {
+            hold.sourceInstanceGeneration = source.generation; record(hold);
+            rebind(recoveryOperation(hold), Side.SOURCE,
+                    rebound -> releaseIfConfirmed(hold, rebound, "Source VM rebinding remains unknown", done));
+            return;
+        }
+        if (target.generation != null) { hold.targetInstanceGeneration = target.generation; record(hold); }
+        MemoryMigrationVO operation = recoveryOperation(hold);
+        // A target without a service-owned pool has nothing to bind.
+        if (managedZram(hold.targetHostUuid)) {
+            rebind(operation, Side.TARGET, rebound -> targetRecovered(hold, operation, rebound, done));
+        } else {
+            targetRecovered(hold, operation, true, done);
+        }
+    }
+
+    private void targetRecovered(MemoryMigrationVO hold, MemoryMigrationVO operation, boolean rebound, Completion done) {
+        if (!rebound) { done.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
+        if (!hostExists(hold.sourceHostUuid)) { releaseRecoveredHold(hold, done); return; }
+        revoke(operation, revoked -> releaseIfConfirmed(hold, revoked, "Source VM revocation remains unknown", done));
+    }
+
+    private void releaseIfConfirmed(MemoryMigrationVO hold, boolean confirmed, String unknown, Completion done) {
+        if (confirmed) { releaseRecoveredHold(hold, done); } else { done.fail(error("MEMORY_RESULT_UNKNOWN", unknown)); }
     }
 
     /**

@@ -159,4 +159,27 @@ public class MemoryObservationRulesTest {
         return response;
     }
 
+    @Test public void exactLongAcceptsOnlyExactIntegersWithoutThrowing() {
+        assertEquals(Long.valueOf(-4096), MemoryObservationRules.exactLong(-4096d));
+        assertEquals(Long.valueOf(7), MemoryObservationRules.exactLong(7));
+        assertEquals(Long.valueOf(9007199254740993L), MemoryObservationRules.exactLong(new java.math.BigInteger("9007199254740993")));
+        assertEquals(Long.valueOf(1200), MemoryObservationRules.exactLong(new java.math.BigDecimal("1.2E3")));
+        for (Object invalid : java.util.Arrays.<Object>asList(null, "7", 1.5d, Double.NaN, 9007199254740992d,
+                new java.math.BigDecimal("1E30"), new java.math.BigDecimal("0.5"))) {
+            assertNull("not an exact long: " + invalid, MemoryObservationRules.exactLong(invalid));
+        }
+        assertNull("an exponent beyond any long", MemoryObservationRules.parseExactLong("1e99999999999"));
+    }
+
+    @Test public void epochMillisReadsRfc3339AndRejectsImpossibleTimesWithoutThrowing() {
+        assertEquals(Long.valueOf(1791468260720L), MemoryObservationRules.epochMillis("2026-10-08T14:04:20.720910Z"));
+        assertEquals(Long.valueOf(1791468260000L), MemoryObservationRules.epochMillis("2026-10-08T22:04:20+08:00"));
+        assertEquals(Long.valueOf(1709164800000L), MemoryObservationRules.epochMillis("2024-02-29T00:00:00Z"));
+        assertEquals("zero seconds may be left out", Long.valueOf(1800000900000L), MemoryObservationRules.epochMillis("2027-01-15T08:15Z"));
+        for (String invalid : java.util.Arrays.asList("2026-02-29T00:00:00Z", "2026-13-01T00:00:00Z", "2026-10-08T24:00:00Z",
+                "2026-10-08T14:04:20", "2026-10-08T14:04:20+19:00", "yesterday", "")) {
+            assertNull("not an RFC 3339 time: " + invalid, MemoryObservationRules.epochMillis(invalid));
+        }
+        assertNull(MemoryObservationRules.epochMillis(1791468260720L));
+    }
 }
