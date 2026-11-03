@@ -420,8 +420,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             requireLicense();
             repository.targets("Host", host);
             if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
-                MemoryBackendPreparationRules.validate(msg.getPreparation());
-                prepareBackend(host, msg.getPreparation(), actor, deadline, finish);
+                MemoryBackendPreparationRules.validate(msg.getCandidateId());
+                prepareBackend(host, msg.getCandidateId(), actor, deadline, finish);
                 return;
             }
             String control = PAUSE.equals(msg.getAction()) ? "paused" : RESUME.equals(msg.getAction()) ? "active"
@@ -562,7 +562,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** Prepares the selected disk, resending until the Agent finishes, then binds it to the Host. */
-    private void prepareBackend(String host, MemoryBackendPreparation preparation, String actor, long deadline,
+    private void prepareBackend(String host, String candidateId, String actor, long deadline,
                                 Consumer<String> finish) {
         if (!preparing.add(host)) {
             throw new MemoryOperationException("MEMORY_HOST_BUSY", "A writeback backend is already being prepared on this Host");
@@ -587,16 +587,37 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             deliver(host);
             finish.accept(outcome);
         };
-        Map<String, Object> command = command(host, Platform.getUuid());
-        command.put("action", "prepare");
-        command.put("generation", generation);
-        command.put("candidateId", preparation.getCandidateId());
-        command.put("expectedHostBootId", preparation.getExpectedHostBootId());
-        command.put("expectedPoolGeneration", preparation.getExpectedPoolGeneration());
-        command.put("backendCapacityBytes", preparation.getBackendCapacityBytes());
-        command.put("resetConfirmed", preparation.isResetConfirmed());
-        afterApplyInFlight(host, deadline,
-                () -> sendPrepare(host, command, preparation.getBackendCapacityBytes(), actor, deadline, 0, done), done);
+        afterApplyInFlight(host, deadline, () -> preparationCommand(host, generation, candidateId, done,
+                (command, capacity) -> sendPrepare(host, command, capacity, actor, deadline, 0, done)), done);
+    }
+
+    /** The Host's boot, pool and disk size for the candidate, read just before the disk is reset. */
+    private void preparationCommand(String host, long generation, String candidateId, Consumer<String> done,
+                                    java.util.function.BiConsumer<Map<String, Object>, Long> then) {
+        call(host, "writeback-backends", command(host, Platform.getUuid()), response -> {
+            if (response == null || !response.isSuccess() || response.state == null) {
+                done.accept("Failed: " + (response == null ? "AGENT_UNREACHABLE"
+                        : response.reasonCode != null ? response.reasonCode : response.reason));
+                return;
+            }
+            String refusal = MemoryBackendPreparationRules.refusal(response.state, candidateId);
+            if (refusal != null) {
+                done.accept("MEMORY_BACKEND_PREPARATION_INVALID: " + refusal);
+                return;
+            }
+            long capacity = ((Number) MemoryBackendPreparationRules.candidate(response.state, candidateId)
+                    .get("capacityBytes")).longValue();
+            Map<String, Object> command = command(host, Platform.getUuid());
+            command.put("action", "prepare");
+            command.put("generation", generation);
+            command.put("candidateId", candidateId);
+            command.put("expectedHostBootId", response.state.get("bootId"));
+            command.put("expectedPoolGeneration", response.state.get("poolGeneration"));
+            command.put("backendCapacityBytes", capacity);
+            // The administrator confirmed the reset by calling the API.
+            command.put("resetConfirmed", true);
+            then.accept(command, capacity);
+        });
     }
 
     /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
