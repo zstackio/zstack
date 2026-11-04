@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network.sdnController
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.sdk.*
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant
@@ -8,6 +9,7 @@ import org.zstack.sugonSdnController.controller.api.types.Project
 import org.zstack.sugonSdnController.controller.api.types.VirtualMachineInterface
 import org.zstack.sugonSdnController.controller.api.ApiSerializer
 import org.zstack.sugonSdnController.controller.api.TfCommands
+import org.zstack.sugonSdnController.network.TfZstackPortSync
 import org.zstack.sdnController.header.SdnControllerVO
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.testlib.EnvSpec
@@ -15,6 +17,9 @@ import org.zstack.testlib.SubCase
 import javax.persistence.TypedQuery;
 import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
+
+import javax.servlet.http.HttpServletRequest
+import java.util.concurrent.atomic.AtomicInteger
 
 
 class SugonSdnControllerCase extends SubCase {
@@ -37,6 +42,7 @@ class SugonSdnControllerCase extends SubCase {
     void test() {
         env.create {
             dbf = bean(DatabaseFacade.class)
+            testTfPortSyncTriggeredForController()
             testTfApi()
         }
     }
@@ -44,6 +50,44 @@ class SugonSdnControllerCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testTfPortSyncTriggeredForController() {
+        String sql = "select sdn" +
+                " from SdnControllerVO sdn" +
+                " where sdn.vendorType = :vendorType";
+        TypedQuery<SdnControllerVO> q = dbf.getEntityManager().createQuery(sql, SdnControllerVO.class);
+        q.setParameter("vendorType", SugonSdnControllerConstant.TF_CONTROLLER);
+        SdnControllerVO sdn = q.getResultList().get(0);
+        AtomicInteger syncCount = new AtomicInteger(0)
+
+        env.simulator(TfCommands.TF_CREATE_VMI) { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            if (req.method == "GET") {
+                syncCount.incrementAndGet()
+                return '{"virtual-machine-interfaces":[]}'
+            }
+
+            VirtualMachineInterface rsp = new VirtualMachineInterface();
+            rsp.name = TfCommands.TEST_VMI_UUID
+            rsp.uuid = TfCommands.TEST_VMI_UUID
+            Project project = new Project();
+            project.name = TfCommands.TEST_PROJECT_UUID
+            project.uuid = TfCommands.TEST_PROJECT_UUID
+            project.displayName = "admin";
+            rsp.setParent(project)
+            String json = ApiSerializer.serializeObject("virtual-machine-interface", rsp);
+            ResponseEntity<String> response = new ResponseEntity<String>(json, HttpStatus.OK);
+            return response.getBody()
+        }
+
+        bean(TfZstackPortSync.class).triggerSyncIfDue(sdn.uuid)
+        retryInSecs {
+            assert syncCount.get() == 1
+        }
+
+        bean(TfZstackPortSync.class).triggerSyncIfDue(sdn.uuid)
+        sleep(500)
+        assert syncCount.get() == 1
     }
 
     void testTfApi() {

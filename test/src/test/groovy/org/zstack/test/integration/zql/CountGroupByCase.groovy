@@ -36,6 +36,7 @@ class CountGroupByCase extends SubCase {
         env.create {
             testCountGroupBy()
             testQuery()
+            testFieldQueryTotalWithNullableFirstField()
             testGroupLimit()
             testEmpty()
         }
@@ -78,6 +79,13 @@ class CountGroupByCase extends SubCase {
         def ret2 = ZQL.fromString("query instanceoffering return with (total) limit 100").getSingleResult() as ZQLQueryReturn
         assert ret2.inventories.size() == 100
         assert ret2.total == 102
+    }
+
+    void testFieldQueryTotalWithNullableFirstField() {
+        def ret = ZQL.fromString("query instanceoffering.description,uuid return with (total) limit 100").getSingleResult() as ZQLQueryReturn
+        assert ret.inventories.size() == 100
+        assert ret.total == 102
+        assert ret.inventories.every { it.description == null }
     }
 
     void testGroupLimit() {

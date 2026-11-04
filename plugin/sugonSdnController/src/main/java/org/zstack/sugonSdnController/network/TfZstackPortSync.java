@@ -2,9 +2,8 @@ package org.zstack.sugonSdnController.network;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.Q;
-import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.vm.VmNicVO;
@@ -19,39 +18,57 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.Future;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
+public class TfZstackPortSync {
+    private static final long SYNC_INTERVAL_MILLIS = TimeUnit.DAYS.toMillis(1);
+    private static final int MAX_DELETE_COUNT = 10;
 
     @Autowired
     protected ThreadFacade thdf;
-    private Future<Void> trackerThread = null;
     @Autowired
     private TfPortService tfPortService;
     private final static CLogger logger = Utils.getLogger(TfZstackPortSync.class);
     private final List<String> excludeTypes = new ArrayList<String>(Arrays.asList("neutron:LOADBALANCER", "VIP", "BMS"));
+    private final Map<String, Long> lastSyncTime = new ConcurrentHashMap<>();
+    private final Set<String> runningSyncs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-    @Override
-    public void managementNodeReady() {
-        if (trackerThread != null) {
-            trackerThread.cancel(true);
+    public void triggerSyncIfDue(String sdnControllerUuid) {
+        if (sdnControllerUuid == null) {
+            logger.warn("Port_Sync_Task: skip sync because sdn controller uuid is null.");
+            return;
         }
-        trackerThread = thdf.submitPeriodicTask(new SyncPort());
+
+        long now = System.currentTimeMillis();
+        Long lastSync = lastSyncTime.get(sdnControllerUuid);
+        if (lastSync != null && now - lastSync < SYNC_INTERVAL_MILLIS) {
+            return;
+        }
+        if (!runningSyncs.add(sdnControllerUuid)) {
+            return;
+        }
+
+        lastSyncTime.put(sdnControllerUuid, now);
+        try {
+            thdf.submit(new SyncPort(sdnControllerUuid));
+        } catch (RuntimeException e) {
+            lastSyncTime.remove(sdnControllerUuid);
+            runningSyncs.remove(sdnControllerUuid);
+            throw e;
+        }
     }
 
-    private class SyncPort implements PeriodicTask {
+    private class SyncPort implements Task<Void> {
+        private final String sdnControllerUuid;
 
-        @Override
-        public TimeUnit getTimeUnit() {
-            return TimeUnit.DAYS;
-        }
-
-        @Override
-        public long getInterval() {
-            return 1;
+        private SyncPort(String sdnControllerUuid) {
+            this.sdnControllerUuid = sdnControllerUuid;
         }
 
         @Override
@@ -64,7 +81,10 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
             List<String> zstackL2NetworksUuid = Q.New(L2NetworkVO.class).select(L2NetworkVO_.uuid).listValues();
             List<String> tfPortsUuid = new ArrayList<>();
             try{
-                List<VirtualMachineInterface> tfPorts = tfPortService.getTfPortsDetail();
+                List<VirtualMachineInterface> tfPorts = tfPortService.getTfPortsDetail(sdnControllerUuid);
+                if (tfPorts == null) {
+                    return new HashSet<>();
+                }
                 for (VirtualMachineInterface vmi : tfPorts) {
                     // skip port if it's network not in zstack
                     List<ObjectReference<ApiPropertyBase>>  tfNetworks = vmi.getVirtualNetwork();
@@ -83,7 +103,7 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
                 }
             } catch (Exception e) {
                 logger.error(String.format("Port_Sync_Task: Fetch tf VirtualMachineInterface failed: %s.", e));
-                return null;
+                return new HashSet<>();
             }
             HashSet<String> result = new HashSet<>(tfPortsUuid);
             result.removeAll(zstackPortsUuid);
@@ -92,13 +112,13 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
         }
 
         @Override
-        public void run() {
+        public Void call() {
             logger.info("Port_Sync_Task: begin.");
             try {
                 HashSet<String> portsToDelete = getPortToDelete();
-                int maxDeleteCount = 10;
+                int maxDeleteCount = MAX_DELETE_COUNT;
                 for (String portUuid: portsToDelete) {
-                    TfPortResponse response = tfPortService.deleteTfPort(portUuid);
+                    TfPortResponse response = tfPortService.deleteTfPort(sdnControllerUuid, portUuid);
                     if (response.getCode() == 200) {
                         logger.info(String.format("Port_Sync_Task: VirtualMachineInterface: %s delete success.",
                                 portUuid));
@@ -113,7 +133,10 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
                 }
             } catch (Exception e) {
                 logger.error(String.format("Port_Sync_Task failed: %s.", e));
+            } finally {
+                runningSyncs.remove(sdnControllerUuid);
             }
+            return null;
         }
     }
 }
