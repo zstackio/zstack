@@ -1,5 +1,6 @@
 package org.zstack.rest;
 
+import org.zstack.core.plugin.FeaturePluginGate;
 import org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint;
 import org.zstack.core.plugin.LoadedFeaturePlugin;
 import io.opentelemetry.api.trace.Span;
@@ -817,6 +818,17 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
                     finalApiSpan.setStatus(StatusCode.OK);
                 }
                 handleJobQuery(req, rsp);
+                return;
+            }
+
+            String switching = FeaturePluginGate.awaitPath(path);
+            if (switching != null) {
+                if (finalApiSpan != null) {
+                    finalApiSpan.setStatus(StatusCode.ERROR, "feature plugin upgrading");
+                    finalApiSpan.setAttribute("http.status_code", HttpStatus.SERVICE_UNAVAILABLE.value());
+                }
+                sendRestErrorResponse(HttpStatus.SERVICE_UNAVAILABLE.value(),
+                        String.format("feature plugin %s is being upgraded, try again later", switching), rsp);
                 return;
             }
 

@@ -22,6 +22,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="FeaturePluginLoader" class="org.zstack.core.plugin.FeaturePluginLoader">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="PluginApiInterceptor" class="org.zstack.core.plugin.PluginApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
