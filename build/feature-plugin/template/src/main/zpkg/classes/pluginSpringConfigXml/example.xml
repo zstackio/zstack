@@ -15,4 +15,6 @@
             <zstack:extension interface="org.zstack.header.plugin.sdk.PluginUsageChecker"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="ExampleTransactional" class="org.zstack.plugin.example.ExampleTransactional"/>
 </beans>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check, pack and sign ZStack feature plugin packages (.zpkg).
 
-  check --plugin-dir DIR --platform-lib WEB-INF/lib [--jdeps-output FILE] [--allowlist FILE] [--bff-dir DIR]
+  check --plugin-dir DIR --platform-lib WEB-INF/lib [--jdeps-output FILE] [--allowlist FILE]
   pack  --plugin-dir DIR --out DIR
   sign  --package PKG --key PRIVATE_KEY_PEM
 
@@ -33,9 +33,10 @@ MANIFEST = 'META-INF/MANIFEST.sha256'
 SIGNATURE = 'META-INF/zpkg.sig'
 DESCRIPTOR = 'plugin.yaml'
 PACKAGE_ROOTS = ('lib/', 'classes/', 'db/', 'drivers/', 'agent/', 'ui/')
-# the ui part has fixed paths so that zstack-ctl and the BFF read it without a path table (SDK spec 7.1, P4 design 5.1)
-UI_PATHS = {'remote': 'ui/remote/', 'bff': 'ui/bff/', 'routes': 'ui/routes.json', 'menus': 'ui/menus.json',
-            'slots': 'ui/slots.json', 'i18n': 'ui/locale/'}
+# the ui part has fixed paths so that zstack-ctl and the BFF read it without a path table (SDK spec 7.1, P4 design 5.1);
+# plugin code does not run in the BFF, which all users share and which cannot unload it
+UI_PATHS = {'remote': 'ui/remote/', 'routes': 'ui/routes.json', 'menus': 'ui/menus.json', 'slots': 'ui/slots.json',
+            'i18n': 'ui/locale/'}
 UI_LOCALES = ('zh-CN', 'en-US')
 UI_SLOTS = (('detail.tab', 'Host'),)
 # what the kvmagent part of a plugin may import besides the standard library; its own modules are imported
@@ -46,6 +47,14 @@ AGENT_ALLOWED_MODULES = ('zstacklib.utils.jsonobject', 'zstacklib.utils.http', '
 ERROR_CODE = re.compile(r'^ORG_ZSTACK_[A-Z0-9_]+_\d{5}$')
 JAR_VERSION = re.compile(r'^(.*?)-\d[\w.]*\.jar$')
 ENTITY = 'Ljavax/persistence/Entity;'
+# what the platform registers only when it starts until P2b (SDK spec 2.5): by super class or interface ...
+V1_UNSUPPORTED_SUPERS = {'org.zstack.header.query.APIQueryMessage': 'query API',
+                         'org.zstack.header.vo.ResourceVO': 'resource',
+                         'org.zstack.zwatch.namespace.AbstractNamespace': 'zwatch namespace',
+                         'org.zstack.zwatch.datatype.Namespace': 'zwatch namespace'}
+# ... and by annotation
+V1_UNSUPPORTED_ANNOTATIONS = {'Lorg/zstack/header/search/Inventory;': 'inventory',
+                              'Lorg/zstack/header/longjob/LongJobFor;': 'long job'}
 
 
 def load_allowlist(path):
@@ -75,7 +84,7 @@ def jdeps_references(output, platform_jars):
 
 
 def class_info(data):
-    """The name of a class file and the strings of its constant pool."""
+    """The name of a class file, the strings of its constant pool, and its super class and interfaces."""
     count = struct.unpack('>H', data[8:10])[0]
     pos, index = 10, 1
     utf8, classes = {}, {}
@@ -92,8 +101,12 @@ def class_info(data):
             pos += 1 + sizes[tag]
         # long and double take two slots
         index += 2 if tag in (5, 6) else 1
-    this_class = struct.unpack('>H', data[pos + 2:pos + 4])[0]
-    return utf8[classes[this_class]].replace('/', '.'), list(utf8.values())
+    this_class, super_class, count = struct.unpack('>HHH', data[pos + 2:pos + 8])
+    interfaces = struct.unpack('>%dH' % count, data[pos + 8:pos + 8 + 2 * count])
+
+    def name(index):
+        return utf8[classes[index]].replace('/', '.')
+    return name(this_class), list(utf8.values()), [name(i) for i in (super_class,) + interfaces if i]
 
 
 def plugin_jars(stage):
@@ -109,6 +122,35 @@ def plugin_classes(stage):
                         yield class_info(z.read(name))
         except zipfile.BadZipfile:
             continue
+
+
+def platform_entity_names(platform_lib):
+    """Simple names of the platform's entity classes; a byte search spares parsing every platform class."""
+    names = set()
+    key = ENTITY.encode('utf-8')
+    for jar in sorted(glob.glob(os.path.join(platform_lib, '*.jar'))):
+        try:
+            with zipfile.ZipFile(jar) as z:
+                for n in z.namelist():
+                    if n.startswith('org/zstack/') and n.endswith('.class'):
+                        data = z.read(n)
+                        if key in data and ENTITY in class_info(data)[1]:
+                            names.add(n[:-len('.class')].rsplit('/', 1)[-1])
+        except zipfile.BadZipfile:
+            continue
+    return names
+
+
+def _unsupported_kind(name, hierarchy, seen=()):
+    # through the plugin's own classes; the platform classes a plugin may extend are on the allowlist
+    for s in hierarchy.get(name, ()):
+        if s in V1_UNSUPPORTED_SUPERS:
+            return V1_UNSUPPORTED_SUPERS[s]
+        if s in hierarchy and s not in seen:
+            kind = _unsupported_kind(s, hierarchy, seen + (name,))
+            if kind:
+                return kind
+    return None
 
 
 def run_jdeps(stage, platform_lib):
@@ -147,7 +189,7 @@ def _agent_import_allowed(module):
     return any(module == m or module.startswith(m + '.') for m in AGENT_ALLOWED_MODULES)
 
 
-def check(stage, platform_lib, allowlist, jdeps_output=None, bff_dir=None):
+def check(stage, platform_lib, allowlist, jdeps_output=None):
     with open(os.path.join(stage, DESCRIPTOR)) as f:
         desc = yaml.safe_load(f)
     problems = []
@@ -165,12 +207,23 @@ def check(stage, platform_lib, allowlist, jdeps_output=None, bff_dir=None):
 
     prefix = 'ORG_ZSTACK_PLUGIN_%s_' % desc['id'].upper().replace('-', '_')
     entities = set((desc.get('mn') or {}).get('entities') or [])
-    for name, strings in plugin_classes(stage):
+    classes = sorted(plugin_classes(stage))
+    hierarchy = dict((name, supers) for name, _, supers in classes)
+    for name, strings, _ in classes:
         for s in strings:
             if ERROR_CODE.match(s) and not s.startswith(prefix):
                 problems.append('error-code-prefix: %s' % s)
         if ENTITY in strings and name not in entities:
             problems.append('undeclared-entity: %s' % name)
+        kind = next((k for a, k in sorted(V1_UNSUPPORTED_ANNOTATIONS.items()) if a in strings), None) or \
+            _unsupported_kind(name, hierarchy)
+        if kind:
+            problems.append('v1-unsupported: %s (%s)' % (name, kind))
+    # JPQL names entities by their simple names
+    plugin_entities = [name for name, strings, _ in classes if ENTITY in strings]
+    if plugin_entities:
+        taken = platform_entity_names(platform_lib)
+        problems += ['entity-name-taken: %s' % n for n in plugin_entities if n.rsplit('.', 1)[-1] in taken]
 
     for path in sorted(glob.glob(os.path.join(stage, 'classes', 'globalConfig', '*.xml'))):
         for e in ET.parse(path).iter():
@@ -188,7 +241,7 @@ def check(stage, platform_lib, allowlist, jdeps_output=None, bff_dir=None):
     for f, module in agent_imports(stage):
         if not _agent_import_allowed(module):
             problems.append('disallowed-agent-import: %s in %s' % (module, f))
-    return problems + ui_problems(stage, desc) + bff_problems(stage, desc, bff_dir)
+    return problems + ui_problems(stage, desc)
 
 
 def ui_problems(stage, desc):
@@ -199,6 +252,8 @@ def ui_problems(stage, desc):
         return ['ui-field: ui'] if os.path.isdir(os.path.join(stage, 'ui')) else []
     pid = desc['id']
     problems = ['ui-field: %s' % k for k in sorted(ui) if UI_PATHS.get(k) != ui[k]]
+    if os.path.isdir(os.path.join(stage, 'ui', 'bff')):
+        problems.append('ui-bff: ui/bff/')
 
     def load(name, default):
         path = os.path.join(stage, *name.split('/'))
@@ -208,8 +263,6 @@ def ui_problems(stage, desc):
             return json.load(f)
 
     required = ['ui/remote/mf-manifest.json'] + ['ui/locale/%s.json' % l for l in UI_LOCALES]
-    if 'bff' in ui:
-        required.append('ui/bff/index.js')
     problems += ['ui-missing: %s' % n for n in required if not os.path.exists(os.path.join(stage, *n.split('/')))]
 
     routes = load('ui/routes.json', [])
@@ -224,36 +277,6 @@ def ui_problems(stage, desc):
     keys = set().union(*messages)
     problems += ['ui-i18n: %s' % k for k in sorted(keys)
                  if not k.startswith(pid + '.') or any(k not in m for m in messages)]
-    return problems
-
-
-def _pascal(pid):
-    return ''.join(w[:1].upper() + w[1:] for w in pid.split('-') if w)
-
-
-def bff_problems(stage, desc, bff_dir):
-    """GraphQL names of the plugin's BFF module (SDK spec 7.3): types start with the plugin id in PascalCase, root
-    fields in camelCase, and no type takes a name of the platform's schema. bff_dir is the cloud BFF package of
-    zstack-ui-next, whose node_modules load the module and whose src/schema.gql lists the platform's names."""
-    if 'bff' not in (desc.get('ui') or {}):
-        return []
-    if not bff_dir:
-        return ['ui-bff: --bff-dir is needed to check the GraphQL names of ui/bff/']
-    module = os.path.join(stage, 'ui', 'bff', 'index.js')
-    r = subprocess.run(['node', os.path.join(HERE, 'bff_names.js'), module, bff_dir],
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    if r.returncode != 0:
-        lines = [l for l in r.stderr.splitlines() if l.strip()]
-        reason = next((l for l in lines if 'Error' in l), lines[-1] if lines else 'exit %d' % r.returncode)
-        return ['ui-bff: cannot load ui/bff/index.js: %s' % reason.strip()]
-    names = json.loads(r.stdout)
-    with open(os.path.join(bff_dir, 'src', 'schema.gql')) as f:
-        taken = set(re.findall(r'^(?:type|input|enum|union|interface|scalar) (\w+)', f.read(), re.M))
-    pascal = _pascal(desc['id'])
-    camel = pascal[:1].lower() + pascal[1:]
-    problems = ['ui-graphql: %s' % n for n in names['types'] if not n.startswith(pascal)]
-    problems += ['ui-graphql: %s' % n for n in names['fields'] if not n.startswith(camel)]
-    problems += ['ui-graphql-taken: %s' % n for n in names['types'] if n.startswith(pascal) and n in taken]
     return problems
 
 
@@ -348,7 +371,6 @@ def main():
     c.add_argument('--platform-lib', required=True, help='WEB-INF/lib of the platform the plugin is built for')
     c.add_argument('--jdeps-output', help='use this jdeps -verbose:class output instead of running jdeps')
     c.add_argument('--allowlist', default=os.path.join(HERE, 'allowlist-v1.txt'))
-    c.add_argument('--bff-dir', help='packages/products/cloud/bff of zstack-ui-next, needed for a plugin with ui/bff/')
     p = sub.add_parser('pack')
     p.add_argument('--plugin-dir', required=True)
     p.add_argument('--out', required=True)
@@ -364,7 +386,7 @@ def main():
     try:
         stage = staging(args.plugin_dir, tmp)
         if args.command == 'check':
-            problems = check(stage, args.platform_lib, args.allowlist, args.jdeps_output, args.bff_dir)
+            problems = check(stage, args.platform_lib, args.allowlist, args.jdeps_output)
             for problem in problems:
                 print(problem)
             sys.exit(1 if problems else 0)

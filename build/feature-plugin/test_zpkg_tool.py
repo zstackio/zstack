@@ -18,15 +18,29 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 ALLOWLIST = os.path.join(HERE, 'allowlist-v1.txt')
 
 
-def make_class(name, strings=()):
-    """A class file with just enough of a constant pool for zpkg_tool to read."""
-    pool = [b'\x01' + struct.pack('>H', len(name.replace('.', '/'))) + name.replace('.', '/').encode('utf-8'),
-            b'\x07' + struct.pack('>H', 1)]
+def make_class(name, strings=(), supers=()):
+    """A class file with just enough of a constant pool for zpkg_tool to read; supers: the super class, then the
+    interfaces."""
+    pool = []
+
+    def utf8(text):
+        data = text.replace('.', '/').encode('utf-8')
+        pool.append(b'\x01' + struct.pack('>H', len(data)) + data)
+        return len(pool)
+
+    def cls(text):
+        index = utf8(text)
+        pool.append(b'\x07' + struct.pack('>H', index))
+        return len(pool)
+    this = cls(name)
+    refs = [cls(n) for n in supers]
     for s in strings:
         data = s.encode('utf-8')
         pool.append(b'\x01' + struct.pack('>H', len(data)) + data)
     head = b'\xca\xfe\xba\xbe' + struct.pack('>HHH', 0, 52, len(pool) + 1)
-    return head + b''.join(pool) + struct.pack('>HHH', 0x21, 2, 0) + b'\x00' * 8
+    interfaces = refs[1:]
+    return head + b''.join(pool) + struct.pack('>HHH', 0x21, this, refs[0] if refs else 0) + \
+        struct.pack('>H', len(interfaces)) + b''.join(struct.pack('>H', i) for i in interfaces) + b'\x00' * 6
 
 
 class CheckCase(unittest.TestCase):
@@ -40,7 +54,7 @@ class CheckCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp)
 
-    def run_check(self, refs=(), classes=None, desc=None, plugin_jars=(), global_configs=None):
+    def run_check(self, refs=(), classes=None, desc=None, plugin_jars=(), global_configs=None, supers=None):
         stage = os.path.join(self.tmp, 'stage')
         os.makedirs(os.path.join(stage, 'lib'))
         d = {'id': 'tpm', 'version': '1.0.0', 'requires': {'sdk': '>=1.0 <2'}, 'mn': {'entities': []}}
@@ -49,7 +63,7 @@ class CheckCase(unittest.TestCase):
             yaml.safe_dump(d, f)
         with zipfile.ZipFile(os.path.join(stage, 'lib', 'tpm-1.0.0.jar'), 'w') as jar:
             for name, strings in (classes or {'org.zstack.tpm.TpmManager': ()}).items():
-                jar.writestr(name.replace('.', '/') + '.class', make_class(name, strings))
+                jar.writestr(name.replace('.', '/') + '.class', make_class(name, strings, (supers or {}).get(name, ())))
         for j in plugin_jars:
             open(os.path.join(stage, 'lib', j), 'w').close()
         for name, content in (global_configs or {}).items():
@@ -124,6 +138,40 @@ class TestCheck(CheckCase):
                    'org.zstack.tpm.TpmKeyVO': ('Ljavax/persistence/Entity;',)}
         problems = self.run_check(classes=classes, desc={'mn': {'entities': ['org.zstack.tpm.VmTpmVO']}})
         self.assertEqual(['undeclared-entity: org.zstack.tpm.TpmKeyVO'], problems)
+
+    def test_entity_named_like_a_platform_entity_is_refused(self):
+        # JPQL names entities by their simple names, a feature plugin's must not take the platform's
+        with zipfile.ZipFile(os.path.join(self.platform, 'header-5.5.0.jar'), 'w') as jar:
+            jar.writestr('org/zstack/header/vm/VmInstanceVO.class',
+                         make_class('org.zstack.header.vm.VmInstanceVO', (zpkg_tool.ENTITY,)))
+        classes = {'org.zstack.tpm.VmInstanceVO': (zpkg_tool.ENTITY,), 'org.zstack.tpm.TpmKeyVO': (zpkg_tool.ENTITY,)}
+        problems = self.run_check(classes=classes, desc={'mn': {'entities': sorted(classes)}})
+        self.assertEqual(['entity-name-taken: org.zstack.tpm.VmInstanceVO'], problems)
+
+    def test_query_api_is_refused_in_v1(self):
+        # the platform registers query APIs at start only until P2b (spec 2.5)
+        classes = {'org.zstack.tpm.APIQueryTpmMsg': (), 'org.zstack.tpm.APIQueryTpmKeyMsg': ()}
+        supers = {'org.zstack.tpm.APIQueryTpmMsg': ['org.zstack.header.query.APIQueryMessage'],
+                  'org.zstack.tpm.APIQueryTpmKeyMsg': ['org.zstack.tpm.APIQueryTpmMsg']}
+        self.assertEqual(['v1-unsupported: org.zstack.tpm.APIQueryTpmKeyMsg (query API)',
+                          'v1-unsupported: org.zstack.tpm.APIQueryTpmMsg (query API)'],
+                         self.run_check(classes=classes, supers=supers))
+
+    def test_other_runtime_registrations_are_refused_in_v1(self):
+        classes = {'org.zstack.tpm.TpmInventory': ('Lorg/zstack/header/search/Inventory;',),
+                   'org.zstack.tpm.TpmVO': (zpkg_tool.ENTITY,),
+                   'org.zstack.tpm.TpmJob': ('Lorg/zstack/header/longjob/LongJobFor;',),
+                   'org.zstack.tpm.TpmNamespace': (),
+                   'org.zstack.tpm.TpmMetrics': ()}
+        supers = {'org.zstack.tpm.TpmVO': ['org.zstack.header.vo.ResourceVO'],
+                  'org.zstack.tpm.TpmNamespace': ['org.zstack.zwatch.namespace.AbstractNamespace'],
+                  'org.zstack.tpm.TpmMetrics': ['java.lang.Object', 'org.zstack.zwatch.datatype.Namespace']}
+        problems = self.run_check(classes=classes, supers=supers, desc={'mn': {'entities': ['org.zstack.tpm.TpmVO']}})
+        self.assertEqual(['v1-unsupported: org.zstack.tpm.TpmInventory (inventory)',
+                          'v1-unsupported: org.zstack.tpm.TpmJob (long job)',
+                          'v1-unsupported: org.zstack.tpm.TpmMetrics (zwatch namespace)',
+                          'v1-unsupported: org.zstack.tpm.TpmNamespace (zwatch namespace)',
+                          'v1-unsupported: org.zstack.tpm.TpmVO (resource)'], problems)
 
     def test_check_package_without_lib(self):
         stage = os.path.join(self.tmp, 'drivers-only')
@@ -247,85 +295,10 @@ class TestUiCheck(CheckCase):
         open(os.path.join(stage, 'ui', 'remote', 'mf-manifest.json'), 'w').close()
         self.assertEqual(['ui-field: ui'], zpkg_tool.ui_problems(stage, {'id': 'tpm'}))
 
-    def test_declared_bff_needs_index(self):
-        self.assertIn('ui-missing: ui/bff/index.js', self.ui_stage(ui=dict(UI_PART, bff='ui/bff/'),
-                                                                 files={'ui/bff/other.js': ''}))
-
-
-BFF_DIR = os.environ.get('ZPKG_TEST_BFF_DIR', '/mnt/sda/rearch/work/zstack-ui-next/packages/products/cloud/bff')
-BFF_MODULE = """
-const { Module } = require("@nestjs/common");
-const g = require("@nestjs/graphql");
-const { QueryAdvance } = require("@zstack/bff-plugin-sdk");
-const VmSampleKind = { A: "A" };
-g.registerEnumType(VmSampleKind, { name: %(enum)s });
-class VmSampleTask {}
-g.Field(() => String)(VmSampleTask.prototype, "name");
-g.ObjectType(%(type)s)(VmSampleTask);
-class VmSampleInput {}
-g.Field(() => String)(VmSampleInput.prototype, "name");
-g.InputType(%(input)s)(VmSampleInput);
-class VmSampleAction extends QueryAdvance {}
-class VmSampleResolver { tasks() { return []; } }
-g.Query(() => [VmSampleTask], { name: %(query)s })(VmSampleResolver.prototype, "tasks",
-    Object.getOwnPropertyDescriptor(VmSampleResolver.prototype, "tasks"));
-g.Resolver()(VmSampleResolver);
-class VmSampleModule {}
-Module({ providers: [VmSampleAction, VmSampleResolver] })(VmSampleModule);
-module.exports = { default: VmSampleModule };
-"""
-
-
-@unittest.skipUnless(shutil.which('node') and os.path.isdir(os.path.join(BFF_DIR, 'node_modules')),
-                     'needs node and the cloud BFF of zstack-ui-next')
-class TestBffNames(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tmp)
-
-    def names(self, **names):
-        values = dict(enum='VmSampleKind', type='VmSampleTask', input='VmSampleInput', query='vmSampleTasks')
-        values.update(names)
-        stage = os.path.join(self.tmp, 'stage')
-        os.makedirs(os.path.join(stage, 'ui', 'bff'))
-        with open(os.path.join(stage, 'ui', 'bff', 'index.js'), 'w') as f:
-            f.write(BFF_MODULE % dict((k, '"%s"' % v) for k, v in values.items()))
-        return zpkg_tool.bff_problems(stage, {'id': 'vm', 'ui': {'bff': 'ui/bff/'}}, BFF_DIR)
-
-    def test_prefixed_names_pass(self):
-        self.assertEqual([], self.names())
-
-    def test_unprefixed_input_type(self):
-        # input types, enums and unions register only when the BFF builds its schema, the BFF cannot check them early
-        self.assertEqual(['ui-graphql: Task'], self.names(input='Task'))
-
-    def test_unprefixed_enum(self):
-        self.assertEqual(['ui-graphql: Kind'], self.names(enum='Kind'))
-
-    def test_unprefixed_query(self):
-        self.assertEqual(['ui-graphql: tasks'], self.names(query='tasks'))
-
-    def test_name_the_platform_has(self):
-        self.assertEqual(['ui-graphql-taken: VmNicResourceConfig'], self.names(type='VmNicResourceConfig'))
-
-    def test_module_that_cannot_load(self):
-        stage = os.path.join(self.tmp, 'stage')
-        os.makedirs(os.path.join(stage, 'ui', 'bff'))
-        with open(os.path.join(stage, 'ui', 'bff', 'index.js'), 'w') as f:
-            f.write('throw new Error("boom");')
-        problems = zpkg_tool.bff_problems(stage, {'id': 'vm', 'ui': {'bff': 'ui/bff/'}}, BFF_DIR)
-        self.assertEqual(1, len(problems))
-        self.assertIn('ui-bff: ', problems[0])
-        self.assertIn('boom', problems[0])
-
-    def test_bff_dir_is_required(self):
-        self.assertEqual(['ui-bff: --bff-dir is needed to check the GraphQL names of ui/bff/'],
-                         zpkg_tool.bff_problems(self.tmp, {'id': 'vm', 'ui': {'bff': 'ui/bff/'}}, None))
-
-    def test_no_bff_no_check(self):
-        self.assertEqual([], zpkg_tool.bff_problems(self.tmp, {'id': 'vm', 'ui': {'remote': 'ui/remote/'}}, None))
+    def test_ui_bff_is_refused(self):
+        # plugin code does not run in the BFF, which all users share and which cannot unload it
+        self.assertEqual(['ui-bff: ui/bff/'], self.ui_stage(files={'ui/bff/index.js': ''}))
+        self.assertIn('ui-field: bff', self.ui_stage(ui=dict(UI_PART, bff='ui/bff/')))
 
 
 class TestAllowlist(unittest.TestCase):
@@ -406,6 +379,25 @@ class TestPack(CheckCase):
         self.assertEqual(0, subprocess.call(['openssl', 'dgst', '-sha256', '-verify', pub, '-signature',
                                              os.path.join(self.tmp, 'zpkg.sig'), os.path.join(self.tmp, 'MANIFEST.sha256')],
                                             stdout=subprocess.DEVNULL))
+
+
+class TestTemplate(unittest.TestCase):
+    def test_template_builds_with_weaving(self):
+        # a plugin's own @Transactional takes effect only woven at build time, as the platform's classes are
+        if not shutil.which('mvn'):
+            self.skipTest('mvn is not on PATH')
+        tmp = tempfile.mkdtemp()
+        try:
+            project = os.path.join(tmp, 'example')
+            shutil.copytree(os.path.join(HERE, 'template'), project, ignore=shutil.ignore_patterns('target'))
+            repo = os.environ.get('ZPKG_TEST_M2_REPO')
+            subprocess.check_call(['mvn', '-B', '-q', '-o', 'package'] + (['-Dmaven.repo.local=%s' % repo] if repo else []),
+                                  cwd=project)
+            with zipfile.ZipFile(os.path.join(project, 'target', 'example-1.0.0.jar')) as jar:
+                _, strings, _ = zpkg_tool.class_info(jar.read('org/zstack/plugin/example/ExampleTransactional.class'))
+            self.assertIn('org/springframework/transaction/aspectj/AnnotationTransactionAspect', strings)
+        finally:
+            shutil.rmtree(tmp)
 
 
 class TestStaging(unittest.TestCase):
