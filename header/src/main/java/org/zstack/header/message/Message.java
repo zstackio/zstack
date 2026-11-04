@@ -171,7 +171,7 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
                 continue;
             }
 
-            Class clz = Class.forName(type);
+            Class clz = org.zstack.utils.FeaturePluginClasses.forName(type);
             setProperty(this, p, rehashObject(getProperty(raw, p), clz));
         }
     }

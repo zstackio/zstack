@@ -22,7 +22,7 @@ public class MulitpleOverlayMsg extends NeedReplyMessage {
 
     public List<NeedReplyMessage> getMessages() {
         try {
-            Class clazz = Class.forName(messageClassName);
+            Class clazz = org.zstack.utils.FeaturePluginClasses.forName(messageClassName);
             List<NeedReplyMessage> msgs = new ArrayList<>();
             messages.forEach(msg -> {
                 NeedReplyMessage nmsg = (NeedReplyMessage) JSONObjectUtil.rehashObject(msg, clazz);

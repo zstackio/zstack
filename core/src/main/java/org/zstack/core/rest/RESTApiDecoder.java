@@ -36,7 +36,7 @@ public class RESTApiDecoder {
             String className = entry.getKey();
             Class<?> clazz;
             try {
-                clazz = Class.forName(className);
+                clazz = org.zstack.utils.FeaturePluginClasses.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
             }
@@ -78,7 +78,7 @@ public class RESTApiDecoder {
             String className = entry.getKey();
             Class<?> clazz;
             try {
-                clazz = Class.forName(className);
+                clazz = org.zstack.utils.FeaturePluginClasses.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
             }

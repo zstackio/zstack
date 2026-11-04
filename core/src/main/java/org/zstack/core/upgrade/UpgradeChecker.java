@@ -265,7 +265,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         final Object commandObj;
         if (cmd instanceof String) {
             try {
-                commandObj = JSONObjectUtil.toObject((String) cmd, Class.forName(commandName));
+                commandObj = JSONObjectUtil.toObject((String) cmd, org.zstack.utils.FeaturePluginClasses.forName(commandName));
             } catch (Exception e) {
                 throw new CloudRuntimeException(String.format("Failed to transform string: %s\n to \n object class: %s", cmd, commandName));
             }

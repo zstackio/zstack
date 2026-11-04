@@ -20,7 +20,7 @@ public class OverlayMessage extends NeedReplyMessage {
 
     public NeedReplyMessage getMessage() {
         try {
-            Class clazz = Class.forName(messageClassName);
+            Class clazz = org.zstack.utils.FeaturePluginClasses.forName(messageClassName);
             NeedReplyMessage nmsg = (NeedReplyMessage) JSONObjectUtil.rehashObject(message, clazz);
             if(nmsg instanceof OverlayMessage){
                 OverlayMessage omsg = (OverlayMessage)nmsg;

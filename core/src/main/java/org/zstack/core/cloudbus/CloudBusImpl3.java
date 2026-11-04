@@ -1464,7 +1464,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 continue;
             }
 
-            Class clz = Class.forName(type);
+            Class clz = org.zstack.utils.FeaturePluginClasses.forName(type);
             setProperty(msg, p, rehashObject(getProperty(raw, p), clz));
         }
     }

@@ -26,7 +26,7 @@ public class RequestData {
 
         if (d.apiClassName != null) {
             try {
-                Class<? extends APIMessage> clz = (Class<? extends APIMessage>) Class.forName(d.apiClassName);
+                Class<? extends APIMessage> clz = (Class<? extends APIMessage>) org.zstack.utils.FeaturePluginClasses.forName(d.apiClassName);
                 d.apiMessage = JSONObjectUtil.rehashObject(m.get("apiMessage"), clz);
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);

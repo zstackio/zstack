@@ -16,7 +16,7 @@ public class JsonWrapper<T> implements Serializable {
     public T get() {
         Class<T> clazz;
         try {
-            clazz = (Class<T>) Class.forName(className);
+            clazz = (Class<T>) org.zstack.utils.FeaturePluginClasses.forName(className);
             return JSONObjectUtil.toObject(content, clazz);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

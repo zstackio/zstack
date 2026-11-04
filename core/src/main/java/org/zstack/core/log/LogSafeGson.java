@@ -25,6 +25,13 @@ import java.util.regex.Pattern;
  * Created by MaJin on 2019/9/21.
  */
 public class LogSafeGson {
+    /**
+     * Drops the cached types of classes the class loader defined, e.g. of an unloaded feature plugin.
+     */
+    public static int forgetTypes(ClassLoader cl) {
+        return org.zstack.utils.gson.GsonTypeCache.forget(logSafeGson, cl);
+    }
+
     private static final CLogger logger = Utils.getLogger(LogSafeGson.class);
 
     /**
@@ -87,7 +94,7 @@ public class LogSafeGson {
                     return value;
                 }
 
-                Class<?> clz = Class.forName((String) classNameField.get(obj));
+                Class<?> clz = org.zstack.utils.FeaturePluginClasses.forName((String) classNameField.get(obj));
                 return mayHasSensitiveInfo(clz) ? JSONObjectUtil.toObject((String) value, clz) : value;
             } catch (IllegalAccessException | ClassNotFoundException e) {
                 return null;

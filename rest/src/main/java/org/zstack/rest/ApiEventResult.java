@@ -23,7 +23,7 @@ public class ApiEventResult {
     static APIEvent fromJson(String jsonStr) {
         try {
             ApiEventResult res = JSONObjectUtil.toObject(jsonStr, ApiEventResult.class);
-            Class<? extends APIEvent> clz = (Class<? extends APIEvent>) Class.forName(res.apiEventClassName);
+            Class<? extends APIEvent> clz = (Class<? extends APIEvent>) org.zstack.utils.FeaturePluginClasses.forName(res.apiEventClassName);
 
             APIEvent evt = JSONObjectUtil.rehashObject(res.apiEvent, clz);
 
@@ -40,7 +40,7 @@ public class ApiEventResult {
                     continue;
                 }
 
-                Class fclz = Class.forName(clzName);
+                Class fclz = org.zstack.utils.FeaturePluginClasses.forName(clzName);
                 Object val = JSONObjectUtil.rehashObject(BeanUtils.getProperty(res.apiEvent, path), fclz);
                 BeanUtils.setProperty(evt, path, val);
             }

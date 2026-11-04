@@ -13,6 +13,14 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 public class CloudBusGson {
+    /**
+     * Drops the cached types of classes the class loader defined, e.g. of an unloaded feature plugin.
+     */
+    public static int forgetTypes(ClassLoader cl) {
+        return org.zstack.utils.gson.GsonTypeCache.forget(gson, cl) + org.zstack.utils.gson.GsonTypeCache.forget(logSafeGson, cl)
+                + org.zstack.utils.gson.GsonTypeCache.forget(httpGson, cl);
+    }
+
     private static Gson gson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
 
         @Override
@@ -29,7 +37,7 @@ public class CloudBusGson {
             String className = entry.getKey();
             Class<?> clazz;
             try {
-                clazz = Class.forName(className);
+                clazz = org.zstack.utils.FeaturePluginClasses.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException(String.format("Unable to deserialize class[%s]", className), e);
             }
@@ -66,7 +74,7 @@ public class CloudBusGson {
             String className = entry.getKey();
             Class<?> clazz;
             try {
-                clazz = Class.forName(className);
+                clazz = org.zstack.utils.FeaturePluginClasses.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException(String.format("Unable to deserialize class[%s]", className), e);
             }
@@ -100,7 +108,7 @@ public class CloudBusGson {
             String className = entry.getKey();
             Class<?> clazz;
             try {
-                clazz = Class.forName(className);
+                clazz = org.zstack.utils.FeaturePluginClasses.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException(String.format("Unable to deserialize class[%s]", className), e);
             }

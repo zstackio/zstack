@@ -10,6 +10,13 @@ import org.zstack.utils.gson.GsonUtil;
  * Created by lining on 2019/8/9.
  */
 public class RequestDataJSONObjectUtil {
+    /**
+     * Drops the cached types of classes the class loader defined, e.g. of an unloaded feature plugin.
+     */
+    public static int forgetTypes(ClassLoader cl) {
+        return org.zstack.utils.gson.GsonTypeCache.forget(gson, cl);
+    }
+
     private static final Gson gson;
 
     static {

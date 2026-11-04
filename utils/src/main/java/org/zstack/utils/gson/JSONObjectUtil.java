@@ -66,6 +66,13 @@ public class JSONObjectUtil {
         return gson.fromJson(content, type);
     }
 
+    /**
+     * Drops the cached types of classes the class loader defined, e.g. of an unloaded feature plugin.
+     */
+    public static int forgetTypes(ClassLoader cl) {
+        return GsonTypeCache.forget(gson, cl) + GsonTypeCache.forget(prettyGson, cl);
+    }
+
     public static String toJsonString(Object obj) {
         return gson.toJson(obj);
     }
@@ -83,7 +90,7 @@ public class JSONObjectUtil {
         LinkedHashMap map = toObject(jstr, LinkedHashMap.class);
         String className = (String) map.keySet().iterator().next();
         try {
-            Class clz = Class.forName(className);
+            Class clz = org.zstack.utils.FeaturePluginClasses.forName(className);
             return rehashObject(map.values().iterator().next(), (Class<T>) clz);
         } catch (Exception e) {
             throw new RuntimeException(e);

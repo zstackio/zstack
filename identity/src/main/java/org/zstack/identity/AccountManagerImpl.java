@@ -425,7 +425,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         for (String apiName : msg.getApiNames()) {
             try {
-                Class apiClass = Class.forName(apiName);
+                Class apiClass = org.zstack.utils.FeaturePluginClasses.forName(apiName);
                 APIMessage api = (APIMessage) apiClass.newInstance();
                 api.setSession(session);
 
