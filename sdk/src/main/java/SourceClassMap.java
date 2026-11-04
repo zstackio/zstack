@@ -712,6 +712,11 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.gpu.dgpu.DGpuProfileInventory", "org.zstack.sdk.DGpuProfileInventory");
 			put("org.zstack.pciDevice.gpu.dgpu.DGpuSpecStatsInventory", "org.zstack.sdk.DGpuSpecStatsInventory");
 			put("org.zstack.pciDevice.gpu.dgpu.DGpuStatus", "org.zstack.sdk.DGpuStatus");
+			put("org.zstack.pciDevice.ib.IbAllocateStatus", "org.zstack.sdk.IbAllocateStatus");
+			put("org.zstack.pciDevice.ib.IbBindingSource", "org.zstack.sdk.IbBindingSource");
+			put("org.zstack.pciDevice.ib.IbCollectionStatus", "org.zstack.sdk.IbCollectionStatus");
+			put("org.zstack.pciDevice.ib.IbDeviceInventory", "org.zstack.sdk.IbDeviceInventory");
+			put("org.zstack.pciDevice.ib.IbDeviceUnavailableReason", "org.zstack.sdk.IbDeviceUnavailableReason");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecInventory", "org.zstack.sdk.MdevDeviceSpecInventory");
 			put("org.zstack.pciDevice.specification.mdev.MdevDeviceSpecState", "org.zstack.sdk.MdevDeviceSpecState");
 			put("org.zstack.pciDevice.specification.mdev.PciDeviceMdevSpecRefInventory", "org.zstack.sdk.PciDeviceMdevSpecRefInventory");
@@ -1246,6 +1251,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
 			put("org.zstack.sdk.IPsecL3NetworkRefInventory", "org.zstack.ipsec.IPsecL3NetworkRefInventory");
 			put("org.zstack.sdk.IPsecPeerCidrInventory", "org.zstack.ipsec.IPsecPeerCidrInventory");
+			put("org.zstack.sdk.IbAllocateStatus", "org.zstack.pciDevice.ib.IbAllocateStatus");
+			put("org.zstack.sdk.IbBindingSource", "org.zstack.pciDevice.ib.IbBindingSource");
+			put("org.zstack.sdk.IbCollectionStatus", "org.zstack.pciDevice.ib.IbCollectionStatus");
+			put("org.zstack.sdk.IbDeviceInventory", "org.zstack.pciDevice.ib.IbDeviceInventory");
+			put("org.zstack.sdk.IbDeviceUnavailableReason", "org.zstack.pciDevice.ib.IbDeviceUnavailableReason");
 			put("org.zstack.sdk.IdentityZoneInventory", "org.zstack.header.identityzone.IdentityZoneInventory");
 			put("org.zstack.sdk.IdentityZoneProperty", "org.zstack.header.identityzone.IdentityZoneProperty");
 			put("org.zstack.sdk.ImageBackupStorageRefInventory", "org.zstack.header.image.ImageBackupStorageRefInventory");
