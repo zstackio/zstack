@@ -82,6 +82,7 @@ class VmNicBasicCase extends SubCase {
         assert nic.ip != null
         assert nic.mac != null
         assert nic.usedIps.size() != 0
+        assert dbFindByUuid(nic.uuid, VmNicVO.class).driverType == null
 
         IpRangeInventory ipRangeInventory = pubL3.ipRanges.get(0)
         assert nic.gateway == ipRangeInventory.gateway
@@ -101,6 +102,7 @@ class VmNicBasicCase extends SubCase {
     void testAttachVmNicToVm () {
         L3NetworkInventory l3 = env.inventoryByName("l3")
         VmInstanceInventory vm = env.inventoryByName("vm")
+        String expectedDriverType = vm.vmNics[0].driverType
 
         changeL3NetworkState {
             uuid = nic.l3NetworkUuid
@@ -149,6 +151,8 @@ class VmNicBasicCase extends SubCase {
         assert vmNicVO.deviceId == 1
         assert vmNicVO.internalName == VmNicVO.generateNicInternalName(vmInstanceVO.getInternalId(), 1)
         assert vmNicVO.vmInstanceUuid == vm.getUuid()
+        assert vmNicVO.driverType == expectedDriverType
+        assert vm.vmNics.find { it.uuid == nic.uuid }.driverType == expectedDriverType
 
         usedIpUuid = vmNicVO.usedIpUuid
 

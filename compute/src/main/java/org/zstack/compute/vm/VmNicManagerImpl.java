@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,39 +118,40 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Override
     public void prepareDbInitialValue() {
-        List<VmNicVO> nics = Q.New(VmNicVO.class).notNull(VmNicVO_.vmInstanceUuid).list();
-        List<VmNicVO> ns = nics.stream()
-                .filter(v -> v.getDriverType() == null
-                        && v.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)
-                        && v.getVmInstanceUuid() != null)
-                .collect(Collectors.toList());
+        List<VmNicVO> nics = Q.New(VmNicVO.class)
+                .isNull(VmNicVO_.driverType)
+                .eq(VmNicVO_.type, VmInstanceConstant.VIRTUAL_NIC_TYPE)
+                .notNull(VmNicVO_.vmInstanceUuid)
+                .list();
 
-        if (CollectionUtils.isEmpty(ns)) {
+        if (CollectionUtils.isEmpty(nics)) {
             return;
         }
 
-        List<String> vmUuids = ns.stream()
+        List<String> vmUuids = nics.stream()
                 .map(VmNicVO::getVmInstanceUuid)
+                .distinct()
                 .collect(Collectors.toList());
+        Set<String> virtioVmUuids = new HashSet<>(VmSystemTags.VIRTIO.filterResourceHasTag(vmUuids));
 
         List<Tuple> tupleList = Q.New(VmInstanceVO.class)
                 .select(VmInstanceVO_.uuid, VmInstanceVO_.platform)
                 .in(VmInstanceVO_.uuid, vmUuids)
                 .listTuple();
 
-        Map<String, String> vmPlatforms = Maps.newHashMap();
+        Map<String, String> vmDrivers = new HashMap<>();
         for (Tuple vmTuple : tupleList) {
             String vmUuid = vmTuple.get(0, String.class);
             String vmPlatform = vmTuple.get(1, String.class);
-            vmPlatforms.put(vmUuid, ImagePlatform.valueOf(vmPlatform).isParaVirtualization() ?
+            vmDrivers.put(vmUuid, virtioVmUuids.contains(vmUuid) || ImagePlatform.valueOf(vmPlatform).isParaVirtualization() ?
                     defaultPVNicDriver : defaultNicDriver);
         }
 
         Map<Boolean, List<String>> nicGroups = nics.stream()
-                .filter(v -> vmPlatforms.containsKey(v.getVmInstanceUuid()))
+                .filter(v -> vmDrivers.containsKey(v.getVmInstanceUuid()))
                 .collect(
                         Collectors.groupingBy(
-                                v -> vmPlatforms.get(v.getVmInstanceUuid()).equals(defaultPVNicDriver),
+                                v -> vmDrivers.get(v.getVmInstanceUuid()).equals(defaultPVNicDriver),
                                 Collectors.mapping(VmNicVO::getUuid, Collectors.toList()))
                 );
 
