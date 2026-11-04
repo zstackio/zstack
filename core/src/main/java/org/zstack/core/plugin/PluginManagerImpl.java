@@ -723,12 +723,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             Map<String, Object> ret = coordinator.runCtlJson(String.format("install %s --json", pkg.getPath()));
             coordinator.refreshDrivers();
             // every management node loads the plugin now, the install holds only when all of them could
-            Map<String, String> failures = new LinkedHashMap<>();
-            String local = coordinator.applyAndPublish(FeaturePluginCoordinator.agentChanged(ret)).get(pkg.getId());
-            if (local != null) {
-                failures.put(Platform.getManagementServerIp(), local);
-            }
-            failures.putAll(coordinator.syncToPeers((String) ret.get("package")));
+            Map<String, String> failures = coordinator.applyOnAllNodes((String) ret.get("package"),
+                    FeaturePluginCoordinator.agentChanged(ret), pkg.getId());
             if (!failures.isEmpty()) {
                 undoInstall(pkg.getId(), previous);
                 throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10002,
@@ -756,8 +752,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 coordinator.runCtlJson(String.format("install %s --json --rollback", packagePath));
             }
             coordinator.refreshDrivers();
-            coordinator.applyAndPublish(true);
-            coordinator.syncToPeers(packagePath);
+            coordinator.applyOnAllNodes(packagePath, true, null);
         } catch (Throwable t) {
             logger.warn(String.format("failed to undo the install of feature plugin %s", pluginId), t);
         }
@@ -806,8 +801,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json", msg.getPluginId()));
             coordinator.refreshDrivers();
             // unloading never fails a node; a node that could not apply the change unloads the plugin when it restarts
-            coordinator.applyAndPublish(FeaturePluginCoordinator.agentChanged(ret));
-            Map<String, String> failures = coordinator.syncToPeers(null);
+            Map<String, String> failures = coordinator.applyOnAllNodes(null, FeaturePluginCoordinator.agentChanged(ret), null);
             if (!failures.isEmpty()) {
                 logger.warn(String.format("management nodes %s could not unload feature plugin %s: %s",
                         failures.keySet(), msg.getPluginId(), failures));

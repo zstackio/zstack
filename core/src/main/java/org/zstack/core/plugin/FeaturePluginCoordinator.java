@@ -4,6 +4,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseGlobalProperty;
@@ -34,6 +35,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLUGIN_10002;
@@ -238,6 +241,41 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
      *
      * @return host name of a node -> why it could not apply the change
      */
+    /**
+     * Applies the change on this node and on the running peers at the same time.
+     *
+     * @param pluginId the plugin whose load failure here counts as a failure, null if none does
+     * @return host name of a node -&gt; why it could not apply the change
+     */
+    Map<String, String> applyOnAllNodes(String packagePath, boolean agentChanged, String pluginId) {
+        Future<Map<String, String>> peers = thdf.submit(new Task<Map<String, String>>() {
+            @Override
+            public Map<String, String> call() {
+                return syncToPeers(packagePath);
+            }
+
+            @Override
+            public String getName() {
+                return "sync-feature-plugins-to-peers";
+            }
+        });
+        Map<String, String> failures = new LinkedHashMap<>();
+        Map<String, String> here = applyAndPublish(agentChanged);
+        String local = pluginId == null ? null : here.get(pluginId);
+        if (local != null) {
+            failures.put(Platform.getManagementServerIp(), local);
+        }
+        try {
+            failures.putAll(peers.get());
+        } catch (ExecutionException e) {
+            throw e.getCause() instanceof RuntimeException ? (RuntimeException) e.getCause() : new CloudRuntimeException(e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException(e);
+        }
+        return failures;
+    }
+
     Map<String, String> syncToPeers(String packagePath) {
         String content = null;
         String sha256 = null;
