@@ -88,6 +88,14 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
      * Lets the hypervisor modules deploy the changed agent parts of feature plugins to their hosts; a failure is only
      * logged, the hosts get the change when they reconnect.
      */
+    Map<String, Integer> deployingHosts() {
+        Map<String, Integer> ret = new HashMap<>();
+        for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
+            ext.deployingHosts().forEach((id, n) -> ret.merge(id, n, Integer::sum));
+        }
+        return ret;
+    }
+
     void packageAdded(FeaturePluginPackageInventory pkg) {
         for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
             try {

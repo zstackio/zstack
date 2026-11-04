@@ -13,6 +13,12 @@ import org.zstack.core.db.Q;
 import org.zstack.core.plugin.FeaturePluginAgentExtensionPoint;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
@@ -43,6 +49,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
 /**
  * Deploys the kvmagent parts of feature plugins. zstack-ctl keeps them with an index in &lt;dataDir&gt;/feature-plugins/agent;
  * they are copied into the kvm ansible module, whose playbook deploys them to a host with another copy of the index when
@@ -50,7 +59,8 @@ import java.util.stream.Collectors;
  * packages an agent part depends on are installed when its plugin package is uploaded, a host that could not install
  * them gets them from the playbook.
  */
-public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensionPoint, KVMHostAddSshFileMd5CheckerExtensionPoint {
+public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensionPoint, KVMHostAddSshFileMd5CheckerExtensionPoint,
+        KVMHostConnectExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmFeaturePluginAgentDeployer.class);
     // where the kvm playbook keeps the index of the feature plugins it deployed
     private static final String HOST_INDEX = "/var/lib/zstack/kvm/package/feature-plugins/index";
@@ -174,7 +184,7 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
         bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusListCallBack(null) {
             @Override
             public void run(List<MessageReply> replies) {
-                Set<String> failed = new LinkedHashSet<>();
+                Map<String, Set<String>> failed = new LinkedHashMap<>();
                 for (int i = 0; i < replies.size(); i++) {
                     KVMHostAsyncHttpCallMsg msg = msgs.get(i);
                     MessageReply reply = replies.get(i);
@@ -186,12 +196,46 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
                     if (error != null) {
                         logger.warn(String.format("failed to push the kvmagent part of feature plugin %s to host[uuid:%s]: %s",
                                 pluginIds.get(i), msg.getHostUuid(), error));
-                        failed.add(msg.getHostUuid());
+                        failed.computeIfAbsent(msg.getHostUuid(), k -> new TreeSet<>()).add(pluginIds.get(i));
                     }
                 }
-                reconnect(failed);
+                failed.forEach((hostUuid, ids) -> ids.forEach(id -> markDeploying(hostUuid, id)));
+                reconnect(failed.keySet());
             }
         });
+    }
+
+    private void markDeploying(String hostUuid, String pluginId) {
+        SystemTagCreator creator = KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.newSystemTagCreator(hostUuid);
+        creator.setTagByTokens(map(e(KVMSystemTags.FEATURE_PLUGIN_DEPLOYING_TOKEN, pluginId)));
+        creator.ignoreIfExisting = true;
+        creator.create();
+    }
+
+    @Override
+    public Map<String, Integer> deployingHosts() {
+        List<String> tags = Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, "featurePlugin::deploying::%")
+                .listValues();
+        Map<String, Integer> ret = new HashMap<>();
+        tags.forEach(tag -> ret.merge(KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.getTokenByTag(tag,
+                KVMSystemTags.FEATURE_PLUGIN_DEPLOYING_TOKEN), 1, Integer::sum));
+        return ret;
+    }
+
+    // the kvm playbook deployed the host's agent parts by the time its connection reaches here
+    @Override
+    public Flow createKvmHostConnectingFlow(KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "clear-feature-plugin-deploying-marks";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.delete(context.getInventory().getUuid());
+                trigger.next();
+            }
+        };
     }
 
     // the kvm playbook deploys what the push could not

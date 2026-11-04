@@ -606,7 +606,10 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
     private void handle(APIGetFeaturePluginsMsg msg) {
         APIGetFeaturePluginsReply reply = new APIGetFeaturePluginsReply();
-        reply.setInventories(FeaturePlugins.installed());
+        List<FeaturePluginInventory> inventories = FeaturePlugins.installed();
+        Map<String, Integer> deploying = coordinator.deployingHosts();
+        inventories.forEach(inv -> inv.setDeployingHosts(deploying.get(inv.getId())));
+        reply.setInventories(inventories);
         bus.reply(msg, reply);
     }
 

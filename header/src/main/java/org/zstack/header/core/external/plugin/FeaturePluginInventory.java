@@ -17,6 +17,16 @@ public class FeaturePluginInventory {
     private String error;
     private String sha256;
     private String licenseAddon;
+    // connected hosts that get the plugin's agent part from the kvm playbook, since pushing it failed
+    private Integer deployingHosts;
+
+    public Integer getDeployingHosts() {
+        return deployingHosts;
+    }
+
+    public void setDeployingHosts(Integer deployingHosts) {
+        this.deployingHosts = deployingHosts;
+    }
 
     public String getId() {
         return id;

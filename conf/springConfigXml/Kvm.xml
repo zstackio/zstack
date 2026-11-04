@@ -35,6 +35,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.plugin.FeaturePluginAgentExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMHostAddSshFileMd5CheckerExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
         </zstack:plugin>
     </bean>
 

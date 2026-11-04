@@ -1,6 +1,8 @@
 package org.zstack.core.plugin;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Implemented by a hypervisor module that deploys the agent parts of feature plugins to its hosts.
@@ -18,5 +20,12 @@ public interface FeaturePluginAgentExtensionPoint {
      * that installing the plugin later does not wait for them.
      */
     default void packageAdded(String pluginId, String sha256, File pkg) {
+    }
+
+    /**
+     * @return plugin id -&gt; number of hosts the agent part of the plugin is still being deployed to
+     */
+    default Map<String, Integer> deployingHosts() {
+        return Collections.emptyMap();
     }
 }

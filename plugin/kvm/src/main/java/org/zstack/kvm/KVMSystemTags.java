@@ -29,6 +29,10 @@ public class KVMSystemTags {
 
     public static SystemTag FORCE_DEPLOYMENT_ONCE = new SystemTag("force::deployment::once", HostVO.class);
 
+    // the agent part of a feature plugin could not be pushed to the host, the kvm playbook deploys it when it connects
+    public static final String FEATURE_PLUGIN_DEPLOYING_TOKEN = "pluginId";
+    public static PatternedSystemTag FEATURE_PLUGIN_DEPLOYING = new PatternedSystemTag(String.format("featurePlugin::deploying::{%s}", FEATURE_PLUGIN_DEPLOYING_TOKEN), HostVO.class);
+
     public static final String HVM_CPU_FLAG_TOKEN = "flag";
     public static PatternedSystemTag HVM_CPU_FLAG = new PatternedSystemTag(String.format("hvm::{%s}", HVM_CPU_FLAG_TOKEN), HostVO.class);
 
