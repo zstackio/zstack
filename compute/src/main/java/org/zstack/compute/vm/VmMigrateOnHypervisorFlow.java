@@ -39,11 +39,13 @@ public class VmMigrateOnHypervisorFlow implements Flow {
         boolean migrateFromDest = false;
         String strategy = null;
         Integer downTime = null;
+        long bandwidth = 0;
         if (spec.getMessage() instanceof MigrateVmMessage) {
             MigrateVmMessage vmMessage = (MigrateVmMessage) spec.getMessage();
             migrateFromDest = vmMessage.isMigrateFromDestination();
             strategy = vmMessage.getStrategy();
             downTime = vmMessage.getDownTime();
+            bandwidth = vmMessage.getBandwidth();
         }
 
         MigrateVmOnHypervisorMsg msg = new MigrateVmOnHypervisorMsg();
@@ -53,6 +55,7 @@ public class VmMigrateOnHypervisorFlow implements Flow {
         msg.setMigrateFromDestination(migrateFromDest);
         msg.setStrategy(strategy);
         msg.setDownTime(downTime);
+        msg.setBandwidth(bandwidth);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

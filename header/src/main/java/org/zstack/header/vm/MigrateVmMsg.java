@@ -17,6 +17,16 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     private boolean migrateFromDestination;
     private boolean allowUnknown;
     private Integer downTime;
+    private long bandwidth;
+
+    @Override
+    public long getBandwidth() {
+        return bandwidth;
+    }
+
+    public void setBandwidth(long bandwidth) {
+        this.bandwidth = bandwidth;
+    }
 
     @Override
     public Integer getDownTime() {
