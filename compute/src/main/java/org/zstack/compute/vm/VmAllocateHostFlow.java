@@ -24,6 +24,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -135,6 +136,10 @@ public class VmAllocateHostFlow implements Flow {
         if (!CollectionUtils.isEmpty(spec.getDiskAOs())) {
             msg.getRequiredPrimaryStorageUuids().addAll(spec.getDiskAOs().stream()
                     .map(APICreateVmInstanceMsg.DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
+        }
+        if (spec.isPreserveExistingDataVolumes()) {
+            spec.getDestDataVolumes().stream().map(VolumeInventory::getPrimaryStorageUuid)
+                    .filter(Objects::nonNull).forEach(msg::addRequiredPrimaryStorageUuid);
         }
         return msg;
     }
