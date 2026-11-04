@@ -23,6 +23,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
@@ -110,6 +112,12 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateVolume.toString().equals(spec.getVmOperation())) {
+            if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) && spec.getVmInstance().getAllVolumes() != null
+                    && spec.getVmInstance().getAllVolumes().stream()
+                    .anyMatch(volume -> VolumeType.Data.toString().equals(volume.getType())
+                            && VolumeStatus.Ready.toString().equals(volume.getStatus()))) {
+                checkLocalStorageForVmStart(spec.getVmInstance(), candidates);
+            }
             Map<String, Boolean> needCheckLocalStorageHosts = getNeedCheckLocalStorageHosts(candidates, spec);
             if (needCheckLocalStorageHosts.isEmpty()) {
                 return candidates;

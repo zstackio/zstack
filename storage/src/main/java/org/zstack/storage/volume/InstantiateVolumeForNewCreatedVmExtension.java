@@ -198,6 +198,9 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 ));
 
         for (VolumeInventory volume : spec.getDestDataVolumes()) {
+            if (spec.isPreserveExistingDataVolumes() && VolumeStatus.Ready.toString().equals(volume.getStatus())) {
+                continue;
+            }
             InstantiateVolumeMsg dmsg = fillMsg(new InstantiateVolumeMsg(), volume, spec);
             List<String> tags = volumeTagsMap.get(volume.getUuid());
             if (!CollectionUtils.isEmpty(tags)) {
