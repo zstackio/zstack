@@ -1053,6 +1053,22 @@ public class KVMAgentCommands {
     public static class CreateVlanBridgeResponse extends CreateBridgeResponse {
     }
 
+    public static class CreateVlanBridgesCmd extends AgentCommand {
+        @GrayVersion(value = "5.6.0")
+        private List<CreateVlanBridgeCmd> bridgeCmds;
+
+        public List<CreateVlanBridgeCmd> getBridgeCmds() {
+            return bridgeCmds;
+        }
+
+        public void setBridgeCmds(List<CreateVlanBridgeCmd> bridgeCmds) {
+            this.bridgeCmds = bridgeCmds;
+        }
+    }
+
+    public static class CreateVlanBridgesResponse extends CreateBridgeResponse {
+    }
+
     public static class VHostAddOn {
         private int queueNum;
         private String rxBufferSize;
