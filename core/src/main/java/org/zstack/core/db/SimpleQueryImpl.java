@@ -73,13 +73,13 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
 
     SimpleQueryImpl(Class<T> vo) {
         _entityClass = vo;
-        _builder = _dbf.getCriteriaBuilder();
+        _builder = _dbf.getCriteriaBuilder(vo);
     }
 
     SimpleQueryImpl(Class<T> vo, DatabaseFacade dbf) {
         _entityClass = vo;
         _dbf = dbf;
-        _builder = _dbf.getCriteriaBuilder();
+        _builder = _dbf.getCriteriaBuilder(vo);
     }
 
     @Override

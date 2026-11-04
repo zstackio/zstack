@@ -47,6 +47,11 @@ public interface DatabaseFacade {
     void hardDeleteCollectionSelectedBySQL(String sql, Class entityClass);
 
     CriteriaBuilder  getCriteriaBuilder();
+
+    /**
+     * The criteria builder of the persistence unit that maps the entity, which is a feature plugin's own for its entities.
+     */
+    CriteriaBuilder getCriteriaBuilder(Class entityClass);
     
     <T> SimpleQuery<T> createQuery(Class<T> entityClass);
 

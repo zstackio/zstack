@@ -520,6 +520,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    public CriteriaBuilder getCriteriaBuilder(Class entityClass) {
+        FeaturePluginPersistenceUnits.Unit u = FeaturePluginPersistenceUnits.unitOf(entityClass);
+        return u == null ? entityManagerFactory.getCriteriaBuilder() : u.emf.getCriteriaBuilder();
+    }
+
+    @Override
     public <T> SimpleQuery<T> createQuery(Class<T> entityClass) {
         assert entityClass.isAnnotationPresent(Entity.class)
                 : entityClass.getName() + " is not annotated by JPA @Entity";
@@ -539,8 +545,20 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         EntityMetadata.removeEntities(entities);
     }
 
+    private volatile EntityManager routingEntityManager;
+
+    /**
+     * The platform's EntityManager; once a feature plugin is loaded, one that sends calls on plugin entities to the
+     * plugin's persistence unit.
+     */
     public EntityManager getEntityManager() {
-        return entityManager;
+        if (FeaturePluginPersistenceUnits.isEmpty()) {
+            return entityManager;
+        }
+        if (routingEntityManager == null) {
+            routingEntityManager = FeaturePluginPersistenceUnits.routing(entityManager);
+        }
+        return routingEntityManager;
     }
 
     @Override

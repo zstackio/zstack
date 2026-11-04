@@ -18,7 +18,6 @@ public class FeaturePlugins {
     private static final String FOLDER = "featurePlugins";
 
     private static List<FeaturePluginInventory> installed;
-    private static final Map<String, List<String>> entitiesByPlugin = new HashMap<>();
     // canonical paths of the files zstack-ctl installed for each plugin
     private static final Map<String, Set<String>> filesByPlugin = new HashMap<>();
 
@@ -47,16 +46,6 @@ public class FeaturePlugins {
             }
         }
         installed = now;
-    }
-
-    public static List<String> loadedEntityClasses() {
-        List<String> ret = new ArrayList<>();
-        for (FeaturePluginInventory inv : installed()) {
-            if (FeaturePluginInventory.STATUS_LOADED.equals(inv.getStatus())) {
-                ret.addAll(entitiesByPlugin.get(inv.getId()));
-            }
-        }
-        return ret;
     }
 
     /**
@@ -136,12 +125,6 @@ public class FeaturePlugins {
                 return inv;
             }
 
-            Map<String, Object> mn = desc.get("mn") == null ? new HashMap<>() : (Map<String, Object>) desc.get("mn");
-            List<String> entities = mn.get("entities") == null ? new ArrayList<>() : (List<String>) mn.get("entities");
-            for (String entity : entities) {
-                Class.forName(entity);
-            }
-            entitiesByPlugin.put(inv.getId(), entities);
             inv.setStatus(FeaturePluginInventory.STATUS_LOADED);
         } catch (Throwable t) {
             inv.setStatus(FeaturePluginInventory.STATUS_FAILED);

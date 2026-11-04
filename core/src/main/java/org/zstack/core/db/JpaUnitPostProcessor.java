@@ -1,7 +1,6 @@
 package org.zstack.core.db;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.zstack.core.plugin.FeaturePlugins;
 import org.springframework.orm.jpa.persistenceunit.MutablePersistenceUnitInfo;
 import org.springframework.orm.jpa.persistenceunit.PersistenceUnitPostProcessor;
 
@@ -14,8 +13,6 @@ public class JpaUnitPostProcessor implements PersistenceUnitPostProcessor {
     
     @Override
     public void postProcessPersistenceUnitInfo(MutablePersistenceUnitInfo unit) {
-        FeaturePlugins.loadedEntityClasses().forEach(unit::addManagedClassName);
-
         /*
         unit.addProperty("hibernate.connection.username", getDbUser());
         unit.addProperty("hibernate.connection.password", getDbPassword());
