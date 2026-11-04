@@ -1,5 +1,6 @@
 package org.zstack.portal.managementnode;
 
+import org.zstack.core.plugin.FeaturePluginCoordinator;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -90,6 +91,8 @@ import static org.zstack.utils.ExceptionDSL.throwableSafe;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager, FindSameNodeExtensionPoint {
+    @Autowired
+    private FeaturePluginCoordinator featurePluginCoordinator;
     private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
 
     private List<ComponentWrapper> components;
@@ -551,6 +554,15 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 public void rollback(FlowRollback trigger, Map data) {
                     apim.stop();
                     trigger.rollback();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "load-feature-plugins";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    // after the API mediator, which takes the APIs of the plugins, and before the node is ready
+                    featurePluginCoordinator.loadInstalledPlugins();
+                    trigger.next();
                 }
             }).then(new NoRollbackFlow() {
                 String __name__ = "set-node-to-running";

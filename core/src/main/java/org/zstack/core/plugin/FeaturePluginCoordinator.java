@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.core.thread.ChainTask;
@@ -14,12 +13,16 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.external.plugin.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeState;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.plugin.sdk.LicenseCheckPoint;
+import org.zstack.header.plugin.sdk.PluginDescriptor;
+import org.zstack.header.plugin.sdk.PluginLicenseChecker;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
@@ -29,33 +32,31 @@ import org.zstack.utils.logging.CLogger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLUGIN_10002;
 
 /**
- * Keeps the feature plugins of all management nodes the same: syncs packages to the other nodes after
- * an install or uninstall, restarts the nodes one by one, and fetches missing packages when a node starts.
+ * Keeps the feature plugins of all management nodes the same without restarting them: after an install or uninstall
+ * each node lays the files out with zstack-ctl and loads, switches or unloads the plugins in its running management
+ * node. A node that starts loads the installed plugins and fetches packages it misses from the others.
  */
 public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FeaturePluginCoordinator.class);
-    private static final int RESTART_DELAY_SECONDS = 10;
-    private static final long PEER_RESTART_TIMEOUT_SECONDS = TimeUnit.MINUTES.toSeconds(15);
-    private static final long PEER_POLL_INTERVAL_SECONDS = 10;
-
-    private volatile boolean restartPending;
 
     @Autowired
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
     @Autowired
-    private DatabaseFacade dbf;
-    @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private FeaturePluginLoader loader;
+
+    // plugin id -> sha256 of the package this node has loaded
+    private final Map<String, String> loadedSha = new ConcurrentHashMap<>();
 
     String runCtl(String args) {
         ShellResult ret = ShellUtils.runAndReturn(String.format("zstack-ctl plugin %s", args));
@@ -79,10 +80,13 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         return JSONObjectUtil.toObject(out.substring(out.lastIndexOf('\n') + 1), LinkedHashMap.class);
     }
 
+    static boolean agentChanged(Map<String, Object> ctlResult) {
+        return Boolean.TRUE.equals(ctlResult.get("agentChanged"));
+    }
+
     /**
-     * Lets the hypervisor modules deploy the changed agent parts of feature plugins to their hosts now, when this
-     * management node does not restart for the change; a failure is only logged, the hosts get the change when
-     * they reconnect.
+     * Lets the hypervisor modules deploy the changed agent parts of feature plugins to their hosts; a failure is only
+     * logged, the hosts get the change when they reconnect.
      */
     void agentPartsChanged() {
         for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
@@ -92,24 +96,6 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                 logger.warn(String.format("%s failed to deploy the agent parts of feature plugins", ext.getClass().getSimpleName()), t);
             }
         }
-    }
-
-    /**
-     * True once this management node is going to restart to apply a feature plugin change; it refuses plugin
-     * operations until then.
-     */
-    boolean isRestartPending() {
-        return restartPending;
-    }
-
-    void markRestartPending() {
-        restartPending = true;
-    }
-
-    void restartLater() {
-        // leave time for the caller to fetch the API result before the management node stops
-        ShellUtils.runAndReturn(String.format("bash -c 'nohup sh -c \"sleep %d; zstack-ctl restart_node\" >/dev/null 2>&1 &'",
-                RESTART_DELAY_SECONDS));
     }
 
     /**
@@ -125,6 +111,102 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         }
     }
 
+    ErrorCode licenseError(PluginDescriptor plugin, LicenseCheckPoint point) {
+        for (PluginLicenseChecker checker : pluginRgty.getExtensionList(PluginLicenseChecker.class)) {
+            ErrorCode err = checker.check(plugin, point);
+            if (err != null) {
+                return err;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Brings the plugins loaded in this management node to the records zstack-ctl keeps: loads new ones, switches
+     * changed ones to their new package and unloads removed ones.
+     *
+     * @return plugin id -> why it could not be loaded
+     */
+    synchronized Map<String, String> apply() {
+        FeaturePlugins.refresh();
+        Map<String, FeaturePluginInventory> wanted = new LinkedHashMap<>();
+        for (FeaturePluginInventory r : FeaturePlugins.records()) {
+            // a record with a status of zstack-ctl's has no files to load
+            if (r.getStatus() == null && r.getSha256() != null) {
+                wanted.put(r.getId(), r);
+            }
+        }
+
+        for (String id : loader.loadedIds()) {
+            if (!wanted.containsKey(id)) {
+                loader.unload(id);
+                loadedSha.remove(id);
+                FeaturePlugins.clearState(id);
+            }
+        }
+
+        Map<String, String> failures = new LinkedHashMap<>();
+        for (FeaturePluginInventory r : wanted.values()) {
+            String id = r.getId();
+            if (r.getSha256().equals(loadedSha.get(id)) && loader.isLoaded(id)) {
+                continue;
+            }
+            File dir = FeaturePlugins.pluginDir(id, r.getSha256());
+            try {
+                if (loader.isLoaded(id)) {
+                    loader.switchTo(id, dir);
+                } else {
+                    loader.load(id, dir);
+                }
+                loadedSha.put(id, r.getSha256());
+                FeaturePlugins.setState(id, FeaturePluginInventory.STATUS_LOADED, null);
+                // what an unlicensed plugin is kept from doing waits for the licensing decision, it is only marked
+                ErrorCode err = licenseError(new PluginDescriptor(id, r.getVersion(), r.getLicenseAddon()), LicenseCheckPoint.LOAD);
+                if (err != null) {
+                    logger.warn(String.format("feature plugin[%s] is not licensed: %s", id, err));
+                    FeaturePlugins.setState(id, FeaturePluginInventory.STATUS_UNLICENSED, err.getReadableDetails());
+                }
+            } catch (Throwable t) {
+                logger.warn(String.format("failed to load feature plugin %s from %s", id, dir), t);
+                failures.put(id, t.getMessage());
+                FeaturePlugins.setState(id, FeaturePluginInventory.STATUS_FAILED, t.getMessage());
+                if (!loader.isLoaded(id)) {
+                    loadedSha.remove(id);
+                }
+            }
+        }
+        FeaturePlugins.setClassLoaders(loader.classLoaders());
+        return failures;
+    }
+
+    /**
+     * Applies the records here, lists the loaded plugins in this node's ui index and deploys changed agent parts.
+     */
+    Map<String, String> applyAndPublish(boolean agentChanged) {
+        Map<String, String> failures = apply();
+        try {
+            runCtl("reconcile --json --publish-ui");
+        } catch (Exception e) {
+            logger.warn("failed to publish the ui parts of feature plugins", e);
+        }
+        if (agentChanged) {
+            agentPartsChanged();
+        }
+        return failures;
+    }
+
+    /**
+     * Loads the installed plugins while the management node starts; start_node has laid their files out and written
+     * the ui index. A plugin that fails to load is marked Failed and the node starts anyway.
+     */
+    public void loadInstalledPlugins() {
+        try {
+            apply().forEach((id, error) -> logger.warn(String.format("feature plugin %s is not loaded: %s", id, error)));
+        } catch (Throwable t) {
+            logger.warn("failed to load feature plugins", t);
+        }
+    }
+
     private List<ManagementNodeVO> runningPeers() {
         return Q.New(ManagementNodeVO.class)
                 .notEq(ManagementNodeVO_.uuid, Platform.getManagementServerId())
@@ -133,12 +215,12 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     }
 
     /**
-     * Sends the package (null after an uninstall) to the other running management nodes and lets them reconcile.
+     * Sends the package (null after an uninstall) to the other running management nodes, which lay it out and apply
+     * the records.
      *
-     * @return uuids of the nodes that need a restart; a node that failed to sync is included,
-     * it fetches the package again when it starts
+     * @return host name of a node -> why it could not apply the change
      */
-    List<String> syncToPeers(String packagePath) {
+    Map<String, String> syncToPeers(String packagePath) {
         String content = null;
         String sha256 = null;
         if (packagePath != null) {
@@ -151,7 +233,7 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
             }
         }
 
-        List<String> restart = new ArrayList<>();
+        Map<String, String> failures = new LinkedHashMap<>();
         for (ManagementNodeVO peer : runningPeers()) {
             SyncFeaturePluginPackageMsg msg = new SyncFeaturePluginPackageMsg();
             msg.setPackageName(packagePath == null ? null : new File(packagePath).getName());
@@ -160,66 +242,12 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
             bus.makeServiceIdByManagementNodeId(msg, PluginManager.SERVICE_ID, peer.getUuid());
             MessageReply reply = bus.call(msg);
             if (!reply.isSuccess()) {
-                logger.warn(String.format("failed to sync feature plugins to management node[%s], it fetches them again" +
-                        " after restarting: %s", peer.getHostName(), reply.getError()));
-                restart.add(peer.getUuid());
-            } else if (((SyncFeaturePluginPackageReply) reply).isNeedRestart()) {
-                restart.add(peer.getUuid());
+                logger.warn(String.format("management node[%s] failed to apply the feature plugin change: %s",
+                        peer.getHostName(), reply.getError()));
+                failures.put(peer.getHostName(), reply.getError().getReadableDetails());
             }
         }
-        return restart;
-    }
-
-    /**
-     * Restarts the given management nodes one after another, this node last. Runs in the plugin operation that
-     * holds the cluster lock, so no other plugin operation starts while the nodes restart. Stops when a node
-     * does not come back in time, so that the cluster is never restarted as a whole.
-     */
-    void restartInOrder(List<String> peerUuids, boolean restartSelf) {
-        try {
-            if (!restartPeersInOrder(peerUuids)) {
-                return;
-            }
-        } catch (Throwable t) {
-            // this node still applies its own change, it would otherwise refuse plugin operations until restarted
-            logger.error("failed to restart the other management nodes for feature plugins", t);
-        }
-
-        if (restartSelf) {
-            restartLater();
-        }
-    }
-
-    private boolean restartPeersInOrder(List<String> peerUuids) throws InterruptedException {
-        List<ManagementNodeVO> peers = peerUuids.isEmpty() ? new ArrayList<>()
-                : Q.New(ManagementNodeVO.class).in(ManagementNodeVO_.uuid, peerUuids).list();
-        peers.sort(Comparator.comparing(ManagementNodeVO::getUuid));
-        for (ManagementNodeVO peer : peers) {
-            Timestamp before = dbf.getCurrentSqlTime();
-            RestartManagementNodeForFeaturePluginMsg msg = new RestartManagementNodeForFeaturePluginMsg();
-            bus.makeServiceIdByManagementNodeId(msg, PluginManager.SERVICE_ID, peer.getUuid());
-            MessageReply reply = bus.call(msg);
-            if (!reply.isSuccess() || !waitForRestart(peer.getHostName(), before)) {
-                logger.error(String.format("management node[%s] did not restart in %s seconds for feature plugins," +
-                        " stop restarting the other management nodes", peer.getHostName(), PEER_RESTART_TIMEOUT_SECONDS));
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean waitForRestart(String hostName, Timestamp before) throws InterruptedException {
-        // a management node recreates its record with a new joinDate when it starts
-        long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(PEER_RESTART_TIMEOUT_SECONDS);
-        while (System.currentTimeMillis() < deadline) {
-            TimeUnit.SECONDS.sleep(PEER_POLL_INTERVAL_SECONDS);
-            ManagementNodeVO vo = Q.New(ManagementNodeVO.class).eq(ManagementNodeVO_.hostName, hostName).limit(1).find();
-            if (vo != null && vo.getState() == ManagementNodeState.RUNNING && vo.getJoinDate() != null
-                    && vo.getJoinDate().after(before)) {
-                return true;
-            }
-        }
-        return false;
+        return failures;
     }
 
     private void addPackage(String packageName, byte[] content) throws IOException {
@@ -266,18 +294,10 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                 addPackage(msg.getPackageName(), content);
             }
             Map<String, Object> result = runCtlJson("reconcile --json");
-            reply.setNeedRestart(Boolean.TRUE.equals(result.get("needRestart")));
-            // a node that restarts deploys them on boot
-            if (Boolean.TRUE.equals(result.get("agentChanged")) && !reply.isNeedRestart()) {
-                agentPartsChanged();
-            }
-            if (reply.isNeedRestart()) {
-                // the node that synced restarts this node later
-                markRestartPending();
-            }
             refreshDrivers();
-            if (!reply.isNeedRestart()) {
-                FeaturePlugins.refresh();
+            Map<String, String> failures = applyAndPublish(agentChanged(result));
+            if (!failures.isEmpty()) {
+                reply.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", failures));
             }
         } catch (OperationFailureException e) {
             reply.setError(e.getErrorCode());
@@ -307,12 +327,6 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
             reply.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", e.getMessage()));
         }
         bus.reply(msg, reply);
-    }
-
-    void handle(RestartManagementNodeForFeaturePluginMsg msg) {
-        markRestartPending();
-        bus.reply(msg, new MessageReply());
-        restartLater();
     }
 
     @Override
@@ -356,17 +370,10 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
             }
         }
 
-        // restart only if this really changed the plugins, a package no node has does not cause restarts
         Map<String, Object> result = runCtlJson("reconcile --json");
-        boolean needRestart = Boolean.TRUE.equals(result.get("needRestart"));
-        // the hosts were reconnected on boot with the old agent parts
-        if (Boolean.TRUE.equals(result.get("agentChanged")) && !needRestart) {
-            agentPartsChanged();
-        }
-        if (needRestart) {
-            logger.info("fetched missing feature plugin packages from other management nodes, restart to load them");
-            markRestartPending();
-            restartLater();
-        }
+        refreshDrivers();
+        logger.info("fetched missing feature plugin packages from other management nodes, loading them");
+        applyAndPublish(agentChanged(result)).forEach((id, error) ->
+                logger.warn(String.format("feature plugin %s is not loaded: %s", id, error)));
     }
 }

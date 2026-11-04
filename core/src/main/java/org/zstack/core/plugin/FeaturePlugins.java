@@ -1,102 +1,115 @@
 package org.zstack.core.plugin;
 
 import org.apache.commons.io.FileUtils;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.header.core.external.plugin.FeaturePluginInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.YamlUtils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.CodeSource;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * The feature plugins installed on this management node, from the records zstack-ctl keeps outside the war in
+ * &lt;dataDir&gt;/feature-plugins/records, and how loading them went.
+ */
 public class FeaturePlugins {
     private static final CLogger logger = Utils.getLogger(FeaturePlugins.class);
-    private static final String FOLDER = "featurePlugins";
+    private static final String ROOT = "feature-plugins";
 
-    private static List<FeaturePluginInventory> installed;
-    // canonical paths of the files zstack-ctl installed for each plugin
-    private static final Map<String, Set<String>> filesByPlugin = new HashMap<>();
+    private static List<FeaturePluginInventory> records;
+    // plugin id -> {status, error} of loading it; a record's own status (left by zstack-ctl) comes first
+    private static final Map<String, String[]> states = new ConcurrentHashMap<>();
+    // class loader -> id of the plugin loaded by it
+    private static final Map<ClassLoader, String> classLoaders = new ConcurrentHashMap<>();
+
+    public static File recordDir() {
+        return Paths.get(CoreGlobalProperty.DATA_DIR, ROOT, "records").toFile();
+    }
+
+    /**
+     * The folder zstack-ctl lays the management node part of a plugin package out in.
+     */
+    public static File pluginDir(String id, String sha256) {
+        return Paths.get(CoreGlobalProperty.DATA_DIR, ROOT, "mn", id, sha256.substring(0, 12)).toFile();
+    }
 
     public static synchronized List<FeaturePluginInventory> installed() {
-        if (installed == null) {
-            installed = load();
+        if (records == null) {
+            records = load();
         }
-        return installed;
-    }
-
-    /**
-     * Reads the records again after a change that needs no restart, e.g. of a driver-only plugin. A plugin whose
-     * package did not change keeps the status it got when the management node started.
-     */
-    public static synchronized void refresh() {
-        Map<String, FeaturePluginInventory> before = new HashMap<>();
-        for (FeaturePluginInventory inv : installed()) {
-            before.put(inv.getId(), inv);
-        }
-        filesByPlugin.clear();
-        List<FeaturePluginInventory> now = load();
-        for (int i = 0; i < now.size(); i++) {
-            FeaturePluginInventory old = before.get(now.get(i).getId());
-            if (old != null && Objects.equals(old.getSha256(), now.get(i).getSha256())) {
-                now.set(i, old);
+        List<FeaturePluginInventory> ret = new ArrayList<>();
+        for (FeaturePluginInventory r : records) {
+            FeaturePluginInventory inv = new FeaturePluginInventory();
+            inv.setId(r.getId());
+            inv.setName(r.getName());
+            inv.setCategory(r.getCategory());
+            inv.setVersion(r.getVersion());
+            inv.setSha256(r.getSha256());
+            inv.setLicenseAddon(r.getLicenseAddon());
+            inv.setStatus(r.getStatus());
+            inv.setError(r.getError());
+            String[] state = states.get(r.getId());
+            if (inv.getStatus() == null && state != null) {
+                inv.setStatus(state[0]);
+                inv.setError(state[1]);
             }
-        }
-        installed = now;
-    }
-
-    /**
-     * @return the id of the feature plugin whose jar contains the class, null if the class does not come from a plugin
-     */
-    public static String pluginIdOf(Class<?> clz) {
-        installed();
-        CodeSource source = clz.getProtectionDomain().getCodeSource();
-        if (source == null || source.getLocation() == null) {
-            return null;
-        }
-
-        String path;
-        try {
-            path = new File(source.getLocation().toURI()).getCanonicalPath();
-        } catch (Exception e) {
-            return null;
-        }
-        for (Map.Entry<String, Set<String>> e : filesByPlugin.entrySet()) {
-            if (e.getValue().contains(path)) {
-                return e.getKey();
-            }
-        }
-        return null;
-    }
-
-    private static Set<String> loadFiles(File record) {
-        Set<String> ret = new HashSet<>();
-        File files = new File(record.getParentFile(), record.getName().replaceAll("\\.yaml$", ".files"));
-        if (!files.exists()) {
-            return ret;
-        }
-        try {
-            for (String line : FileUtils.readLines(files, StandardCharsets.UTF_8)) {
-                if (!line.trim().isEmpty()) {
-                    ret.add(new File(line.trim()).getCanonicalPath());
-                }
-            }
-        } catch (IOException e) {
-            logger.warn(String.format("failed to read installed files of feature plugin %s", files.getAbsolutePath()), e);
+            ret.add(inv);
         }
         return ret;
     }
 
+    /**
+     * Reads the records again after zstack-ctl changed them.
+     */
+    public static synchronized void refresh() {
+        records = load();
+    }
+
+    /**
+     * The records as zstack-ctl wrote them; a status here is zstack-ctl's (the plugin has no files to load).
+     */
+    static synchronized List<FeaturePluginInventory> records() {
+        if (records == null) {
+            records = load();
+        }
+        return new ArrayList<>(records);
+    }
+
+    static void setState(String id, String status, String error) {
+        states.put(id, new String[]{status, error});
+    }
+
+    static void clearState(String id) {
+        states.remove(id);
+    }
+
+    /**
+     * @param loaded plugin id -> the class loader the plugin is loaded by now
+     */
+    static void setClassLoaders(Map<String, ClassLoader> loaded) {
+        classLoaders.clear();
+        loaded.forEach((id, cl) -> classLoaders.put(cl, id));
+    }
+
+    /**
+     * @return the id of the feature plugin whose class loader defined the class, null for a platform class
+     */
+    public static String pluginIdOf(Class<?> clz) {
+        ClassLoader cl = clz.getClassLoader();
+        return cl == null ? null : classLoaders.get(cl);
+    }
+
     private static List<FeaturePluginInventory> load() {
         List<FeaturePluginInventory> ret = new ArrayList<>();
-        for (String path : PathUtil.scanFolderOnClassPath(FOLDER)) {
-            if (path.endsWith(".yaml")) {
-                FeaturePluginInventory inv = loadDescriptor(new File(path));
-                filesByPlugin.put(inv.getId(), loadFiles(new File(path)));
-                ret.add(inv);
+        File[] files = recordDir().listFiles((d, n) -> n.endsWith(".yaml"));
+        if (files != null) {
+            for (File f : files) {
+                ret.add(loadRecord(f));
             }
         }
         ret.sort(Comparator.comparing(FeaturePluginInventory::getId));
@@ -104,7 +117,7 @@ public class FeaturePlugins {
     }
 
     @SuppressWarnings("unchecked")
-    private static FeaturePluginInventory loadDescriptor(File file) {
+    private static FeaturePluginInventory loadRecord(File file) {
         FeaturePluginInventory inv = new FeaturePluginInventory();
         inv.setId(file.getName().replaceAll("\\.yaml$", ""));
         try {
@@ -122,14 +135,11 @@ public class FeaturePlugins {
             if (skip != null) {
                 inv.setStatus(String.valueOf(skip.get("status")));
                 inv.setError(String.valueOf(skip.get("reason")));
-                return inv;
             }
-
-            inv.setStatus(FeaturePluginInventory.STATUS_LOADED);
         } catch (Throwable t) {
             inv.setStatus(FeaturePluginInventory.STATUS_FAILED);
             inv.setError(t.toString());
-            logger.warn(String.format("failed to load feature plugin descriptor %s", file.getAbsolutePath()), t);
+            logger.warn(String.format("failed to read the record of feature plugin %s", file.getAbsolutePath()), t);
         }
         return inv;
     }

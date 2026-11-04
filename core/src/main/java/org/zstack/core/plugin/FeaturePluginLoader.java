@@ -135,6 +135,15 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
     }
 
     /**
+     * @return plugin id -> the class loader the plugin is loaded by now
+     */
+    public Map<String, ClassLoader> classLoaders() {
+        Map<String, ClassLoader> ret = new HashMap<>();
+        loaded.forEach((id, p) -> ret.put(id, p.classLoader));
+        return ret;
+    }
+
+    /**
      * @param dir the folder zstack-ctl laid the plugin's management node part out in, holding plugin.yaml, lib/ and classes/
      */
     public synchronized LoadedFeaturePlugin load(String id, File dir) {

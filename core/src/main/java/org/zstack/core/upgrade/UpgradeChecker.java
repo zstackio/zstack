@@ -162,11 +162,14 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", grayUpgradeFile.getAbsolutePath(), e.getMessage()));
         }
 
-        // feature plugins put grayUpgrade/<plugin id>.json beside the platform file; other files there,
-        // like the backup of the previous platform file, are not read
+        // feature plugins have classes/grayUpgrade/<plugin id>.json in their own folder
         for (FeaturePluginInventory plugin : FeaturePlugins.installed()) {
-            File file = PathUtil.findFileOnClassPath(String.format("grayUpgrade/%s.json", plugin.getId()));
-            if (file == null) {
+            if (plugin.getSha256() == null) {
+                continue;
+            }
+            File file = new File(FeaturePlugins.pluginDir(plugin.getId(), plugin.getSha256()),
+                    String.format("classes/grayUpgrade/%s.json", plugin.getId()));
+            if (!file.exists()) {
                 continue;
             }
             try {

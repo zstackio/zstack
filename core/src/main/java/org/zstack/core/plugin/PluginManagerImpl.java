@@ -272,33 +272,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             }
         }.execute();
         scanAndLoadPlugins(fileDirPath);
-        checkFeaturePluginLicenses();
         return true;
-    }
-
-    private ErrorCode checkLicense(PluginDescriptor plugin, LicenseCheckPoint point) {
-        for (PluginLicenseChecker checker : pluginRgty.getExtensionList(PluginLicenseChecker.class)) {
-            ErrorCode err = checker.check(plugin, point);
-            if (err != null) {
-                return err;
-            }
-        }
-        return null;
-    }
-
-    private void checkFeaturePluginLicenses() {
-        // what to do with an unlicensed plugin beyond marking it waits for the licensing decision
-        for (FeaturePluginInventory inv : FeaturePlugins.installed()) {
-            if (!FeaturePluginInventory.STATUS_LOADED.equals(inv.getStatus())) {
-                continue;
-            }
-            ErrorCode err = checkLicense(new PluginDescriptor(inv.getId(), inv.getVersion(), inv.getLicenseAddon()), LicenseCheckPoint.LOAD);
-            if (err != null) {
-                logger.warn(String.format("feature plugin[%s] is not licensed: %s", inv.getId(), err));
-                inv.setStatus(FeaturePluginInventory.STATUS_UNLICENSED);
-                inv.setError(err.getReadableDetails());
-            }
-        }
     }
 
     @Override
@@ -415,8 +389,6 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             coordinator.handle((SyncFeaturePluginPackageMsg) msg);
         } else if (msg instanceof FetchFeaturePluginPackageMsg) {
             coordinator.handle((FetchFeaturePluginPackageMsg) msg);
-        } else if (msg instanceof RestartManagementNodeForFeaturePluginMsg) {
-            coordinator.handle((RestartManagementNodeForFeaturePluginMsg) msg);
         } else if (msg instanceof DeletePluginDriversMsg) {
             handle((DeletePluginDriversMsg) msg);
         } else {
@@ -647,16 +619,6 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
         return JSONObjectUtil.toCollection(coordinator.runCtl("list --json").trim(), ArrayList.class, FeaturePluginPackageInventory.class);
     }
 
-    private Runnable restartAfter(List<String> peers, boolean restartSelf) {
-        if (peers.isEmpty() && !restartSelf) {
-            return null;
-        }
-        if (restartSelf) {
-            coordinator.markRestartPending();
-        }
-        return () -> coordinator.restartInOrder(peers, restartSelf);
-    }
-
     private void submitFeaturePluginOperation(APIMessage msg, APIEvent event, String name, FeaturePluginOperation operation) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -673,12 +635,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 try {
                     lock.lock();
                     locked = true;
-                    if (coordinator.isRestartPending()) {
-                        event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
-                                "the management node is restarting to apply a previous feature plugin change"));
-                    } else {
-                        after = operation.run();
-                    }
+                    after = operation.run();
                 } catch (CloudRuntimeException e) {
                     if (locked) {
                         event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", e.getMessage()));
@@ -693,7 +650,6 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
                 try {
                     bus.publish(event);
-                    // the lock is kept while the management nodes restart, no other plugin operation runs in between
                     if (after != null) {
                         after.run();
                     }
@@ -752,24 +708,52 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10003,
                             "feature plugin package[%s] is not found in the plugin repositories", msg.getPackagePath())));
             // installing with zstack-ctl on the command line skips this check, the check when loading covers it
-            ErrorCode licenseError = checkLicense(new PluginDescriptor(pkg.getId(), pkg.getVersion(), pkg.getLicenseAddon()), LicenseCheckPoint.INSTALL);
+            ErrorCode licenseError = coordinator.licenseError(new PluginDescriptor(pkg.getId(), pkg.getVersion(), pkg.getLicenseAddon()), LicenseCheckPoint.INSTALL);
             if (licenseError != null) {
                 throw new OperationFailureException(licenseError);
             }
+
+            FeaturePluginVO previous = Q.New(FeaturePluginVO.class).eq(FeaturePluginVO_.id, pkg.getId()).find();
             Map<String, Object> ret = coordinator.runCtlJson(String.format("install %s --json", pkg.getPath()));
             coordinator.refreshDrivers();
-            boolean restartSelf = Boolean.TRUE.equals(ret.get("needRestart"));
-            if (!restartSelf) {
-                FeaturePlugins.refresh();
+            // every management node loads the plugin now, the install holds only when all of them could
+            Map<String, String> failures = new LinkedHashMap<>();
+            String local = coordinator.applyAndPublish(FeaturePluginCoordinator.agentChanged(ret)).get(pkg.getId());
+            if (local != null) {
+                failures.put(Platform.getManagementServerIp(), local);
             }
-            List<String> peers = coordinator.syncToPeers((String) ret.get("package"));
-            if (Boolean.TRUE.equals(ret.get("agentChanged")) && !restartSelf) {
-                coordinator.agentPartsChanged();
+            failures.putAll(coordinator.syncToPeers((String) ret.get("package")));
+            if (!failures.isEmpty()) {
+                undoInstall(pkg.getId(), previous);
+                throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10002,
+                        "feature plugin %s cannot be loaded, the install is undone: %s", pkg.getId(), failures));
             }
+
             pkg.setInstalled(true);
             event.setInventory(pkg);
-            return restartAfter(peers, restartSelf);
+            return null;
         });
+    }
+
+    // back to the package installed before, or to no plugin
+    private void undoInstall(String pluginId, FeaturePluginVO previous) {
+        try {
+            String packagePath = null;
+            if (previous == null) {
+                coordinator.runCtlJson(String.format("uninstall %s --json --rollback", pluginId));
+            } else {
+                packagePath = listFeaturePluginPackages().stream().filter(p -> previous.getSha256().equals(p.getSha256()))
+                        .map(FeaturePluginPackageInventory::getPath).findFirst()
+                        .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10003,
+                                "the package of feature plugin %s %s is gone", pluginId, previous.getVersion())));
+                coordinator.runCtlJson(String.format("install %s --json", packagePath));
+            }
+            coordinator.refreshDrivers();
+            coordinator.applyAndPublish(true);
+            coordinator.syncToPeers(packagePath);
+        } catch (Throwable t) {
+            logger.warn(String.format("failed to undo the install of feature plugin %s", pluginId), t);
+        }
     }
 
     /**
@@ -814,15 +798,14 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             checkUninstallable(msg.getPluginId());
             Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json", msg.getPluginId()));
             coordinator.refreshDrivers();
-            boolean restartSelf = Boolean.TRUE.equals(ret.get("needRestart"));
-            if (!restartSelf) {
-                FeaturePlugins.refresh();
+            // unloading never fails a node; a node that could not apply the change unloads the plugin when it restarts
+            coordinator.applyAndPublish(FeaturePluginCoordinator.agentChanged(ret));
+            Map<String, String> failures = coordinator.syncToPeers(null);
+            if (!failures.isEmpty()) {
+                logger.warn(String.format("management nodes %s could not unload feature plugin %s: %s",
+                        failures.keySet(), msg.getPluginId(), failures));
             }
-            List<String> peers = coordinator.syncToPeers(null);
-            if (Boolean.TRUE.equals(ret.get("agentChanged")) && !restartSelf) {
-                coordinator.agentPartsChanged();
-            }
-            return restartAfter(peers, restartSelf);
+            return null;
         });
     }
 
