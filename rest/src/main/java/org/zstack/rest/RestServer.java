@@ -1,6 +1,7 @@
 package org.zstack.rest;
 
 import org.zstack.core.plugin.FeaturePluginGate;
+import org.zstack.core.plugin.FeaturePlugins;
 import org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint;
 import org.zstack.core.plugin.LoadedFeaturePlugin;
 import io.opentelemetry.api.trace.Span;
@@ -121,6 +122,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -369,6 +371,11 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
     @Override
     public boolean handleEvent(Event e) {
         if (e instanceof APIEvent) {
+            String pluginId = pluginJobs.remove(((APIEvent) e).getApiId());
+            if (pluginId != null) {
+                endPluginRequest(pluginId);
+            }
+
             RequestData d = asyncStore.complete((APIEvent) e);
 
             if (d != null && d.webHook != null) {
@@ -667,6 +674,12 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
     private Map<String, Object> apis = new java.util.concurrent.ConcurrentHashMap<>();
     private Set<String> sensitiveRestPaths = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private Map<Class, RestResponseWrapper> responseAnnotationByClass = new java.util.concurrent.ConcurrentHashMap<>();
+    // requests to the APIs of feature plugins being handled, by plugin id: a request until it is answered, an async
+    // API until its event; an unloading plugin waits for them before its API dispatch and services go
+    private final Map<String, AtomicInteger> pluginRequests = new java.util.concurrent.ConcurrentHashMap<>();
+    // apiId -> plugin id of the async APIs of feature plugins whose event has not come
+    private final Map<String, String> pluginJobs = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long PLUGIN_REQUEST_DRAIN_MILLIS = TimeUnit.SECONDS.toMillis(5);
 
     private HttpEntity<String> toHttpEntity(HttpServletRequest req) {
         try {
@@ -836,6 +849,16 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
 
             String matchPath = getMatchPath(path);
             Object api = matchPath == null ? null : apis.get(matchPath);
+            String pluginId = api == null ? null : FeaturePlugins.pluginIdOf(api instanceof Api ? ((Api) api).apiClass
+                    : ((Collection<Api>) api).iterator().next().apiClass);
+            if (pluginId != null) {
+                beginPluginRequest(pluginId);
+                // the plugin was unloaded since the route was found
+                if (apis.get(matchPath) != api) {
+                    endPluginRequest(pluginId);
+                    api = null;
+                }
+            }
             if (api == null) {
                 if (finalApiSpan != null) {
                     finalApiSpan.setStatus(StatusCode.ERROR, "API not found");
@@ -871,6 +894,10 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
                 response.setError(Platform.inerr(org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_REST_10014,
                         "failed to handle REST API: %s", e.getMessage()));
                 sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), response, rsp);
+            } finally {
+                if (pluginId != null) {
+                    endPluginRequest(pluginId);
+                }
             }
         } finally {
             endSpanAndScope(finalApiSpan, finalScope);
@@ -1584,6 +1611,11 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
             response.setLocation(buildAsyncJobLocation(msg.getId(), d.requestInfo.requestDestinationAddress, restf));
             response.setApiTimeout(timeoutMgr.getMessageTimeout(msg));
 
+            String pluginId = FeaturePlugins.pluginIdOf(msg.getClass());
+            if (pluginId != null) {
+                beginPluginRequest(pluginId);
+                pluginJobs.put(msg.getId(), pluginId);
+            }
             bus.send(msg);
 
             sendResponse(HttpStatus.ACCEPTED.value(), response, rsp);
@@ -1753,9 +1785,41 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
         plugin.getClasses().stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).forEach(this::registerApiClass);
     }
 
+    private void beginPluginRequest(String pluginId) {
+        pluginRequests.computeIfAbsent(pluginId, k -> new AtomicInteger()).incrementAndGet();
+    }
+
+    private void endPluginRequest(String pluginId) {
+        AtomicInteger n = pluginRequests.get(pluginId);
+        if (n != null) {
+            n.decrementAndGet();
+        }
+    }
+
+    // new requests find no route any more; the routed ones still reach the plugin's API dispatch and services
+    private void awaitPluginRequests(String pluginId) {
+        long deadline = System.currentTimeMillis() + PLUGIN_REQUEST_DRAIN_MILLIS;
+        AtomicInteger n = pluginRequests.get(pluginId);
+        while (n != null && n.get() > 0 && System.currentTimeMillis() < deadline) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(20);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        if (n != null && n.get() > 0) {
+            logger.warn(String.format("%d requests to feature plugin %s are still in progress after %d ms, it is unloaded anyway",
+                    n.get(), pluginId, PLUGIN_REQUEST_DRAIN_MILLIS));
+        }
+        pluginRequests.remove(pluginId);
+        pluginJobs.values().removeIf(pluginId::equals);
+    }
+
     @Override
     public void featurePluginUnloading(LoadedFeaturePlugin plugin) {
         plugin.getClasses().stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).forEach(this::unregisterApiClass);
+        awaitPluginRequests(plugin.getId());
         asyncStore.forgetResultsOf(plugin.getClassLoader());
         RequestDataJSONObjectUtil.forgetTypes(plugin.getClassLoader());
     }
