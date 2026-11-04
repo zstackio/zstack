@@ -408,5 +408,30 @@ class VxlanLazyAttachCase extends SubCase {
             value = true
         }
 
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "1"
+        }
+
+        List<VxlanKvmAgentCommands.CreateVxlanBridgesCmd> vxlanBatchCmds = Collections.synchronizedList(new ArrayList<>())
+        env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            vxlanBatchCmds.add(JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class))
+            return rsp
+        }
+        fdbcmds.clear()
+        reconnectHost { uuid = host1.uuid }
+
+        assert vxlanBatchCmds.size() == 2
+        assert vxlanBatchCmds.collect { it.bridgeCmds.size() } == [1, 1]
+        assert fdbcmds.size() == 2
+        assert fdbcmds.collect { it.networkUuids.size() } == [1, 1]
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "100"
+        }
+
     }
 }
