@@ -176,6 +176,8 @@ class ZbsPrimaryStorageCase extends SubCase {
             diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
             kvm = env.inventoryByName("kvm-1") as KVMHostInventory
             evtf = bean(EventFacade.class)
+
+            testSyncPrimaryStorageCapacityConcurrently()
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
             testPrepareHostsWhenAttachPrimaryStorageToCluster()
@@ -194,6 +196,22 @@ class ZbsPrimaryStorageCase extends SubCase {
             testDecodeMdsUriWithSpecialPassword()
             testMdsReconnectAfterMaximumPingFailures()
         }
+    }
+
+    void testSyncPrimaryStorageCapacityConcurrently() {
+        def threads = new ArrayList<>()
+        def success_cnt = new AtomicInteger(0)
+        (1..20).forEach {
+            threads.add(Thread.start {
+                syncPrimaryStorageCapacity {
+                    primaryStorageUuid = ps.uuid
+                }
+                success_cnt.incrementAndGet()
+            })
+        }
+
+        threads.each { it.join() }
+        assert success_cnt.get() == 20
     }
 
     void testCheckHostStorageConnection() {
