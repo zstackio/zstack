@@ -21,4 +21,6 @@ public class L2NetworkGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig MLDVersion = new GlobalConfig(CATEGORY, "mld.version");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig RealizeL2NetworkBatchCount = new GlobalConfig(CATEGORY, "realize.batch.count");
 }
