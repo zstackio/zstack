@@ -836,7 +836,8 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
                 return;
             }
 
-            String switching = FeaturePluginGate.awaitPath(path);
+            // the gate knows the paths of plugin APIs without the API version
+            String switching = FeaturePluginGate.awaitPath(StringUtils.removeStart(path, RestConstants.API_VERSION));
             if (switching != null) {
                 if (finalApiSpan != null) {
                     finalApiSpan.setStatus(StatusCode.ERROR, "feature plugin upgrading");

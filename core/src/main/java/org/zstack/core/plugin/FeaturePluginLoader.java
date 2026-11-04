@@ -191,7 +191,6 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
         try {
             loaded.remove(id);
             deactivate(old);
-            release(old);
             try {
                 activate(next);
             } catch (Throwable t) {
@@ -215,6 +214,8 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
             return next.view;
         } finally {
             FeaturePluginGate.close(id);
+            // after the gate: closing the old version's context and dropping its caches is most of a switch
+            release(old);
         }
     }
 
