@@ -505,6 +505,8 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
         Class apiResponseClass;
         RestRequest requestAnnotation;
         RestResponse responseAnnotation;
+        // taken with the route, so that a request routed before a feature plugin unloads is still answered
+        RestResponseWrapper responseWrapper;
         Map<String, String> requestMappingFields;
         String path;
         List<String> optionalPaths = new ArrayList<>();
@@ -946,7 +948,9 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
         if (evt.isSuccess()) {
             RestResponseWrapper w = responseAnnotationByClass.get(evt.getClass());
             if (w == null) {
-                throw new CloudRuntimeException(String.format("cannot find RestResponseWrapper for the class[%s]", evt.getClass()));
+                // the API of a feature plugin that was unloaded while the job ran
+                sendRestErrorResponse(HttpStatus.NOT_FOUND.value(), String.format("the API of the job is gone: %s", evt.getClass().getName()), rsp);
+                return;
             }
             writeResponse(response, w, ret.getResult());
             sendResponse(HttpStatus.OK.value(), response, rsp);
@@ -1555,7 +1559,7 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
 
         // the api succeeded
 
-        writeResponse(response, responseAnnotationByClass.get(api.apiResponseClass), reply);
+        writeResponse(response, api.responseWrapper, reply);
         boolean maskLogBody = !LogSafeGson.getSensitiveFields(
                 reply.getClass()).isEmpty();
         sendResponse(HttpStatus.OK.value(), response, rsp, null, maskLogBody);
@@ -1682,6 +1686,7 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
     private synchronized void registerApiClass(Class clz) {
         RestRequest at = (RestRequest) clz.getAnnotation(RestRequest.class);
         Api api = new Api(clz, at);
+        RestResponseWrapper wrapper = new RestResponseWrapper(api.responseAnnotation, api.apiResponseClass);
 
         List<String> paths = new ArrayList<>();
         if (!"null".equals(api.path)) {
@@ -1694,6 +1699,7 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
 
             api = new Api(clz, at);
             api.path = path;
+            api.responseWrapper = wrapper;
 
             if (LogSafeGson.needMaskLog(api.apiClass)) {
                 sensitiveRestPaths.add(normalizedPath);
@@ -1715,7 +1721,7 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
             }
         }
 
-        responseAnnotationByClass.put(api.apiResponseClass, new RestResponseWrapper(api.responseAnnotation, api.apiResponseClass));
+        responseAnnotationByClass.put(api.apiResponseClass, wrapper);
     }
 
     private synchronized void unregisterApiClass(Class clz) {
