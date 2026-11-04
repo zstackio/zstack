@@ -71,7 +71,6 @@ public class ZnsProxyInstaller {
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);
         runner.setRunOnLocal(true);
-        runner.setForceRun(true);
         runner.setPassword(host.getPassword());
         runner.setUsername(host.getUsername());
         runner.setSshPort(normalizeSshPort(host));
