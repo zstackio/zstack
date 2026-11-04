@@ -19,6 +19,8 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import javax.annotation.Nonnull;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -322,7 +324,13 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
     @Override
     public Thread newThread(@Nonnull Runnable arg0) {
-        return new Thread(arg0, "zs-thread-" + seqNum.getAndIncrement());
+        // the pool grows on whatever thread submits a task; a new thread must not keep the protection domains and
+        // context class loader of that caller, e.g. of a feature plugin that is unloaded later
+        return AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+            Thread t = new Thread(arg0, "zs-thread-" + seqNum.getAndIncrement());
+            t.setContextClassLoader(ThreadFacadeImpl.class.getClassLoader());
+            return t;
+        });
     }
 
     @Override

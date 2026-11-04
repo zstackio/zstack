@@ -1820,6 +1820,8 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
     public void featurePluginUnloading(LoadedFeaturePlugin plugin) {
         plugin.getClasses().stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).forEach(this::unregisterApiClass);
         awaitPluginRequests(plugin.getId());
+        // the property descriptors of the plugin's replies and events, which refer to their classes
+        PropertyUtils.clearDescriptors();
         asyncStore.forgetResultsOf(plugin.getClassLoader());
         RequestDataJSONObjectUtil.forgetTypes(plugin.getClassLoader());
     }
