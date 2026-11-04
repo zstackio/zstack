@@ -141,6 +141,10 @@ public class MemoryRepository {
                 .eq(HostVO_.status, HostStatus.Connected).orderBy(HostVO_.uuid, SimpleQuery.Od.ASC).listValues());
     }
 
+    public boolean isConnected(String host) {
+        return transaction(em -> Q.New(HostVO.class).eq(HostVO_.uuid, host).eq(HostVO_.status, HostStatus.Connected).isExists());
+    }
+
     public List<String> summaryTargets(List<String> requested, String zoneUuid) {
         if (requested != null && requested.isEmpty()) { return Collections.emptyList(); }
         return transaction(em -> {
@@ -272,14 +276,14 @@ public class MemoryRepository {
         }
     }
 
+    /** The Host's state, locked; the first plan creates it, and a concurrent first plan waits for that row. */
     private MemoryStateVO lockState(EntityManager em, String host) {
-        MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
-        if (state == null) {
-            state = new MemoryStateVO(); state.setHostUuid(host); state.setStatus(CONVERGING);
-            state.setControl("active");
-            em.persist(state);
-        }
-        return state;
+        java.sql.Timestamp now = new java.sql.Timestamp(System.currentTimeMillis());
+        em.createNativeQuery("INSERT IGNORE INTO MemoryStateVO (hostUuid, desiredRevision, status, control, failures, createDate, lastOpDate)"
+                        + " VALUES (:hostUuid, 0, :status, 'active', 0, :now, :now)")
+                .setParameter("hostUuid", host).setParameter("status", CONVERGING).setParameter("now", now)
+                .executeUpdate();
+        return em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
     }
 
     /** The generation a plan produced and, for an operation, the task that waits for it. */
@@ -293,8 +297,6 @@ public class MemoryRepository {
      * Recompute the desired configuration; a change starts a new generation.
      * An operator operation is always recorded as a task carrying its
      * generation, also when the configuration is already the desired one.
-     * Of two first plans of a Host, the one that inserts its state second fails;
-     * its caller plans again (next scan, next observation or the operator).
      */
     public Planned plan(String host, String control, String action, String actor, License license, Origin origin) {
         return transaction(em -> {

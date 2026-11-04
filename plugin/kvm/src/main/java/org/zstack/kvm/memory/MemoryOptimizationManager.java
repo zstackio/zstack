@@ -541,6 +541,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         if (preparing.contains(host)) { delivering.remove(host); round.finished(host, null); return; }
         MemoryRepository.Delivery delivery = repository.pending(host);
         if (delivery == null) { delivering.remove(host); round.finished(host, null); return; }
+        // A disconnected Host is sent its generation when it reconnects, as by the scan.
+        if (!repository.isConnected(host)) { delivering.remove(host); round.finished(host, null); return; }
         Map<String, Object> command = command(host, Platform.getUuid());
         command.put("generation", delivery.generation);
         command.put("desired", delivery.desired);

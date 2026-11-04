@@ -41,6 +41,7 @@ public class MemoryClusterOperationTest {
             hosts.removeAll(disconnected);
             return hosts;
         }
+        @Override public boolean isConnected(String host) { return !disconnected.contains(host); }
         String preparedBackend;
         long preparedCapacity;
 
@@ -304,6 +305,25 @@ public class MemoryClusterOperationTest {
         assertEquals("success", results.get("host1"));
         assertEquals("MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED", results.get("host2"));
         assertEquals("the Host still has its generation to receive", "paused", repository.controls.get("host2"));
+        assertEquals("a disconnected Host is not sent an apply it cannot receive", Collections.singletonList("host1"), appliedHosts());
+    }
+
+    @Test public void aConfigurationChangeIsSentOnlyToConnectedHosts() throws Exception {
+        setup();
+        repository.disconnected.add("host2");
+        manager.standardConfigurationChanged(null, ZramChange.NONE);
+        assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+        // The disconnected Host keeps its generation for the reconnect; no delivery is attempted or failed.
+        assertEquals(Collections.singletonList("host1"), appliedHosts());
+        assertTrue(repository.reasons.isEmpty());
+    }
+
+    private List<Object> appliedHosts() {
+        List<Object> hosts = new ArrayList<>();
+        for (Map<String, Object> command : manager.commands) {
+            if ("apply".equals(command.get("path"))) { hosts.add(command.get("hostUuid")); }
+        }
+        return hosts;
     }
 
     @Test public void aHostStillConvergingAtItsDeadlineReportsWhyItIsConverging() throws Exception {
