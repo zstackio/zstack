@@ -282,6 +282,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 allConfig.putAll(configsFromXml);
                 if (pluginId != null) {
                     pluginConfigs.computeIfAbsent(pluginId, k -> ConcurrentHashMap.newKeySet()).addAll(configsFromXml.keySet());
+                    undefinedAtStart.removeAll(configsFromXml.keySet());
                 }
                 // re-validate after merging xml's with db's
                 validateAll();
@@ -313,7 +314,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             Set<String> own = pluginConfigs.getOrDefault(pluginId, Collections.emptySet());
             for (GlobalConfig c : configsFromXml.values()) {
-                if (allConfig.containsKey(c.getIdentity()) && !own.contains(c.getIdentity())) {
+                if (allConfig.containsKey(c.getIdentity()) && !own.contains(c.getIdentity())
+                        && !undefinedAtStart.contains(c.getIdentity())) {
                     throw new IllegalArgumentException(String.format("feature plugin %s defines GlobalConfig[category: %s, name: %s]" +
                             " that is already defined", pluginId, c.getCategory(), c.getName()));
                 }
@@ -402,6 +404,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 GlobalConfig x = configsFromXml.get(g.getIdentity());
                 if (x == null) {
                     configsFromXml.put(g.getIdentity(), g);
+                    if (pluginId == null) {
+                        undefinedAtStart.add(g.getIdentity());
+                    }
                 } else {
                     x.setValue(g.value());
                     x.setDefaultValue(g.getDefaultValue());
@@ -872,6 +877,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
     // identities of the global configs each feature plugin loaded at runtime brought
     private final Map<String, Set<String>> pluginConfigs = new ConcurrentHashMap<>();
+    // identities the node took from database rows alone when it started: configs of feature plugins, which load later
+    // and take them over, and rows no definition has any more
+    private final Set<String> undefinedAtStart = ConcurrentHashMap.newKeySet();
 
     /**
      * Global configs of a feature plugin loaded at runtime. Values in the database stay when the plugin is unloaded
