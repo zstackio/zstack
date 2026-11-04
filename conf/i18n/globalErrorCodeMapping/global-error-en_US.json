@@ -463,6 +463,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10346": "NIC[uuid:%s, type:%s] does not support driver model[%s]: %s",
   "ORG_ZSTACK_COMPUTE_VM_10347": "Conflicting NIC driver preferences[%s] for VM[uuid:%s]",
   "ORG_ZSTACK_COMPUTE_VM_10345": "the vm[uuid:%s] with memory snapshots does not support setting machine type",
+  "ORG_ZSTACK_COMPUTE_VM_10349": "cannot stop vm[name:%s, uuid:%s]: hostUuid is null, cannot determine its current host",
+  "ORG_ZSTACK_COMPUTE_VM_10350": "cannot stop vm[name:%s, uuid:%s]: host[uuid:%s] does not exist",
   "ORG_ZSTACK_COMPUTE_HOST_10013": "networkInterface[name:%s] of instance[uuid:%s] cannot be found",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_INTEGRITY_10008": "encryption %s[id:%s] failed: %s",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_SMP_10000": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host within the attached compute clusters",
