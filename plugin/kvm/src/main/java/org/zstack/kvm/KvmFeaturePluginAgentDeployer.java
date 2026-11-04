@@ -1,14 +1,17 @@
 package org.zstack.kvm;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.host.HostGlobalConfig;
-import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.CloudBusSteppingCallback;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.Q;
 import org.zstack.core.plugin.FeaturePluginAgentExtensionPoint;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -16,32 +19,80 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.ReconnectHostMsg;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.kvm.KVMAgentCommands.ApplyFeaturePluginCmd;
+import org.zstack.kvm.KVMAgentCommands.ApplyFeaturePluginRsp;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
-import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Deploys the kvmagent parts of feature plugins with the kvm playbook: zstack-ctl keeps them and an index in the
- * kvm ansible module, the playbook runs on a host whose copy of the index differs.
+ * Deploys the kvmagent parts of feature plugins. zstack-ctl keeps them with an index in &lt;dataDir&gt;/feature-plugins/agent;
+ * they are copied into the kvm ansible module, whose playbook deploys them to a host with another copy of the index when
+ * it connects, and pushed to the connected hosts when they change. A host the push fails on is reconnected.
  */
 public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensionPoint, KVMHostAddSshFileMd5CheckerExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmFeaturePluginAgentDeployer.class);
     // where the kvm playbook keeps the index of the feature plugins it deployed
     private static final String HOST_INDEX = "/var/lib/zstack/kvm/package/feature-plugins/index";
+    private static final long APPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(8);
 
-    @Autowired
-    private AnsibleFacade asf;
     @Autowired
     private CloudBus bus;
     @Autowired
     private ResourceDestinationMaker destMaker;
 
+    private File moduleDir() {
+        return new File(PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible", "files", "kvm", "feature-plugins"));
+    }
+
     private String index() {
-        return PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible", "files", "kvm", "feature-plugins", "index");
+        return PathUtil.join(moduleDir().getAbsolutePath(), "index");
+    }
+
+    private static Map<String, String> readIndex(File index) {
+        Map<String, String> ret = new TreeMap<>();
+        if (!index.exists()) {
+            return ret;
+        }
+        try {
+            for (String line : FileUtils.readLines(index, StandardCharsets.UTF_8)) {
+                String[] parts = line.trim().split(" ");
+                if (parts.length == 2) {
+                    ret.put(parts[0], parts[1]);
+                }
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("cannot read %s", index), e);
+        }
+        return ret;
+    }
+
+    /**
+     * Copies the agent parts into the kvm ansible module, after deploying the module replaced it.
+     *
+     * @return the index the module had before, plugin id -&gt; sha256
+     */
+    synchronized Map<String, String> copyAgentParts() {
+        File src = Paths.get(CoreGlobalProperty.DATA_DIR, "feature-plugins", "agent").toFile();
+        Map<String, String> before = readIndex(new File(index()));
+        try {
+            FileUtils.deleteDirectory(moduleDir());
+            if (src.isDirectory()) {
+                FileUtils.copyDirectory(src, moduleDir());
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("cannot copy the agent parts of feature plugins from %s", src), e);
+        }
+        return before;
     }
 
     @Override
@@ -59,14 +110,80 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
         return checker;
     }
 
+    private ApplyFeaturePluginCmd applyCmd(String pluginId, String sha256) {
+        ApplyFeaturePluginCmd cmd = new ApplyFeaturePluginCmd();
+        cmd.pluginId = pluginId;
+        cmd.sha256 = sha256;
+        if (sha256 != null) {
+            try {
+                cmd.archive = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(moduleDir().getAbsolutePath(), pluginId + ".tar.gz")));
+            } catch (IOException e) {
+                throw new CloudRuntimeException(String.format("cannot read the agent part of feature plugin %s", pluginId), e);
+            }
+        }
+        return cmd;
+    }
+
     @Override
     public void agentPartsChanged() {
-        asf.deployModule(KVMConstant.ANSIBLE_MODULE_PATH, KVMConstant.ANSIBLE_PLAYBOOK_NAME);
+        Map<String, String> before = copyAgentParts();
+        Map<String, String> after = readIndex(new File(index()));
+        Set<String> changed = new TreeSet<>(before.keySet());
+        changed.addAll(after.keySet());
+        changed.removeIf(id -> Objects.equals(before.get(id), after.get(id)));
+        if (changed.isEmpty()) {
+            return;
+        }
+
         List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
                 .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .eq(HostVO_.status, HostStatus.Connected)
                 .listValues();
-        List<ReconnectHostMsg> msgs = hostUuids.stream().filter(destMaker::isManagedByUs).map(uuid -> {
+        List<KVMHostAsyncHttpCallMsg> msgs = new ArrayList<>();
+        List<String> pluginIds = new ArrayList<>();
+        for (String hostUuid : hostUuids.stream().filter(destMaker::isManagedByUs).collect(Collectors.toList())) {
+            for (String pluginId : changed) {
+                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                msg.setHostUuid(hostUuid);
+                msg.setPath(KVMConstant.FEATURE_PLUGIN_APPLY_PATH);
+                msg.setCommand(applyCmd(pluginId, after.get(pluginId)));
+                msg.setTimeout(APPLY_TIMEOUT);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                msgs.add(msg);
+                pluginIds.add(pluginId);
+            }
+        }
+        if (msgs.isEmpty()) {
+            return;
+        }
+
+        logger.info(String.format("push the kvmagent parts of feature plugins %s to %s hosts", changed, msgs.size() / changed.size()));
+        bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusListCallBack(null) {
+            @Override
+            public void run(List<MessageReply> replies) {
+                Set<String> failed = new LinkedHashSet<>();
+                for (int i = 0; i < replies.size(); i++) {
+                    KVMHostAsyncHttpCallMsg msg = msgs.get(i);
+                    MessageReply reply = replies.get(i);
+                    String error = !reply.isSuccess() ? reply.getError().toString() : null;
+                    if (error == null) {
+                        ApplyFeaturePluginRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(ApplyFeaturePluginRsp.class);
+                        error = rsp.isSuccess() ? null : rsp.getError();
+                    }
+                    if (error != null) {
+                        logger.warn(String.format("failed to push the kvmagent part of feature plugin %s to host[uuid:%s]: %s",
+                                pluginIds.get(i), msg.getHostUuid(), error));
+                        failed.add(msg.getHostUuid());
+                    }
+                }
+                reconnect(failed);
+            }
+        });
+    }
+
+    // the kvm playbook deploys what the push could not
+    private void reconnect(Collection<String> hostUuids) {
+        List<ReconnectHostMsg> msgs = hostUuids.stream().map(uuid -> {
             ReconnectHostMsg msg = new ReconnectHostMsg();
             msg.setHostUuid(uuid);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, uuid);
@@ -76,7 +193,7 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
             return;
         }
 
-        logger.info(String.format("reconnect %s hosts to deploy the changed kvmagent parts of feature plugins", msgs.size()));
+        logger.info(String.format("reconnect %s hosts to deploy the kvmagent parts of feature plugins", msgs.size()));
         bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusSteppingCallback(null) {
             @Override
             public void run(NeedReplyMessage msg, MessageReply reply) {

@@ -493,6 +493,19 @@ public class KVMAgentCommands {
         }
     }
 
+    // the platform's own commands for deploying feature plugins, not part of the plugin SDK
+    public static class ApplyFeaturePluginCmd extends AgentCommand {
+        public String pluginId;
+        // the package's sha256, null removes the plugin from the host
+        public String sha256;
+        // base64 of the plugin's agent archive zstack-ctl wrote
+        public String archive;
+    }
+
+    public static class ApplyFeaturePluginRsp extends AgentResponse {
+        public String status;
+    }
+
     public static class HostFactCmd extends AgentCommand {
     }
 

@@ -163,6 +163,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Autowired
     private AnsibleFacade asf;
     @Autowired
+    private KvmFeaturePluginAgentDeployer featurePluginAgentDeployer;
+    @Autowired
     private ResourceDestinationMaker destMaker;
     @Autowired
     private CloudBus bus;
@@ -443,6 +445,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         }
 
         asf.deployModule(KVMConstant.ANSIBLE_MODULE_PATH, KVMConstant.ANSIBLE_PLAYBOOK_NAME);
+        featurePluginAgentDeployer.copyAgentParts();
     }
 
     void physicalCpuStatusAlarmEvent(HostPhysicalDeviceStatusAlarmEventCmd cmd) {

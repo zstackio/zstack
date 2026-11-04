@@ -159,6 +159,7 @@ public interface KVMConstant {
     String HOST_STORAGEDEVICE_HBA_STATE_EVENT = "/storagedevice/hba/state/alarm";
     String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ALARM_PATH = "/host/process/physicalMemory/usage/alarm";
     String HOST_KVMAGENT_STATUS_PATH = "/host/kvmagent/status";
+    String FEATURE_PLUGIN_APPLY_PATH = "/host/featureplugin/apply";
 
     String KVM_AGENT_OWNER = "kvm";
 
