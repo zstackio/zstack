@@ -694,6 +694,9 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     .filter(p -> FeaturePluginPackageInventory.SOURCE_UPLOAD.equals(p.getSource())
                             && msg.getName().equals(new File(p.getPath()).getName()))
                     .findFirst().orElse(null));
+            if (event.getInventory() != null && event.getInventory().getError() == null) {
+                coordinator.packageAdded(event.getInventory());
+            }
             return null;
         });
     }

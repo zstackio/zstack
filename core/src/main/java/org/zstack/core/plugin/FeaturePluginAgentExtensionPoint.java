@@ -1,5 +1,7 @@
 package org.zstack.core.plugin;
 
+import java.io.File;
+
 /**
  * Implemented by a hypervisor module that deploys the agent parts of feature plugins to its hosts.
  */
@@ -10,4 +12,11 @@ public interface FeaturePluginAgentExtensionPoint {
      * and reconnects its hosts then.
      */
     void agentPartsChanged();
+
+    /**
+     * A plugin package was uploaded: install the system packages its agent part depends on, in the background, so
+     * that installing the plugin later does not wait for them.
+     */
+    default void packageAdded(String pluginId, String sha256, File pkg) {
+    }
 }

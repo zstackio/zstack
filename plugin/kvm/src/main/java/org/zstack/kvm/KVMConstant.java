@@ -160,6 +160,7 @@ public interface KVMConstant {
     String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ALARM_PATH = "/host/process/physicalMemory/usage/alarm";
     String HOST_KVMAGENT_STATUS_PATH = "/host/kvmagent/status";
     String FEATURE_PLUGIN_APPLY_PATH = "/host/featureplugin/apply";
+    String FEATURE_PLUGIN_PACKAGES_PATH = "/host/featureplugin/packages";
 
     String KVM_AGENT_OWNER = "kvm";
 

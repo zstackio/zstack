@@ -506,6 +506,17 @@ public class KVMAgentCommands {
         public String status;
     }
 
+    public static class FeaturePluginPackagesCmd extends AgentCommand {
+        public String pluginId;
+        public String sha256;
+        // "<os>-<arch>/<file name>" -> base64 of an rpm under agent/rpms/ built for the host's architecture
+        public Map<String, String> rpms;
+    }
+
+    public static class FeaturePluginPackagesRsp extends AgentResponse {
+        public List<String> installed;
+    }
+
     public static class HostFactCmd extends AgentCommand {
     }
 

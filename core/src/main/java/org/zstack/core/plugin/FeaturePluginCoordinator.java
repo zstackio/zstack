@@ -88,6 +88,16 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
      * Lets the hypervisor modules deploy the changed agent parts of feature plugins to their hosts; a failure is only
      * logged, the hosts get the change when they reconnect.
      */
+    void packageAdded(FeaturePluginPackageInventory pkg) {
+        for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
+            try {
+                ext.packageAdded(pkg.getId(), pkg.getSha256(), new File(pkg.getPath()));
+            } catch (Throwable t) {
+                logger.warn(String.format("%s failed to preinstall the agent packages of %s", ext.getClass().getSimpleName(), pkg.getPath()), t);
+            }
+        }
+    }
+
     void agentPartsChanged() {
         for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
             try {

@@ -11,6 +11,8 @@ import org.zstack.core.cloudbus.CloudBusSteppingCallback;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.Q;
 import org.zstack.core.plugin.FeaturePluginAgentExtensionPoint;
+import org.zstack.core.thread.Task;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
@@ -21,14 +23,21 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.kvm.KVMAgentCommands.ApplyFeaturePluginCmd;
 import org.zstack.kvm.KVMAgentCommands.ApplyFeaturePluginRsp;
+import org.zstack.kvm.KVMAgentCommands.FeaturePluginPackagesCmd;
+import org.zstack.kvm.KVMAgentCommands.FeaturePluginPackagesRsp;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+
+import javax.persistence.Tuple;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +46,9 @@ import java.util.stream.Collectors;
 /**
  * Deploys the kvmagent parts of feature plugins. zstack-ctl keeps them with an index in &lt;dataDir&gt;/feature-plugins/agent;
  * they are copied into the kvm ansible module, whose playbook deploys them to a host with another copy of the index when
- * it connects, and pushed to the connected hosts when they change. A host the push fails on is reconnected.
+ * it connects, and pushed to the connected hosts when they change. A host the push fails on is reconnected. The system
+ * packages an agent part depends on are installed when its plugin package is uploaded, a host that could not install
+ * them gets them from the playbook.
  */
 public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensionPoint, KVMHostAddSshFileMd5CheckerExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KvmFeaturePluginAgentDeployer.class);
@@ -49,6 +60,8 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
     private CloudBus bus;
     @Autowired
     private ResourceDestinationMaker destMaker;
+    @Autowired
+    private ThreadFacade thdf;
 
     private File moduleDir() {
         return new File(PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible", "files", "kvm", "feature-plugins"));
@@ -200,6 +213,104 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("failed to reconnect host[uuid:%s] for feature plugins: %s",
                             ((ReconnectHostMsg) msg).getHostUuid(), reply.getError()));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void packageAdded(String pluginId, String sha256, File pkg) {
+        thdf.submit(new Task<Void>() {
+            @Override
+            public Void call() {
+                preinstall(pluginId, sha256, pkg);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("preinstall-feature-plugin-packages-%s", pluginId);
+            }
+        });
+    }
+
+    // the rpms under agent/rpms/<os>-<arch>/ of a plugin package, by "<os>-<arch>/<file name>"
+    private static Map<String, byte[]> readRpms(File pkg) throws IOException {
+        Map<String, byte[]> ret = new TreeMap<>();
+        Path tmp = Files.createTempDirectory("feature-plugin-rpms");
+        try {
+            ShellResult r = ShellUtils.runAndReturn(String.format("tar xzf '%s' -C '%s' --wildcards 'agent/rpms/*/*.rpm'",
+                    pkg.getAbsolutePath(), tmp));
+            // tar fails when the package has no rpm
+            File[] folders = r.isReturnCode(0) ? tmp.resolve("agent").resolve("rpms").toFile().listFiles(File::isDirectory) : null;
+            for (File folder : folders == null ? new File[0] : folders) {
+                File[] rpms = folder.listFiles((d, n) -> n.endsWith(".rpm"));
+                for (File rpm : rpms == null ? new File[0] : rpms) {
+                    ret.put(folder.getName() + "/" + rpm.getName(), Files.readAllBytes(rpm.toPath()));
+                }
+            }
+        } finally {
+            FileUtils.deleteQuietly(tmp.toFile());
+        }
+        return ret;
+    }
+
+    private void preinstall(String pluginId, String sha256, File pkg) {
+        Map<String, byte[]> rpms;
+        try {
+            rpms = readRpms(pkg);
+        } catch (IOException e) {
+            logger.warn(String.format("cannot read the agent packages of %s", pkg), e);
+            return;
+        }
+        if (rpms.isEmpty()) {
+            return;
+        }
+
+        // the cloud bus takes each message to the management node of the host
+        List<Tuple> hosts = Q.New(HostVO.class).select(HostVO_.uuid, HostVO_.architecture)
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .listTuple();
+        List<KVMHostAsyncHttpCallMsg> msgs = new ArrayList<>();
+        for (Tuple host : hosts) {
+            FeaturePluginPackagesCmd cmd = new FeaturePluginPackagesCmd();
+            cmd.pluginId = pluginId;
+            cmd.sha256 = sha256;
+            cmd.rpms = new TreeMap<>();
+            rpms.forEach((name, content) -> {
+                if (name.split("/")[0].endsWith("-" + host.get(1, String.class))) {
+                    cmd.rpms.put(name, Base64.getEncoder().encodeToString(content));
+                }
+            });
+            if (cmd.rpms.isEmpty()) {
+                continue;
+            }
+
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setHostUuid(host.get(0, String.class));
+            msg.setPath(KVMConstant.FEATURE_PLUGIN_PACKAGES_PATH);
+            msg.setCommand(cmd);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+            msgs.add(msg);
+        }
+        if (msgs.isEmpty()) {
+            return;
+        }
+
+        logger.info(String.format("install the agent packages of feature plugin %s on %s hosts", pluginId, msgs.size()));
+        bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusSteppingCallback(null) {
+            @Override
+            public void run(NeedReplyMessage msg, MessageReply reply) {
+                String hostUuid = ((KVMHostAsyncHttpCallMsg) msg).getHostUuid();
+                FeaturePluginPackagesRsp rsp = reply.isSuccess() ? ((KVMHostAsyncHttpCallReply) reply).toResponse(FeaturePluginPackagesRsp.class) : null;
+                if (rsp != null && rsp.isSuccess()) {
+                    logger.info(String.format("installed the agent packages %s of feature plugin %s on host[uuid:%s]",
+                            rsp.installed, pluginId, hostUuid));
+                } else {
+                    // installing the plugin then leaves this host to the kvm playbook
+                    logger.warn(String.format("failed to install the agent packages of feature plugin %s on host[uuid:%s]: %s",
+                            pluginId, hostUuid, rsp == null ? reply.getError() : rsp.getError()));
                 }
             }
         });
