@@ -225,7 +225,17 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     /** What a Host's VM inventory proves about one VM: nothing, its absence or its presence. */
     private enum Presence { UNKNOWN, ABSENT, PRESENT }
 
-    private static final class VmIdentity {
+    /**
+     * Why a lifecycle binding found no generation to send, or null when there is nothing to do:
+     * only a VM proven absent, with no generation left, has nothing to revoke.
+     */
+    static String lifecycleFailure(String action, VmIdentity identity, MemoryAgentResponse response) {
+        boolean absent = identity.authoritative && !identity.present;
+        if (absent && "revoke".equals(action)) { return null; }
+        return absent ? "VM_INSTANCE_NOT_FOUND" : "VM_IDENTITY_UNKNOWN: " + MemoryOptimizationManager.failure(response);
+    }
+
+    static final class VmIdentity {
         final boolean authoritative;
         final boolean present;
         final String generation;
@@ -390,7 +400,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 && response.state.get("vms") instanceof Map;
     }
 
-    private static VmIdentity vmIdentity(MemoryAgentResponse response, String vm) {
+    static VmIdentity vmIdentity(MemoryAgentResponse response, String vm) {
         if (response == null || response.state == null) { return new VmIdentity(Presence.UNKNOWN, null, null); }
         Object raw = response.state.get("vms");
         // An empty vms map is only proof of absence when the Agent explicitly
@@ -489,10 +499,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 generation = lifecycleGenerations.get(inv.getUuid());
             }
             if (generation == null) {
-                // A VM proven absent with no generation left has nothing to revoke.
-                boolean nothingToRevoke = "revoke".equals(action) && identity.authoritative;
-                round.finished(inv.getUuid(), nothingToRevoke ? null : identity.authoritative
-                        ? "VM_INSTANCE_NOT_FOUND" : "VM_IDENTITY_UNKNOWN: " + MemoryOptimizationManager.failure(response));
+                round.finished(inv.getUuid(), lifecycleFailure(action, identity, response));
                 return;
             }
             Map<String, Object> command = new LinkedHashMap<>();

@@ -835,10 +835,13 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         return new MemoryLifecycleHooks.Round(what, calls, logger::error);
     }
 
-    /** Why an Agent call did not succeed, for a round's failures. */
+    /** Why an Agent call did not succeed, for a round's failures; never null, as null is a success there. */
     static String failure(MemoryAgentResponse response) {
         if (response == null) { return "AGENT_UNREACHABLE"; }
-        return response.reasonCode != null ? response.reasonCode : response.reason != null ? response.reason : response.status;
+        for (String reason : Arrays.asList(response.reasonCode, response.reason, response.getError(), response.status)) {
+            if (reason != null && !reason.trim().isEmpty()) { return reason; }
+        }
+        return "INVALID_AGENT_RESPONSE";
     }
 
     /** A read-only state sample: public state, service events and VM bindings follow it. */
