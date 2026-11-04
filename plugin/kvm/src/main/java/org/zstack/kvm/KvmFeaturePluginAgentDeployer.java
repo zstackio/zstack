@@ -283,8 +283,9 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
         Map<String, byte[]> ret = new TreeMap<>();
         Path tmp = Files.createTempDirectory("feature-plugin-rpms");
         try {
+            // as the management node's own user: files extracted with sudo are not readable to it
             ShellResult r = ShellUtils.runAndReturn(String.format("tar xzf '%s' -C '%s' --wildcards 'agent/rpms/*/*.rpm'",
-                    pkg.getAbsolutePath(), tmp));
+                    pkg.getAbsolutePath(), tmp), false);
             // tar fails when the package has no rpm
             File[] folders = r.isReturnCode(0) ? tmp.resolve("agent").resolve("rpms").toFile().listFiles(File::isDirectory) : null;
             for (File folder : folders == null ? new File[0] : folders) {
