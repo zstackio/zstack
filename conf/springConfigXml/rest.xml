@@ -24,6 +24,7 @@
     <bean id="RestServer" class="org.zstack.rest.RestServer">
         <zstack:plugin>
     		<zstack:extension interface="org.zstack.header.Component"/>
+    		<zstack:extension interface="org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint" order="10"/>
         </zstack:plugin>
     </bean>
 </beans>

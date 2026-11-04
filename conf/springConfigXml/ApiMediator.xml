@@ -16,6 +16,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
             <zstack:extension interface="org.zstack.core.thread.ThreadPoolRegisterExtensionPoint"/>
+            <zstack:extension interface="org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint" order="20"/>
         </zstack:plugin>
 
         <property name="apiWorkerNum" value="${ApiMediator.apiWorkerNum:5}"/>

@@ -49,14 +49,20 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
     @NoJsonSchema
     @APINoSee
     @GsonTransient
-    public static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
+    // feature plugins loaded at runtime add and drop theirs
+    public static Map<Class, Collection<FieldParam>> apiParams = new java.util.concurrent.ConcurrentHashMap<>();
 
     @NoJsonSchema
     @APINoSee
     @GsonTransient
     public static Set<Class> apiMessageClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
             .stream().filter(c -> !Modifier.isStatic(c.getModifiers()) && c.isAnnotationPresent(RestRequest.class))
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(APIMessage::newClassSet));
+
+    // feature plugins loaded at runtime add and drop theirs while others read it
+    private static Set<Class> newClassSet() {
+        return java.util.concurrent.ConcurrentHashMap.newKeySet();
+    }
 
     static {
         collectApiParams();
@@ -65,7 +71,11 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
 
     private static void collectResponseMappingFields() {
         BeanUtils.reflections.getSubTypesOf(APIResponse.class).stream().filter(clz-> clz != APIReply.class && clz != APIEvent.class
-         && !Modifier.isStatic(clz.getModifiers()) && clz.isAnnotationPresent(RestResponse.class)).forEach(clz -> {
+         && !Modifier.isStatic(clz.getModifiers()) && clz.isAnnotationPresent(RestResponse.class)).forEach(APIMessage::collectResponseMappingFields);
+    }
+
+    private static void collectResponseMappingFields(Class<?> clz) {
+        {
             RestResponse annotation = clz.getAnnotation(RestResponse.class);
             Map responseMappingFields = new HashMap();
 
@@ -95,7 +105,7 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             }
 
             APIResponse.responseMappingFields.put(clz, responseMappingFields);
-        });
+        }
     }
 
     public static Map<Class, Collection<FieldParam>> getApiParams() {
@@ -112,6 +122,47 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
         }
 
         for (Class clz : apiMessageClasses) {
+            collectApiParams(clz, defaultAnnotation);
+        }
+    }
+
+    private static APIParam defaultApiParam() {
+        class Nothing { @APIParam(required = false) public String nothing;}
+        try {
+            return Nothing.class.getField("nothing").getAnnotation(APIParam.class);
+        } catch (NoSuchFieldException e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    /**
+     * API messages and responses of a feature plugin loaded at runtime.
+     */
+    public static void addPluginApiClasses(Collection<Class<?>> classes) {
+        APIParam defaultAnnotation = defaultApiParam();
+        for (Class<?> clz : classes) {
+            if (Modifier.isStatic(clz.getModifiers()) || Modifier.isAbstract(clz.getModifiers())) {
+                continue;
+            }
+            if (APIMessage.class.isAssignableFrom(clz) && clz.isAnnotationPresent(RestRequest.class)) {
+                apiMessageClasses.add(clz);
+                collectApiParams(clz, defaultAnnotation);
+            } else if (APIResponse.class.isAssignableFrom(clz) && clz.isAnnotationPresent(RestResponse.class)) {
+                collectResponseMappingFields(clz);
+            }
+        }
+    }
+
+    public static void removePluginApiClasses(Collection<Class<?>> classes) {
+        for (Class<?> clz : classes) {
+            apiMessageClasses.remove(clz);
+            apiParams.remove(clz);
+            APIResponse.responseMappingFields.remove(clz);
+        }
+    }
+
+    private static void collectApiParams(Class clz, APIParam defaultAnnotation) {
+        {
             List<Field> fields = FieldUtils.getAllFields(clz);
 
             Map<String, FieldParam> fmap = new HashMap<>();

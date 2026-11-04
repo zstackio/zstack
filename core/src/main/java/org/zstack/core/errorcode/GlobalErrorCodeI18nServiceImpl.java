@@ -1,5 +1,7 @@
 package org.zstack.core.errorcode;
 
+import org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint;
+import org.zstack.core.plugin.LoadedFeaturePlugin;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -15,7 +17,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nService, Component {
+public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nService, Component, FeaturePluginRuntimeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(GlobalErrorCodeI18nServiceImpl.class);
 
     private static final String I18N_FOLDER = "i18n" + File.separator + "globalErrorCodeMapping";
@@ -38,59 +40,83 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
         return true;
     }
 
+    // messages read when the management node starts: the platform's and those of plugins installed the old way
+    private final Map<String, Map<String, String>> platformMessages = new HashMap<>();
+    private final Map<String, Map<String, String>> startupPluginMessages = new HashMap<>();
+    // plugin id -> locale -> messages of feature plugins loaded at runtime
+    private final Map<String, Map<String, Map<String, String>>> runtimePluginMessages = new ConcurrentHashMap<>();
+
     private void loadAllJsonFiles() {
         // global-error-<locale>.json comes from the platform, global-error-<locale>.<plugin id>.json from feature plugins
-        Map<String, Map<String, String>> platformMessages = new HashMap<>();
-        Map<String, Map<String, String>> pluginMessages = new HashMap<>();
         try {
             List<String> paths = PathUtil.scanFolderOnClassPath(I18N_FOLDER);
             for (String path : paths) {
-                if (!path.endsWith(FILE_SUFFIX)) {
-                    continue;
-                }
-
-                File file = new File(path);
-                String fileName = file.getName();
-                if (!fileName.startsWith(FILE_PREFIX)) {
-                    continue;
-                }
-
-                String name = fileName.substring(FILE_PREFIX.length(),
-                        fileName.length() - FILE_SUFFIX.length());
-                boolean fromPlugin = name.contains(".");
-                String locale = fromPlugin ? name.substring(0, name.indexOf('.')) : name;
-
-                try {
-                    String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-                    @SuppressWarnings("unchecked")
-                    Map<String, String> messages = JSONObjectUtil.toObject(content, LinkedHashMap.class);
-                    (fromPlugin ? pluginMessages : platformMessages)
-                            .computeIfAbsent(locale, k -> new LinkedHashMap<>()).putAll(messages);
-                    logger.info(String.format("loaded %d i18n error messages for locale [%s] from %s",
-                            messages.size(), locale, fileName));
-                } catch (Exception e) {
-                    logger.warn(String.format("failed to load i18n file [%s]: %s", path, e.getMessage()), e);
-                }
+                readFile(new File(path), platformMessages, startupPluginMessages);
             }
         } catch (Exception e) {
             logger.warn(String.format("failed to scan i18n folder: %s", e.getMessage()));
         }
+        merge();
+    }
+
+    private void readFile(File file, Map<String, Map<String, String>> platform, Map<String, Map<String, String>> plugin) {
+        String fileName = file.getName();
+        if (!fileName.endsWith(FILE_SUFFIX) || !fileName.startsWith(FILE_PREFIX)) {
+            return;
+        }
+
+        String name = fileName.substring(FILE_PREFIX.length(), fileName.length() - FILE_SUFFIX.length());
+        boolean fromPlugin = name.contains(".");
+        String locale = fromPlugin ? name.substring(0, name.indexOf('.')) : name;
+        try {
+            String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            @SuppressWarnings("unchecked")
+            Map<String, String> messages = JSONObjectUtil.toObject(content, LinkedHashMap.class);
+            (fromPlugin ? plugin : platform).computeIfAbsent(locale, k -> new LinkedHashMap<>()).putAll(messages);
+            logger.info(String.format("loaded %d i18n error messages for locale [%s] from %s",
+                    messages.size(), locale, fileName));
+        } catch (Exception e) {
+            logger.warn(String.format("failed to load i18n file [%s]: %s", file.getAbsolutePath(), e.getMessage()), e);
+        }
+    }
+
+    private synchronized void merge() {
+        List<Map<String, Map<String, String>>> plugins = new ArrayList<>();
+        plugins.add(startupPluginMessages);
+        plugins.addAll(runtimePluginMessages.values());
 
         Set<String> locales = new HashSet<>(platformMessages.keySet());
-        locales.addAll(pluginMessages.keySet());
+        plugins.forEach(m -> locales.addAll(m.keySet()));
         for (String locale : locales) {
             Map<String, String> merged = new LinkedHashMap<>(platformMessages.getOrDefault(locale, Collections.emptyMap()));
-            pluginMessages.getOrDefault(locale, Collections.emptyMap()).forEach((code, message) -> {
-                if (merged.putIfAbsent(code, message) != null) {
-                    logger.warn(String.format("i18n error message of %s for locale [%s] from a feature plugin is ignored," +
-                            " the platform defines it", code, locale));
-                }
-            });
+            for (Map<String, Map<String, String>> plugin : plugins) {
+                plugin.getOrDefault(locale, Collections.emptyMap()).forEach((code, message) -> {
+                    if (merged.putIfAbsent(code, message) != null) {
+                        logger.warn(String.format("i18n error message of %s for locale [%s] from a feature plugin is ignored," +
+                                " the platform or another plugin defines it", code, locale));
+                    }
+                });
+            }
             localeMessages.put(locale, Collections.unmodifiableMap(merged));
         }
 
         logger.info(String.format("GlobalErrorCodeI18nService loaded %d locales: %s",
                 localeMessages.size(), localeMessages.keySet()));
+    }
+
+    @Override
+    public void featurePluginLoaded(LoadedFeaturePlugin plugin) {
+        Map<String, Map<String, String>> messages = new HashMap<>();
+        plugin.filesUnder(I18N_FOLDER.replace(File.separator, "/") + "/").forEach(f -> readFile(f, messages, messages));
+        runtimePluginMessages.put(plugin.getId(), messages);
+        merge();
+    }
+
+    @Override
+    public void featurePluginUnloading(LoadedFeaturePlugin plugin) {
+        if (runtimePluginMessages.remove(plugin.getId()) != null) {
+            merge();
+        }
     }
 
     @Override

@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface APIResponse {
-    Map<Class, Map<String, String>> responseMappingFields = new HashMap<>();
+    Map<Class, Map<String, String>> responseMappingFields = new java.util.concurrent.ConcurrentHashMap<>();
 
     default LinkedHashMap toResponseMap(APIResponse rsp) {
         LinkedHashMap ret = new LinkedHashMap();

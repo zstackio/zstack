@@ -13,9 +13,10 @@ import org.zstack.utils.DebugUtils;
 import java.util.*;
 
 public class RBAC {
-    public static List<Permission> permissions = new ArrayList<>();
-    public static List<Role> roles = new ArrayList<>();
-    public static List<GlobalReadableResource> readableResources = new ArrayList<>();
+    // read concurrently while feature plugins loaded at runtime add and drop theirs
+    public static List<Permission> permissions = new java.util.concurrent.CopyOnWriteArrayList<>();
+    public static List<Role> roles = new java.util.concurrent.CopyOnWriteArrayList<>();
+    public static List<GlobalReadableResource> readableResources = new java.util.concurrent.CopyOnWriteArrayList<>();
     public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
 
@@ -478,6 +479,65 @@ public class RBAC {
             throw new CloudRuntimeException(String.format("cannot find role[name:%s]", name));
         }
         return opt.get();
+    }
+
+    /**
+     * What the RBACDescription classes of a feature plugin loaded at runtime added, so that unloading the plugin takes
+     * exactly that away.
+     */
+    public static class PluginRbac {
+        private final List<Permission> permissions = new ArrayList<>();
+        private final List<Role> roles = new ArrayList<>();
+        private final List<GlobalReadableResource> readableResources = new ArrayList<>();
+        private final Map<Role, Set<String>> contributedActions = new HashMap<>();
+    }
+
+    public static synchronized PluginRbac addDescriptions(Collection<Class<?>> descriptionClasses) {
+        PluginRbac ret = new PluginRbac();
+        int p = permissions.size();
+        int r = roles.size();
+        int g = readableResources.size();
+        int b = roleBuilders.size();
+        int c = roleContributors.size();
+        for (Class<?> dclz : descriptionClasses) {
+            RBACDescription rd;
+            try {
+                rd = (RBACDescription) dclz.getConstructor().newInstance();
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+            rd.permissions();
+            rd.roles();
+            rd.contributeToRoles();
+            rd.globalReadableResources();
+        }
+
+        ret.permissions.addAll(permissions.subList(p, permissions.size()));
+        ret.readableResources.addAll(readableResources.subList(g, readableResources.size()));
+        // as staticInit does for the platform's
+        for (RoleBuilder rb : new ArrayList<>(roleBuilders.subList(b, roleBuilders.size()))) {
+            rb.permissionsByNames.forEach(pname -> rb.role.allowedActions.addAll(findPermissionByName(pname).getNormalAPIs()));
+            roles.add(rb.role);
+        }
+        ret.roles.addAll(roles.subList(r, roles.size()));
+        for (RoleContributor rc : new ArrayList<>(roleContributors.subList(c, roleContributors.size()))) {
+            Role role = findRoleByName(rc.roleName);
+            Set<String> actions = new HashSet<>(rc.actions);
+            rc.normalActionsByPermissionName.forEach(pname -> actions.addAll(findPermissionByName(pname).getNormalAPIs()));
+            actions.removeAll(role.allowedActions);
+            role.allowedActions.addAll(actions);
+            ret.contributedActions.computeIfAbsent(role, k -> new HashSet<>()).addAll(actions);
+        }
+        roleBuilders.subList(b, roleBuilders.size()).clear();
+        roleContributors.subList(c, roleContributors.size()).clear();
+        return ret;
+    }
+
+    public static synchronized void remove(PluginRbac added) {
+        permissions.removeAll(added.permissions);
+        roles.removeAll(added.roles);
+        readableResources.removeAll(added.readableResources);
+        added.contributedActions.forEach((role, actions) -> role.allowedActions.removeAll(actions));
     }
 
     @StaticInit

@@ -10,15 +10,21 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
     private static final CLogger logger = CLoggerImpl.getLogger(PluginRegistryImpl.class);
     private Map<String, List<PluginExtension>> extensions = new HashMap<>();
     private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<>();
-    private Map<Class, List> extensionsByInterfaceClass = new HashMap<>();
-    private Map<Class, Map<Object, Object>> extensionAsMap = new HashMap<>();
-    private Map<Class, Map<Object, List>> extensionListAsMap = new HashMap<>();
+    // read concurrently while feature plugins add and drop extensions at runtime; a list a caller holds is changed in place
+    private Map<Class, List> extensionsByInterfaceClass = new ConcurrentHashMap<>();
+    private Map<Class, Map<Object, Object>> extensionAsMap = new ConcurrentHashMap<>();
+    private Map<Class, Map<Object, List>> extensionListAsMap = new ConcurrentHashMap<>();
+    // the key functions of saveExtensionAsMap and saveExtensionListAsMap, to build the maps again after a change
+    private Map<Class, Function> extensionAsMapKeys = new ConcurrentHashMap<>();
+    private Map<Class, Function> extensionListAsMapKeys = new ConcurrentHashMap<>();
 
     private void sortPlugins() {
         for (List<PluginExtension> exts : extensionsByInterfaceName.values()) {
@@ -127,7 +133,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
 
             try {
                 Class clazz = Class.forName(className);
-                List instances = new ArrayList();
+                List instances = new CopyOnWriteArrayList();
                 for (PluginExtension ext : exts) {
                     if (!instances.contains(ext.getInstance())) {
                         instances.add(ext.getInstance());
@@ -143,8 +149,69 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
 
     @Override
     public <T> List<T> getExtensionList(Class<T> clazz) {
-        List<T> exts = extensionsByInterfaceClass.get(clazz);
-        return exts == null ? new ArrayList<>() : exts;
+        // kept even when empty, so that a caller holding the list sees extensions feature plugins add later
+        return extensionsByInterfaceClass.computeIfAbsent(clazz, k -> new CopyOnWriteArrayList());
+    }
+
+    /**
+     * Adds the extensions of a feature plugin loaded at runtime. Lists callers already hold are changed in place.
+     */
+    public synchronized void addExtensions(Collection<PluginExtension> exts, ClassLoader cl) {
+        Set<String> changed = new HashSet<>();
+        for (PluginExtension ext : exts) {
+            extensionsByInterfaceName.computeIfAbsent(ext.getReferenceInterface(), k -> new ArrayList<>()).add(ext);
+            changed.add(ext.getReferenceInterface());
+        }
+        refreshInterfaces(changed, cl);
+    }
+
+    public synchronized void removeExtensions(Collection<PluginExtension> exts, ClassLoader cl) {
+        Set<String> changed = new HashSet<>();
+        for (PluginExtension ext : exts) {
+            List<PluginExtension> lst = extensionsByInterfaceName.get(ext.getReferenceInterface());
+            if (lst != null) {
+                lst.removeIf(it -> it == ext);
+            }
+            changed.add(ext.getReferenceInterface());
+        }
+        refreshInterfaces(changed, cl);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void refreshInterfaces(Set<String> names, ClassLoader cl) {
+        for (String name : names) {
+            List<PluginExtension> exts = extensionsByInterfaceName.computeIfAbsent(name, k -> new ArrayList<>());
+            exts.sort(Comparator.comparingInt(PluginExtension::getOrder).reversed());
+            Class clazz;
+            try {
+                clazz = Class.forName(name, false, cl);
+            } catch (ClassNotFoundException e) {
+                throw new CloudRuntimeException(e);
+            }
+
+            List target = new ArrayList();
+            for (PluginExtension ext : exts) {
+                if (!target.contains(ext.getInstance())) {
+                    target.add(ext.getInstance());
+                }
+            }
+            List current = getExtensionList(clazz);
+            current.retainAll(target);
+            for (int i = 0; i < target.size(); i++) {
+                if (!current.contains(target.get(i))) {
+                    current.add(Math.min(i, current.size()), target.get(i));
+                }
+            }
+
+            Function asMapKey = extensionAsMapKeys.get(clazz);
+            if (asMapKey != null) {
+                saveExtensionAsMap(clazz, asMapKey);
+            }
+            Function asListMapKey = extensionListAsMapKeys.get(clazz);
+            if (asListMapKey != null) {
+                saveExtensionListAsMap(clazz, asListMapKey);
+            }
+        }
     }
 
     @Override
@@ -159,6 +226,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
             m.put(key, ext);
         }
 
+        extensionAsMapKeys.put(clazz, func);
         extensionAsMap.put(clazz, m);
     }
 
@@ -189,6 +257,7 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
             lst.add(ext);
         }
 
+        extensionListAsMapKeys.put(clazz, func);
         extensionListAsMap.put(clazz, m);
     }
 

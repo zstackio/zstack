@@ -1,5 +1,7 @@
 package org.zstack.portal.apimediator;
 
+import org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint;
+import org.zstack.core.plugin.LoadedFeaturePlugin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -68,7 +70,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class ApiMediatorImpl extends AbstractService implements
         ApiMediator,
         ThreadPoolRegisterExtensionPoint,
-        GlobalApiMessageInterceptor {
+        GlobalApiMessageInterceptor,
+        FeaturePluginRuntimeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ApiMediator.class);
 
     @Autowired
@@ -417,6 +420,16 @@ public class ApiMediatorImpl extends AbstractService implements
     @Override
     public String getId() {
         return ApiMediatorConstant.SERVICE_ID;
+    }
+
+    @Override
+    public void featurePluginLoaded(LoadedFeaturePlugin plugin) {
+        ((ApiMessageProcessorImpl) processor).addServiceConfigs(plugin.filesUnder("serviceConfig/"), plugin.getClassLoader());
+    }
+
+    @Override
+    public void featurePluginUnloading(LoadedFeaturePlugin plugin) {
+        ((ApiMessageProcessorImpl) processor).removeMessages(plugin.getClasses());
     }
 
     @Override

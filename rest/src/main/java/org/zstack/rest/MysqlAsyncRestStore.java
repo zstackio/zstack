@@ -29,6 +29,13 @@ import java.util.concurrent.TimeUnit;
  * Created by xing5 on 2016/12/8.
  */
 public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
+    @Override
+    public void forgetResultsOf(ClassLoader cl) {
+        synchronized (results) {
+            results.values().removeIf(evt -> evt.getClass().getClassLoader() == cl);
+        }
+    }
+
     private static final CLogger logger = Utils.getLogger(MysqlAsyncRestStore.class);
 
     @Autowired

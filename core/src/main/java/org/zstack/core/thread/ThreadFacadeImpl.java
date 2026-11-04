@@ -334,6 +334,31 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         return _periodicTasks;
     }
 
+    /**
+     * Cancels the periodic tasks whose classes the class loader defined, e.g. those an unloaded feature plugin left
+     * behind; the task map keeps a cancelled task, and with it the plugin's classes, otherwise.
+     *
+     * @return how many tasks were cancelled
+     */
+    public int cancelTasksOf(ClassLoader cl) {
+        int n = 0;
+        for (Map.Entry<PeriodicTask, ScheduledFuture<?>> e : _periodicTasks.entrySet()) {
+            if (e.getKey().getClass().getClassLoader() == cl) {
+                e.getValue().cancel(true);
+                _periodicTasks.remove(e.getKey());
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Drops cancelled timer tasks now; a timer keeps them, and what they refer to, until their time comes.
+     */
+    public void purgeTimers() {
+        timerPool.pool.forEach(Timer::purge);
+    }
+
     @Override
     public Future<Void> submitPeriodicTask(final PeriodicTask task, long delay) {
         assert task.getInterval() != 0;

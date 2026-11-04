@@ -19,12 +19,28 @@ public class EntityMetadata {
         List<String> encryptColumns = new ArrayList<>();
     }
 
-    private static Map<Class, Metadata> metadata = new HashMap<>();
-    private static Set<Class> classesWithEncryptColumn = new HashSet<>();
+    private static Map<Class, Metadata> metadata = new java.util.concurrent.ConcurrentHashMap<>();
+    private static Set<Class> classesWithEncryptColumn = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     @StaticInit
     static void staticInit() {
-        BeanUtils.reflections.getTypesAnnotatedWith(Entity.class).forEach(clz -> {
+        BeanUtils.reflections.getTypesAnnotatedWith(Entity.class).forEach(EntityMetadata::register);
+    }
+
+    // entities of a feature plugin loaded at runtime
+    static void addEntities(java.util.Collection<Class<?>> classes) {
+        classes.forEach(EntityMetadata::register);
+    }
+
+    static void removeEntities(java.util.Collection<Class<?>> classes) {
+        classes.forEach(clz -> {
+            metadata.remove(clz);
+            classesWithEncryptColumn.remove(clz);
+        });
+    }
+
+    private static void register(Class<?> clz) {
+        {
             Metadata m = new Metadata();
             m.entityClass = clz;
             FieldUtils.getAllFields(clz).forEach(f -> {
@@ -40,7 +56,7 @@ public class EntityMetadata {
             });
 
             metadata.put(clz, m);
-        });
+        }
     }
 
 

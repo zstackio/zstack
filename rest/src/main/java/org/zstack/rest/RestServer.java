@@ -1,5 +1,7 @@
 package org.zstack.rest;
 
+import org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint;
+import org.zstack.core.plugin.LoadedFeaturePlugin;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
@@ -127,7 +129,7 @@ import static java.util.Arrays.asList;
 /**
  * Created by xing5 on 2016/12/7.
  */
-public class RestServer implements Component, CloudBusEventListener {
+public class RestServer implements Component, CloudBusEventListener, FeaturePluginRuntimeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(RestServer.class);
     private static final CLogger requestLogger = Utils.getSafeLogger("api.request");
     private static ThreadLocal<RequestInfo> requestInfo = new ThreadLocal<>();
@@ -658,9 +660,10 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private AntPathMatcher matcher = new AntPathMatcher();
 
-    private Map<String, Object> apis = new HashMap<>();
-    private Set<String> sensitiveRestPaths = new HashSet<>();
-    private Map<Class, RestResponseWrapper> responseAnnotationByClass = new HashMap<>();
+    // feature plugins loaded at runtime add and drop their APIs while requests are served
+    private Map<String, Object> apis = new java.util.concurrent.ConcurrentHashMap<>();
+    private Set<String> sensitiveRestPaths = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private Map<Class, RestResponseWrapper> responseAnnotationByClass = new java.util.concurrent.ConcurrentHashMap<>();
 
     private HttpEntity<String> toHttpEntity(HttpServletRequest req) {
         try {
@@ -710,7 +713,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private String getFormatBody(String path, String body) {
         path = getMatchPath(path);
-        if (sensitiveRestPaths.contains(path)) {
+        if (path != null && sensitiveRestPaths.contains(path)) {
             return "*****";
         } else {
             return body;
@@ -817,7 +820,8 @@ public class RestServer implements Component, CloudBusEventListener {
                 return;
             }
 
-            Object api = apis.get(getMatchPath(path));
+            String matchPath = getMatchPath(path);
+            Object api = matchPath == null ? null : apis.get(matchPath);
             if (api == null) {
                 if (finalApiSpan != null) {
                     finalApiSpan.setStatus(StatusCode.ERROR, "API not found");
@@ -1663,6 +1667,81 @@ public class RestServer implements Component, CloudBusEventListener {
         }
     }
 
+    private synchronized void registerApiClass(Class clz) {
+        RestRequest at = (RestRequest) clz.getAnnotation(RestRequest.class);
+        Api api = new Api(clz, at);
+
+        List<String> paths = new ArrayList<>();
+        if (!"null".equals(api.path)) {
+            paths.add(api.path);
+        }
+        paths.addAll(api.optionalPaths);
+
+        for (String path : paths) {
+            String normalizedPath = normalizePath(path);
+
+            api = new Api(clz, at);
+            api.path = path;
+
+            if (LogSafeGson.needMaskLog(api.apiClass)) {
+                sensitiveRestPaths.add(normalizedPath);
+            }
+
+            Object c = apis.get(normalizedPath);
+            if (c == null) {
+                apis.put(normalizedPath, api);
+            } else {
+                // a new list rather than a changed one, requests may be reading it
+                List lst = new ArrayList();
+                if (c instanceof Api) {
+                    lst.add(c);
+                } else {
+                    lst.addAll((List) c);
+                }
+                lst.add(api);
+                apis.put(normalizedPath, lst);
+            }
+        }
+
+        responseAnnotationByClass.put(api.apiResponseClass, new RestResponseWrapper(api.responseAnnotation, api.apiResponseClass));
+    }
+
+    private synchronized void unregisterApiClass(Class clz) {
+        for (Map.Entry<String, Object> e : new ArrayList<>(apis.entrySet())) {
+            Object c = e.getValue();
+            if (c instanceof Api) {
+                if (((Api) c).apiClass == clz) {
+                    apis.remove(e.getKey());
+                    sensitiveRestPaths.remove(e.getKey());
+                }
+                continue;
+            }
+
+            List lst = new ArrayList((List) c);
+            if (lst.removeIf(a -> ((Api) a).apiClass == clz)) {
+                if (lst.isEmpty()) {
+                    apis.remove(e.getKey());
+                    sensitiveRestPaths.remove(e.getKey());
+                } else {
+                    apis.put(e.getKey(), lst.size() == 1 ? lst.get(0) : lst);
+                }
+            }
+        }
+        responseAnnotationByClass.remove(((RestRequest) clz.getAnnotation(RestRequest.class)).responseClass());
+    }
+
+    @Override
+    public void featurePluginLoaded(LoadedFeaturePlugin plugin) {
+        plugin.getClasses().stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).forEach(this::registerApiClass);
+    }
+
+    @Override
+    public void featurePluginUnloading(LoadedFeaturePlugin plugin) {
+        plugin.getClasses().stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).forEach(this::unregisterApiClass);
+        asyncStore.forgetResultsOf(plugin.getClassLoader());
+        RequestDataJSONObjectUtil.forgetTypes(plugin.getClassLoader());
+    }
+
     private void build() {
         Reflections reflections = Platform.getReflections();
         Set<Class<?>> classes = reflections.getTypesAnnotatedWith(RestRequest.class).stream()
@@ -1671,48 +1750,8 @@ public class RestServer implements Component, CloudBusEventListener {
         List<String> errorApiList = new ArrayList();
         for (Class clz : classes) {
             RestRequest at = (RestRequest) clz.getAnnotation(RestRequest.class);
-            Api api = new Api(clz, at);
-
             collectRestRequestErrConfigApi(errorApiList, clz, at);
-
-            List<String> paths = new ArrayList<>();
-            if (!"null".equals(api.path)) {
-                paths.add(api.path);
-            }
-            paths.addAll(api.optionalPaths);
-
-
-            for (String path : paths) {
-                String normalizedPath = normalizePath(path);
-
-                api = new Api(clz, at);
-                api.path = path;
-
-                if (LogSafeGson.needMaskLog(api.apiClass)) {
-                    sensitiveRestPaths.add(normalizedPath);
-                }
-
-                if (!apis.containsKey(normalizedPath)) {
-                    apis.put(normalizedPath, api);
-                } else {
-                    Object c = apis.get(normalizedPath);
-
-                    List lst;
-                    if (c instanceof Api) {
-                        // merge to a list
-                        lst = new ArrayList();
-                        lst.add(c);
-
-                        apis.put(normalizedPath, lst);
-                    } else {
-                        lst = (List) c;
-                    }
-
-                    lst.add(api);
-                }
-            }
-
-            responseAnnotationByClass.put(api.apiResponseClass, new RestResponseWrapper(api.responseAnnotation, api.apiResponseClass));
+            registerApiClass(clz);
         }
 
         responseAnnotationByClass.put(APIEvent.class, new RestResponseWrapper(new RestResponse(){

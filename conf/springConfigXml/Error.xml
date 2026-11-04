@@ -16,6 +16,7 @@
     <bean id="GlobalErrorCodeI18nService" class="org.zstack.core.errorcode.GlobalErrorCodeI18nServiceImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint" order="40"/>
         </zstack:plugin>
     </bean>
 </beans>

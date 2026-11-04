@@ -12,4 +12,10 @@ public interface AsyncRestApiStore {
     RequestData complete(APIEvent evt);
 
     AsyncRestQueryResult query(String uuid);
+
+    /**
+     * Drops cached results whose classes the class loader defined, e.g. those of an unloaded feature plugin.
+     */
+    default void forgetResultsOf(ClassLoader cl) {
+    }
 }

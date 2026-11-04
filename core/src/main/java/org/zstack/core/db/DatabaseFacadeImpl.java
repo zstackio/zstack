@@ -58,7 +58,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     private List<SoftDeleteEntityExtensionPoint> softDeleteForAllExtensions = new ArrayList<SoftDeleteEntityExtensionPoint>();
     private Map<Class, List<HardDeleteEntityExtensionPoint>> hardDeleteExtensions = new HashMap<Class, List<HardDeleteEntityExtensionPoint>>();
     private List<HardDeleteEntityExtensionPoint> hardDeleteForAllExtensions = new ArrayList<HardDeleteEntityExtensionPoint>();
-    private Map<Class, EntityInfo> entityInfoMap = new HashMap<Class, EntityInfo>();
+    // feature plugins add and drop their entities at runtime
+    private Map<Class, EntityInfo> entityInfoMap = new java.util.concurrent.ConcurrentHashMap<Class, EntityInfo>();
     private String dbVersion;
 
     class EntityInfo {
@@ -523,6 +524,19 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         assert entityClass.isAnnotationPresent(Entity.class)
                 : entityClass.getName() + " is not annotated by JPA @Entity";
         return new SimpleQueryImpl<T>(entityClass, this);
+    }
+
+    /**
+     * Entities of a feature plugin loaded at runtime; they are in the plugin's own persistence unit.
+     */
+    public void addPluginEntities(Collection<Class<?>> entities) {
+        EntityMetadata.addEntities(entities);
+        entities.forEach(clz -> entityInfoMap.put(clz, new EntityInfo(clz)));
+    }
+
+    public void removePluginEntities(Collection<Class<?>> entities) {
+        entities.forEach(entityInfoMap::remove);
+        EntityMetadata.removeEntities(entities);
     }
 
     public EntityManager getEntityManager() {

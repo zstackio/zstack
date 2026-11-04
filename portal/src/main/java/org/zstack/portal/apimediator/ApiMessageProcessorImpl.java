@@ -39,7 +39,8 @@ import java.util.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private static CLogger logger = Utils.getLogger(ApiMessageProcessorImpl.class);
-    private Map<Class, ApiMessageDescriptor> descriptors = new HashMap<Class, ApiMessageDescriptor>();
+    // feature plugins loaded at runtime add and drop theirs
+    private Map<Class, ApiMessageDescriptor> descriptors = new java.util.concurrent.ConcurrentHashMap<Class, ApiMessageDescriptor>();
     private Map<Class, Set<GlobalApiMessageInterceptor>> globalInterceptors = new HashMap<Class, Set<GlobalApiMessageInterceptor>>();
     private Set<GlobalApiMessageInterceptor> globalInterceptorsForAllMsg = new HashSet<GlobalApiMessageInterceptor>();
     private Comparator<ApiMessageInterceptor> msgInterceptorComparator = Comparator
@@ -92,7 +93,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         this.unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
         this.minimalOn = Platform.isMinimalOn();
         this.configFolders = (List<String>) config.get("serviceConfigFolders");
-        this.supportApis = new ArrayList<>();
+        this.supportApis = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         populateGlobalInterceptors();
 
@@ -112,7 +113,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 File cfg = new File(p);
                 Unmarshaller unmarshaller = context.createUnmarshaller();
                 Service schema = (Service) unmarshaller.unmarshal(cfg);
-                createDescriptor(schema, cfg.getAbsolutePath());
+                createDescriptor(schema, cfg.getAbsolutePath(), null);
             }
 
             if (!this.unitTestOn) {
@@ -174,11 +175,34 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     }
 
 
-    private void createDescriptor(Service schema, String cfgPath) {
+    /**
+     * API messages a feature plugin loaded at runtime declares in its service config files.
+     */
+    public void addServiceConfigs(List<File> files, ClassLoader cl) {
+        try {
+            JAXBContext context = JAXBContext.newInstance("org.zstack.portal.apimediator.schema");
+            for (File cfg : files) {
+                Service schema = (Service) context.createUnmarshaller().unmarshal(cfg);
+                createDescriptor(schema, cfg.getAbsolutePath(), cl);
+            }
+        } catch (JAXBException e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    public void removeMessages(Collection<Class<?>> classes) {
+        for (Class<?> clz : classes) {
+            if (descriptors.remove(clz) != null) {
+                supportApis.remove(clz.getSimpleName());
+            }
+        }
+    }
+
+    private void createDescriptor(Service schema, String cfgPath, ClassLoader cl) {
         for (Service.Message mschema : schema.getMessage()) {
             Class msgClz = null;
             try {
-                msgClz = Class.forName(mschema.getName());
+                msgClz = cl == null ? Class.forName(mschema.getName()) : Class.forName(mschema.getName(), true, cl);
             } catch (ClassNotFoundException e) {
                 String err = String.format("unable to create ApiMessageDescriptor for message[name:%s, path:%s]", mschema.getName(), cfgPath);
                 throw new CloudRuntimeException(err, e);

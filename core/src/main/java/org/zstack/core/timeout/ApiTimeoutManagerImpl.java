@@ -7,6 +7,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint;
+import org.zstack.core.plugin.LoadedFeaturePlugin;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -26,7 +28,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * Created by frank on 2/17/2016.
  */
 public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
-        BeforeDeliveryMessageInterceptor, GlobalConfigInitExtensionPoint {
+        BeforeDeliveryMessageInterceptor, GlobalConfigInitExtensionPoint, FeaturePluginRuntimeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ApiTimeoutManagerImpl.class);
 
     @Autowired
@@ -196,7 +198,28 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                 .getSubTypesOf(ConfigurableTimeoutMessage.class).stream()
                 .filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
                 .collect(Collectors.toSet());
+        return prepareTimeoutGlobalConfig(allConfigurableMessageClasses);
+    }
 
+    // the timeouts of the messages of a feature plugin loaded at runtime, generated as for the platform's at start
+    @Override
+    @SuppressWarnings("unchecked")
+    public void featurePluginLoaded(LoadedFeaturePlugin plugin) {
+        Set<Class<? extends ConfigurableTimeoutMessage>> classes = plugin.subTypesOf(ConfigurableTimeoutMessage.class).stream()
+                .filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz) && !clz.isInterface()
+                        && !java.lang.reflect.Modifier.isAbstract(clz.getModifiers()))
+                .map(clz -> (Class<? extends ConfigurableTimeoutMessage>) clz)
+                .collect(Collectors.toSet());
+        ((GlobalConfigFacadeImpl) gcf).addPluginConfigs(plugin.getId(), Collections.emptyList(), Collections.emptyList(),
+                prepareTimeoutGlobalConfig(classes));
+    }
+
+    @Override
+    public void featurePluginUnloading(LoadedFeaturePlugin plugin) {
+        // GlobalConfigFacadeImpl drops all global configs of the plugin
+    }
+
+    private List<GlobalConfig> prepareTimeoutGlobalConfig(Set<Class<? extends ConfigurableTimeoutMessage>> allConfigurableMessageClasses) {
         List<GlobalConfig> results = new ArrayList<>();
         allConfigurableMessageClasses.forEach(clz -> {
             GlobalConfigVO vo = new GlobalConfigVO();

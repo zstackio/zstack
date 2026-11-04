@@ -16,6 +16,7 @@
 		<zstack:plugin>
             <!-- don't declare GlobalConfigFacade as Component, it's specially handled -->
             <zstack:extension interface="org.zstack.header.Service" />
+            <zstack:extension interface="org.zstack.core.plugin.FeaturePluginRuntimeExtensionPoint" order="50"/>
 		</zstack:plugin>
 	</bean>
 
