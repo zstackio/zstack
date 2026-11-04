@@ -746,7 +746,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                         .map(FeaturePluginPackageInventory::getPath).findFirst()
                         .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10003,
                                 "the package of feature plugin %s %s is gone", pluginId, previous.getVersion())));
-                coordinator.runCtlJson(String.format("install %s --json", packagePath));
+                // the previous version is lower than the recorded one, --rollback skips that check
+                coordinator.runCtlJson(String.format("install %s --json --rollback", packagePath));
             }
             coordinator.refreshDrivers();
             coordinator.applyAndPublish(true);
