@@ -4792,5 +4792,12 @@
   "ORG_ZSTACK_NETWORK_ZNS_10045": "无法启用 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
   "ORG_ZSTACK_NETWORK_ZNS_10046": "网段[uuid:%s]上已存在 DHCP 服务，但 GET 返回为空",
   "ORG_ZSTACK_NETWORK_ZNS_10047": "无法更新 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
-  "ORG_ZSTACK_NETWORK_ZNS_10048": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败"
+  "ORG_ZSTACK_NETWORK_ZNS_10048": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败",
+  "ORG_ZSTACK_VPC_10052": "IP[%s]不是有效的IPv4地址",
+  "ORG_ZSTACK_VPC_10053": "DNS记录[域名:%s]已添加到VPC路由器[uuid:%s]",
+  "ORG_ZSTACK_VPC_10054": "VPC路由器[uuid:%s]的DNS记录数量超过限制[%s]",
+  "ORG_ZSTACK_VPC_10055": "域名[%s]格式无效",
+  "ORG_ZSTACK_VPC_10056": "IP[%s]不在%s[uuid:%s]的私有网络范围内",
+  "ORG_ZSTACK_VPC_10057": "未找到DNS记录[uuid:%s]",
+  "ORG_ZSTACK_VPC_10058": "同步DNS记录到VPC路由器[uuid:%s]失败，原因：%s"
 }
