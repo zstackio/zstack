@@ -1,6 +1,7 @@
 package org.zstack.compute.allocator;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -80,15 +81,29 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
         List<String> clusterUuids = (List<String>) spec.getExtraData().get(HostAllocatorConstant.LocationSelector.cluster);
         String hostUuid = (String) spec.getExtraData().get(HostAllocatorConstant.LocationSelector.host);
 
-        if (zoneUuid == null && CollectionUtils.isEmpty(clusterUuids) && hostUuid == null && spec.getHypervisorType() == null) {
+        String hypervisorType = spec.getHypervisorType();
+
+        // normalize empty strings to null — treat empty string as "not specified"
+        zoneUuid = StringUtils.isEmpty(zoneUuid) ? null : zoneUuid;
+        hostUuid = StringUtils.isEmpty(hostUuid) ? null : hostUuid;
+        hypervisorType = StringUtils.isEmpty(hypervisorType) ? null : hypervisorType;
+        if (!CollectionUtils.isEmpty(clusterUuids)) {
+            clusterUuids = new ArrayList<>(clusterUuids);
+            clusterUuids.removeIf(s -> s == null || s.isEmpty());
+            if (clusterUuids.isEmpty()) {
+                clusterUuids = null;
+            }
+        }
+
+        if (zoneUuid == null && CollectionUtils.isEmpty(clusterUuids) && hostUuid == null && hypervisorType == null) {
             next(candidates);
             return;
         }
 
         if (amITheFirstFlow()) {
-            candidates = allocate(zoneUuid, clusterUuids, hostUuid, spec.getHypervisorType());
+            candidates = allocate(zoneUuid, clusterUuids, hostUuid, hypervisorType);
         } else {
-            candidates = allocate(candidates, zoneUuid, clusterUuids, hostUuid, spec.getHypervisorType());
+            candidates = allocate(candidates, zoneUuid, clusterUuids, hostUuid, hypervisorType);
         }
 
         if (candidates.isEmpty()) {
@@ -96,14 +111,14 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
             if (zoneUuid != null) {
                 args.append(String.format("zoneUuid=%s", zoneUuid)).append(" ");
             }
-            if (!clusterUuids.isEmpty()) {
+            if (!CollectionUtils.isEmpty(clusterUuids)) {
                 args.append(String.format("clusterUuid in %s", clusterUuids)).append(" ");
             }
             if (hostUuid != null) {
                 args.append(String.format("hostUuid=%s", hostUuid)).append(" ");
             }
-            if (spec.getHypervisorType() != null) {
-                args.append(String.format("hypervisorType=%s", spec.getHypervisorType())).append(" ");
+            if (hypervisorType != null) {
+                args.append(String.format("hypervisorType=%s", hypervisorType)).append(" ");
             }
             fail(Platform.operr("No host with %s found", args));
         } else {
