@@ -5,9 +5,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.errorcode.GlobalErrorCodeI18nService;
 import org.zstack.core.errorcode.GlobalErrorCodeI18nServiceImpl;
+import org.zstack.core.errorcode.LocaleUtils;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeDiagnostic;
 import org.zstack.header.errorcode.ErrorCodeDiagnosticHelper;
+
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TestErrorCodeDiagnosticI18n {
     private GlobalErrorCodeI18nService i18nService;
@@ -43,5 +46,48 @@ public class TestErrorCodeDiagnosticI18n {
         i18nService.localizeErrorCode(error, "pt_BR");
         Assert.assertTrue("unsupported locale should fallback to en_US",
                 error.getMessage().contains("VM NIC lifecycle setup failed"));
+    }
+
+    @Test
+    public void testStopVmWithoutHostI18nAndDiagnostic() {
+        assertStopErrorLocalized(ORG_ZSTACK_COMPUTE_VM_10349,
+                new String[]{"测试VM-100%", "vm-uuid"},
+                "无法停止云主机[名称:测试VM-100%, uuid:vm-uuid]：hostUuid 为空，无法确定当前所在的物理机",
+                "cannot stop vm[name:测试VM-100%, uuid:vm-uuid]: hostUuid is null, cannot determine its current host");
+    }
+
+    @Test
+    public void testStopVmWithMissingHostI18nAndDiagnostic() {
+        assertStopErrorLocalized(ORG_ZSTACK_COMPUTE_VM_10350,
+                new String[]{"测试VM-100%", "vm-uuid", "host-uuid"},
+                "无法停止云主机[名称:测试VM-100%, uuid:vm-uuid]：物理机[uuid:host-uuid]不存在",
+                "cannot stop vm[name:测试VM-100%, uuid:vm-uuid]: host[uuid:host-uuid] does not exist");
+    }
+
+    private void assertStopErrorLocalized(String globalErrorCode, String[] args,
+                                          String chineseMessage, String englishMessage) {
+        ErrorCode error = new ErrorCode("SYS.1006", "Operation Error", englishMessage);
+        error.setGlobalErrorCode(globalErrorCode);
+        error.setFormatArgs(args);
+
+        String locale = LocaleUtils.resolveLocale("zh-CN", i18nService.getAvailableLocales());
+        Assert.assertEquals("zh_CN", locale);
+        i18nService.localizeErrorCode(error, locale);
+        Assert.assertEquals(chineseMessage, error.getMessage());
+        Assert.assertEquals(englishMessage, error.getDetails());
+        Assert.assertEquals("SYS.1006", error.getCode());
+        Assert.assertEquals(globalErrorCode, error.getGlobalErrorCode());
+        Assert.assertArrayEquals(args, error.getFormatArgs());
+
+        ErrorCodeDiagnostic diagnostic = ErrorCodeDiagnosticHelper.toDiagnostic(error);
+        Assert.assertEquals("Cloud", diagnostic.getComponent());
+        Assert.assertEquals("VM", diagnostic.getCategory());
+        Assert.assertEquals(globalErrorCode.substring(globalErrorCode.lastIndexOf('_') + 1),
+                diagnostic.getCode());
+        Assert.assertEquals(chineseMessage, diagnostic.getMessage());
+
+        Assert.assertEquals(chineseMessage, i18nService.localizeErrorCodeDetails(error, locale).getDetails());
+        Assert.assertEquals(englishMessage, i18nService.getLocalizedMessage(globalErrorCode, "en_US", args));
+        Assert.assertEquals(englishMessage, i18nService.getLocalizedMessage(globalErrorCode, "pt_BR", args));
     }
 }
