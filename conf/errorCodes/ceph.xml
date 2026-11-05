@@ -1,0 +1,8 @@
+<error>
+    <prefix>CEPH</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>All destination SSH candidates failed the Ceph migration network precheck</description>
+    </code>
+</error>

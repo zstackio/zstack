@@ -1105,6 +1105,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         @NoLogging
         String dstMonSshPassword;
         int dstMonSshPort;
+        @NoLogging
+        public List<MigrationMonCandidate> dstMonCandidates;
 
         public String getParentUuid() {
             return parentUuid;
@@ -1171,8 +1173,37 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class MigrationMonCandidate implements Serializable {
+        public String monUuid;
+        public String ip;
+        public String networkType;
+        public String sshUsername;
+        @NoLogging
+        public String sshPassword;
+        public int sshPort;
+
+        MigrationMonCandidate(CephPrimaryStorageMonVO mon, String ip, String networkType) {
+            this.monUuid = mon.getUuid();
+            this.ip = ip;
+            this.networkType = networkType;
+            this.sshUsername = mon.getSshUsername();
+            this.sshPassword = mon.getSshPassword();
+            this.sshPort = mon.getSshPort();
+        }
+    }
+
     // common response of storage migration
     public static class StorageMigrationRsp extends AgentResponse {
+        public boolean networkPrecheckFailed;
+
+        @Override
+        public ErrorCode buildErrorCode() {
+            if (!isSuccess() && networkPrecheckFailed) {
+                return Platform.err(ORG_ZSTACK_STORAGE_CEPH_10024, CephErrors.MIGRATION_NETWORK_PRECHECK_FAILED,
+                        "operation error, because:%s", getError());
+            }
+            return super.buildErrorCode();
+        }
     }
 
     public static class GetVolumeSnapInfosCmd extends AgentCommand {
@@ -6228,16 +6259,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.setDstInstallPath(msg.getDstInstallPath());
 
         MonMigrateIpInfo dstMonMigrateIpInfo = new MonMigrateIpInfo(msg.getDstPrimaryStorageUuid());
-        CephPrimaryStorageMonVO dstMon = dstMonMigrateIpInfo.monMap.values().iterator().next();
-        String dstMonMigrateIp = dstMon.getHostname();
-        if (!dstMonMigrateIpInfo.getMonsMigrateIpInCidr().isEmpty()) {
-            dstMon = dstMonMigrateIpInfo.getMonsMigrateIpInCidr().get(0);
-            dstMonMigrateIp = dstMonMigrateIpInfo.getMigrateIp(dstMon.getUuid());
+        cmd.dstMonCandidates = dstMonMigrateIpInfo.getCandidates();
+        if (cmd.dstMonCandidates.isEmpty()) {
+            CephToCephMigrateVolumeSegmentReply reply = new CephToCephMigrateVolumeSegmentReply();
+            reply.setError(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10006,
+                    "all ceph mons of primary storage[uuid:%s] are not in Connected state", msg.getDstPrimaryStorageUuid()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
         }
-        cmd.setDstMonHostname(dstMonMigrateIp);
-        cmd.setDstMonSshUsername(dstMon.getSshUsername());
-        cmd.setDstMonSshPassword(dstMon.getSshPassword());
-        cmd.setDstMonSshPort(dstMon.getSshPort());
+        MigrationMonCandidate first = cmd.dstMonCandidates.get(0);
+        cmd.setDstMonHostname(first.ip);
+        cmd.setDstMonSshUsername(first.sshUsername);
+        cmd.setDstMonSshPassword(first.sshPassword);
+        cmd.setDstMonSshPort(first.sshPort);
 
         final MonMigrateIpInfo srcMonMigrateIpInfo = new MonMigrateIpInfo(msg.getPrimaryStorageUuid());
         List<String> srcMonsWithMigrateIp = new ArrayList<>();
@@ -6267,15 +6302,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     static class MonMigrateIpInfo {
         private final Map<String, CephPrimaryStorageMonVO> monMap;
 
-        private final Map<String, String> monMigrateIpMap = new HashMap<>();
+        private final Map<String, List<String>> monMigrateIpMap = new LinkedHashMap<>();
 
         public MonMigrateIpInfo(String psUuid) {
             CephPrimaryStorageVO psVO = Q.New(CephPrimaryStorageVO.class)
                     .eq(CephPrimaryStorageVO_.uuid, psUuid).find();
             List<CephPrimaryStorageMonVO> monVOS = new ArrayList<>(psVO.getMons());
+            monVOS.removeIf(mon -> mon.getStatus() != MonStatus.Connected);
             Collections.shuffle(monVOS);
             this.monMap = monVOS.stream().collect(
-                    Collectors.toMap(CephPrimaryStorageMonVO::getUuid, CephPrimaryStorageMonVO -> CephPrimaryStorageMonVO));
+                    Collectors.toMap(CephPrimaryStorageMonVO::getUuid, mon -> mon, (a, b) -> a, LinkedHashMap::new));
 
             String migrateCidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR
                     .getTokenByResourceUuid(psUuid, PrimaryStorageSystemTags.PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR_TOKEN);
@@ -6291,21 +6327,28 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 Optional.ofNullable(extraIps).ifPresent(it -> ips.addAll(Arrays.asList(it.split(","))));
                 List<String> cidrIps = NetworkUtils.filterIpsInCidr(ips, migrateCidr);
                 if (!cidrIps.isEmpty()) {
-                    monMigrateIpMap.put(mon.getUuid(), cidrIps.get(0));
+                    monMigrateIpMap.put(mon.getUuid(), cidrIps);
                 }
             }
         }
 
-        public List<CephPrimaryStorageMonVO> getMonsMigrateIpInCidr() {
-            if (monMigrateIpMap.isEmpty()) {
-                return Collections.emptyList();
+        public List<MigrationMonCandidate> getCandidates() {
+            Map<String, MigrationMonCandidate> candidates = new LinkedHashMap<>();
+            if (!monMigrateIpMap.isEmpty()) {
+                monMigrateIpMap.forEach((uuid, ips) -> ips.forEach(ip ->
+                        addCandidate(candidates, monMap.get(uuid), ip, "migration")));
+            } else {
+                monMap.values().forEach(mon -> addCandidate(candidates, mon, mon.getMonAddr(), "monAddr"));
+                monMap.values().forEach(mon -> addCandidate(candidates, mon, mon.getHostname(), "hostname"));
             }
-
-            return monMigrateIpMap.keySet().stream().map(monMap::get).collect(Collectors.toList());
+            return new ArrayList<>(candidates.values());
         }
 
-        public String getMigrateIp(String monUuid) {
-            return monMigrateIpMap.get(monUuid);
+        private void addCandidate(Map<String, MigrationMonCandidate> candidates, CephPrimaryStorageMonVO mon,
+                                  String ip, String networkType) {
+            if (StringUtils.isNotBlank(ip)) {
+                candidates.putIfAbsent(ip + ":" + mon.getSshPort(), new MigrationMonCandidate(mon, ip, networkType));
+            }
         }
     }
 
