@@ -1074,7 +1074,7 @@
   "ORG_ZSTACK_GUESTTOOLS_10023": "更新 vm[uuid:%s] 的网络配置失败，因为 GuestTools 版本过低，无法支持此功能。",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10059": "裸金属2机箱[UUID:%s]在后再%d秒仍未关机",
   "ORG_ZSTACK_GUESTTOOLS_10024": "更新虚拟机[uuid:%s]的网络配置失败，因为guesttools未运行。",
-  "ORG_ZSTACK_GUESTTOOLS_10021": "冲突主机名，三层网络[uuid:%s]上已有虚拟机[uuid:%s]使用主机名[%s]",
+  "ORG_ZSTACK_GUESTTOOLS_10021": "主机名冲突，虚拟机[uuid:%s]已使用主机名[%s]，位于三层网络[uuid:%s]",
   "ORG_ZSTACK_GUESTTOOLS_10022": "更新虚拟机[uuid:%s]的网络配置失败，因为该虚拟机未运行。",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10054": "失败通过网关[uuid:%s]ping裸金属实例[uuid:%s]，因为%s",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10055": "通过网关[uuid:%s]更改裸金属2实例[uuid:%s]的密码失败，因为%s",
