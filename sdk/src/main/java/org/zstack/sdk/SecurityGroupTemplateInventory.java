@@ -28,6 +28,14 @@ public class SecurityGroupTemplateInventory  {
         return this.description;
     }
 
+    public java.lang.String zhName;
+    public void setZhName(java.lang.String zhName) {
+        this.zhName = zhName;
+    }
+    public java.lang.String getZhName() {
+        return this.zhName;
+    }
+
     public boolean defaultSelected;
     public void setDefaultSelected(boolean defaultSelected) {
         this.defaultSelected = defaultSelected;
