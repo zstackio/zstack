@@ -9,4 +9,6 @@ public class IdentityGlobalProperty {
     public static int AUTHORIZATION_SESSION_CACHE_SIZE;
     @GlobalProperty(name = "identity.init.type", defaultValue = "IAM,IAM2")
     public static String IDENTITY_INIT_TYPE;
+    @GlobalProperty(name = "upgradeCustomizedRoleTpmPermission", defaultValue = "false")
+    public static boolean UPGRADE_CUSTOMIZED_ROLE_TPM_PERMISSION;
 }
