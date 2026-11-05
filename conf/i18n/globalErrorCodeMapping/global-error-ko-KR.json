@@ -3860,7 +3860,7 @@
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10011": "계정[%s]은 기본 보안 그룹에 대한 작업을 수행할 수 없습니다",
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10010": "계정[%s]은 기본 보안 그룹[%s]에 대한 작업을 수행할 수 없습니다",
   "ORG_ZSTACK_SNS_10026": "%s(으)로 이메일 주소를 업데이트할 수 없습니다. 이미 엔드포인트 [UUID:%s]에 존재하기 때문입니다",
-  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "VM의 네트워크 인터페이스 [UUID: %s]는 하나의 보안 그룹에만 속할 수 있습니다. 따라서 현재 보안 그룹 [UUID: %s]에서 제거할 수 없습니다.",
+  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "VM의 네트워크 인터페이스 [UUID: %s]는 보안 그룹에 하나 이상 연결되어 있어야 합니다. 프로젝트 [UUID: %s]에서 보안 그룹 사용이 필수입니다.",
   "ORG_ZSTACK_SNS_10024": "동일한 이메일 주소를 엔드포인트[uuid:%s]에 추가할 수 없습니다",
   "ORG_ZSTACK_SNS_10023": "플러그인[%s]을 찾을 수 없습니다",
   "ORG_ZSTACK_SNS_10022": "동일한 주소[%s:%s]로 SNMP 플랫폼을 생성할 수 없습니다",

@@ -160,14 +160,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     private void validate(APIShareResourceMsg msg) {
         if (Q.New(SecurityGroupVO.class).in(SecurityGroupVO_.uuid, msg.getResourceUuids()).isExists()) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10151,
-                    "cannot change security group sharing through %s; use APISetSecurityGroupSharingMsg instead", msg.getClass().getSimpleName()));
+                    "cannot change security group sharing through the resource sharing API. Use SetSecurityGroupSharing instead"));
         }
     }
 
     private void validate(APIRevokeResourceSharingMsg msg) {
         if (Q.New(SecurityGroupVO.class).in(SecurityGroupVO_.uuid, msg.getResourceUuids()).isExists()) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10151,
-                    "cannot change security group sharing through %s; use APISetSecurityGroupSharingMsg instead", msg.getClass().getSimpleName()));
+                    "cannot change security group sharing through the resource sharing API. Use SetSecurityGroupSharing instead"));
         }
     }
 
@@ -232,7 +232,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         if (SecurityGroupVO.class.getSimpleName().equals(ref.getResourceType()) && permissionChecker.isShared(msg.getResourceUuid())) {
             throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10144,
-                    "cannot change owner of shared security group[uuid:%s], revoke sharing first", msg.getResourceUuid()));
+                    "cannot change the owner of shared security group[uuid:%s]. Revoke sharing first", msg.getResourceUuid()));
         }
     }
 

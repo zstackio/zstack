@@ -3950,7 +3950,7 @@
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10011": "le compte[%s] n'est pas autorisé à effectuer des opérations sur le groupe de sécurité par défaut",
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10010": "le compte[%s] ne peut pas effectuer d'opérations sur le groupe de sécurité par défaut[%s]",
   "ORG_ZSTACK_SNS_10026": "impossible de mettre à jour l'adresse e-mail vers %s car elle existe déjà dans le point de terminaison [UUID:%s]",
-  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "l'interface réseau de la VM [UUID: %s] ne peut faire partie que d'un seul groupe de sécurité; par conséquent, elle ne peut pas être supprimée du groupe de sécurité actuel [UUID: %s].",
+  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "L'interface réseau de la VM [UUID: %s] doit rester associée à au moins un groupe de sécurité, car le projet [UUID: %s] exige l'utilisation de groupes de sécurité.",
   "ORG_ZSTACK_SNS_10024": "impossible d'ajouter la même adresse e-mail au point de terminaison[uuid:%s]",
   "ORG_ZSTACK_SNS_10023": "impossible de trouver le plugin[%s]",
   "ORG_ZSTACK_SNS_10022": "impossible de créer une plateforme SNMP avec la même adresse[%s:%s]",
