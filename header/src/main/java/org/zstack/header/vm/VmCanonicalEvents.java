@@ -205,6 +205,7 @@ public class VmCanonicalEvents {
         private String vmUuid;
         private String oldState;
         private String newState;
+        private String stateChangeSource;
         private VmInstanceInventory inventory;
         private Date date = new Date();
 
@@ -246,6 +247,14 @@ public class VmCanonicalEvents {
 
         public void setNewState(String newState) {
             this.newState = newState;
+        }
+
+        public String getStateChangeSource() {
+            return stateChangeSource;
+        }
+
+        public void setStateChangeSource(String stateChangeSource) {
+            this.stateChangeSource = stateChangeSource;
         }
     }
 
