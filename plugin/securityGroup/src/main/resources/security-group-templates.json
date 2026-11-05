@@ -3,13 +3,15 @@
     "id": "Custom",
     "name": "Custom",
     "description": "Create a security group with custom rules",
+    "zhName": "自定义",
     "defaultSelected": true,
     "rules": []
   },
   {
     "id": "CommonPorts",
-    "name": "Common ports",
+    "name": "Allow TCP ports 22/80/443/3389 and ICMP",
     "description": "Allow remote login, web access and ping over IPv4",
+    "zhName": "放通 22/80/443/3389 端口和 ICMP 协议",
     "defaultSelected": false,
     "rules": [
       {"type": "Ingress", "ipVersion": 4, "protocol": "TCP", "dstPortRange": "22", "action": "ACCEPT", "state": "Enabled", "priority": 1},
@@ -21,8 +23,9 @@
   },
   {
     "id": "AllowAllIpv4",
-    "name": "Allow all IPv4 traffic",
+    "name": "Allow all ports",
     "description": "Allow all inbound and outbound IPv4 traffic",
+    "zhName": "放通全部端口",
     "defaultSelected": false,
     "rules": [
       {"type": "Ingress", "ipVersion": 4, "protocol": "ALL", "action": "ACCEPT", "state": "Enabled", "priority": 1},

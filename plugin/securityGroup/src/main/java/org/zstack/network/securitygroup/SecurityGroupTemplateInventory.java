@@ -9,6 +9,7 @@ public class SecurityGroupTemplateInventory {
     private String id;
     private String name;
     private String description;
+    private String zhName;
     private boolean defaultSelected;
     private List<SecurityGroupTemplateRule> rules;
 
@@ -34,6 +35,14 @@ public class SecurityGroupTemplateInventory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getZhName() {
+        return zhName;
+    }
+
+    public void setZhName(String zhName) {
+        this.zhName = zhName;
     }
 
     public boolean isDefaultSelected() {

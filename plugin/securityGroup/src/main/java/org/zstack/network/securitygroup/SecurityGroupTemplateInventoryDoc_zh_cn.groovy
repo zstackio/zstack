@@ -20,7 +20,13 @@ doc {
 	}
 	field {
 		name "description"
-		desc "资源的详细描述"
+		desc "模板描述"
+		type "String"
+		since "5.7.0"
+	}
+	field {
+		name "zhName"
+		desc "模板的中文名称"
 		type "String"
 		since "5.7.0"
 	}
