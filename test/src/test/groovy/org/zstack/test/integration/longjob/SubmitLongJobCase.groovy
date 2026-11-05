@@ -63,11 +63,13 @@ class SubmitLongJobCase extends SubCase {
         job = dbf.reload(job)
         assert job.executeTime == null
 
+        // Legacy jobs can reach completion without a create timestamp.
+        job.setCreateDate(null)
         job.setState(LongJobState.Succeeded)
         dbf.update(job)
         job = dbf.reload(job)
         long exec2 = job.executeTime
-        assert exec2 >= 0
+        assert exec2 >= 1
 
         // try again
         job.setState(LongJobState.Canceled)
