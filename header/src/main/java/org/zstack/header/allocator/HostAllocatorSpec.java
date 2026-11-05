@@ -37,6 +37,7 @@ public class HostAllocatorSpec {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private String accountUuid;
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -161,7 +162,13 @@ public class HostAllocatorSpec {
         }
         return l3NetworkUuids;
     }
+    public String getAccountUuid() {
+        return accountUuid;
+    }
 
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
     public void setL3NetworkUuids(List<String> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
@@ -250,6 +257,7 @@ public class HostAllocatorSpec {
         msg.getOptionalPrimaryStorageUuids().forEach(spec::addOptionalPrimaryStorageUuids);
         spec.setAllocationScene(msg.getAllocationScene());
         spec.setArchitecture(msg.getArchitecture());
+        spec.setAccountUuid(msg.getAccountUuid());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }

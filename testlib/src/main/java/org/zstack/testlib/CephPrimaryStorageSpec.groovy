@@ -568,7 +568,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         return
                     }
 
-                    if (f.parent?.setVolumeChainInstallPaths() == snapshotPath) {
+                    if (f.parent?.pathString() == snapshotPath) {
                         children.add(f.pathString())
                     }
                 }
