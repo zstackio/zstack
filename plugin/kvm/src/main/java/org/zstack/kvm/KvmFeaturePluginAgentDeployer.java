@@ -2,23 +2,28 @@ package org.zstack.kvm;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusSteppingCallback;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.Q;
 import org.zstack.core.plugin.FeaturePluginAgentExtensionPoint;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
@@ -27,6 +32,8 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.ReconnectHostMsg;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.rest.JsonAsyncRESTCallback;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands.ApplyFeaturePluginCmd;
 import org.zstack.kvm.KVMAgentCommands.ApplyFeaturePluginRsp;
 import org.zstack.kvm.KVMAgentCommands.FeaturePluginPackagesCmd;
@@ -46,6 +53,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -72,6 +80,11 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
     private ResourceDestinationMaker destMaker;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private RESTFacade restf;
+
+    // plugin ids whose agent parts changed while a host was connecting, after its playbook may have deployed the old ones
+    private final Map<String, Set<String>> missedByConnectingHosts = new ConcurrentHashMap<>();
 
     private File moduleDir() {
         return new File(PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible", "files", "kvm", "feature-plugins"));
@@ -133,18 +146,28 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
         return checker;
     }
 
-    private ApplyFeaturePluginCmd applyCmd(String pluginId, String sha256) {
+    private static ApplyFeaturePluginCmd applyCmd(String pluginId, Map<String, String> index, Map<String, String> archives) {
         ApplyFeaturePluginCmd cmd = new ApplyFeaturePluginCmd();
         cmd.pluginId = pluginId;
-        cmd.sha256 = sha256;
-        if (sha256 != null) {
+        cmd.sha256 = index.get(pluginId);
+        cmd.archive = archives.get(pluginId);
+        return cmd;
+    }
+
+    // base64 of the agent archive of each plugin that changed, read once for all hosts
+    private Map<String, String> archives(Set<String> pluginIds, Map<String, String> index) {
+        Map<String, String> ret = new HashMap<>();
+        for (String id : pluginIds) {
+            if (index.get(id) == null) {
+                continue;
+            }
             try {
-                cmd.archive = Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(moduleDir().getAbsolutePath(), pluginId + ".tar.gz")));
+                ret.put(id, Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(moduleDir().getAbsolutePath(), id + ".tar.gz"))));
             } catch (IOException e) {
-                throw new CloudRuntimeException(String.format("cannot read the agent part of feature plugin %s", pluginId), e);
+                throw new CloudRuntimeException(String.format("cannot read the agent part of feature plugin %s", id), e);
             }
         }
-        return cmd;
+        return ret;
     }
 
     @Override
@@ -158,36 +181,41 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
             return;
         }
 
+        List<String> connecting = Q.New(HostVO.class).select(HostVO_.uuid)
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .eq(HostVO_.status, HostStatus.Connecting)
+                .listValues();
+        // their connections push them, until then they are not ready there
+        connecting.stream().filter(destMaker::isManagedByUs).forEach(h -> {
+            missedByConnectingHosts.computeIfAbsent(h, k -> ConcurrentHashMap.newKeySet()).addAll(changed);
+            changed.forEach(id -> markDeploying(h, id));
+        });
+
         List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
                 .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .eq(HostVO_.status, HostStatus.Connected)
                 .listValues();
-        List<KVMHostAsyncHttpCallMsg> msgs = new ArrayList<>();
-        List<String> pluginIds = new ArrayList<>();
-        for (String hostUuid : hostUuids.stream().filter(destMaker::isManagedByUs).collect(Collectors.toList())) {
-            for (String pluginId : changed) {
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setHostUuid(hostUuid);
-                msg.setPath(KVMConstant.FEATURE_PLUGIN_APPLY_PATH);
-                msg.setCommand(applyCmd(pluginId, after.get(pluginId)));
-                msg.setTimeout(APPLY_TIMEOUT);
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                msgs.add(msg);
-                pluginIds.add(pluginId);
-            }
-        }
-        if (msgs.isEmpty()) {
+        List<String[]> pushes = new ArrayList<>();
+        hostUuids.stream().filter(destMaker::isManagedByUs).forEach(h -> changed.forEach(id -> pushes.add(new String[]{h, id})));
+        if (pushes.isEmpty()) {
             return;
         }
 
-        logger.info(String.format("push the kvmagent parts of feature plugins %s to %s hosts", changed, msgs.size() / changed.size()));
-        bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusListCallBack(null) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                Map<String, Set<String>> failed = new LinkedHashMap<>();
-                for (int i = 0; i < replies.size(); i++) {
-                    KVMHostAsyncHttpCallMsg msg = msgs.get(i);
-                    MessageReply reply = replies.get(i);
+        Map<String, String> archives = archives(changed, after);
+        logger.info(String.format("push the kvmagent parts of feature plugins %s to %s hosts", changed, pushes.size() / changed.size()));
+        Map<String, Set<String>> failed = new ConcurrentHashMap<>();
+        // a message holds a copy of the archive, only those in flight exist at once
+        new While<>(pushes).step((push, completion) -> {
+            ApplyFeaturePluginCmd cmd = applyCmd(push[1], after, archives);
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setHostUuid(push[0]);
+            msg.setPath(KVMConstant.FEATURE_PLUGIN_APPLY_PATH);
+            msg.setCommand(cmd);
+            msg.setTimeout(APPLY_TIMEOUT);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, push[0]);
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
                     String error = !reply.isSuccess() ? reply.getError().toString() : null;
                     if (error == null) {
                         ApplyFeaturePluginRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(ApplyFeaturePluginRsp.class);
@@ -195,10 +223,18 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
                     }
                     if (error != null) {
                         logger.warn(String.format("failed to push the kvmagent part of feature plugin %s to host[uuid:%s]: %s",
-                                pluginIds.get(i), msg.getHostUuid(), error));
-                        failed.computeIfAbsent(msg.getHostUuid(), k -> new TreeSet<>()).add(pluginIds.get(i));
+                                push[1], push[0], error));
+                        failed.computeIfAbsent(push[0], k -> ConcurrentHashMap.newKeySet()).add(push[1]);
+                    } else {
+                        // the host has what the index lists now, a mark from an earlier failure no longer holds
+                        clearDeploying(push[0], push[1]);
                     }
+                    completion.done();
                 }
+            });
+        }, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class)).run(new WhileDoneCompletion(null) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
                 failed.forEach((hostUuid, ids) -> ids.forEach(id -> markDeploying(hostUuid, id)));
                 reconnect(failed.keySet());
             }
@@ -210,6 +246,11 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
         creator.setTagByTokens(map(e(KVMSystemTags.FEATURE_PLUGIN_DEPLOYING_TOKEN, pluginId)));
         creator.ignoreIfExisting = true;
         creator.create();
+    }
+
+    private void clearDeploying(String hostUuid, String pluginId) {
+        KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.delete(hostUuid, KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.instantiateTag(
+                map(e(KVMSystemTags.FEATURE_PLUGIN_DEPLOYING_TOKEN, pluginId))));
     }
 
     @Override
@@ -232,10 +273,60 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.delete(context.getInventory().getUuid());
-                trigger.next();
+                String hostUuid = context.getInventory().getUuid();
+                KVMSystemTags.FEATURE_PLUGIN_DEPLOYING.delete(hostUuid);
+                Map<String, String> installed = readIndex(new File(index()));
+                // an agent part the host could not load is not ready on it either
+                if (context.getFeaturePlugins() != null) {
+                    context.getFeaturePlugins().forEach((id, status) -> {
+                        if (installed.containsKey(id) && !"Loaded".equals(status.get("status"))) {
+                            markDeploying(hostUuid, id);
+                        }
+                    });
+                }
+
+                Set<String> missed = missedByConnectingHosts.remove(hostUuid);
+                if (missed == null) {
+                    trigger.next();
+                    return;
+                }
+                Map<String, String> archives = archives(missed, installed);
+                String url = UriComponentsBuilder.fromHttpUrl(context.getBaseUrl()).path(KVMConstant.FEATURE_PLUGIN_APPLY_PATH).toUriString();
+                new While<>(missed).each((id, completion) -> restf.asyncJsonPost(url, applyCmd(id, installed, archives),
+                        new JsonAsyncRESTCallback<ApplyFeaturePluginRsp>(completion) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                missedPushFailed(hostUuid, id, err.toString());
+                                completion.done();
+                            }
+
+                            @Override
+                            public void success(ApplyFeaturePluginRsp rsp) {
+                                if (!rsp.isSuccess()) {
+                                    missedPushFailed(hostUuid, id, rsp.getError());
+                                }
+                                completion.done();
+                            }
+
+                            @Override
+                            public Class<ApplyFeaturePluginRsp> getReturnClass() {
+                                return ApplyFeaturePluginRsp.class;
+                            }
+                        }, TimeUnit.MILLISECONDS, APPLY_TIMEOUT)).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
             }
         };
+    }
+
+    // the host stays marked, it gets the agent part when it connects again
+    private void missedPushFailed(String hostUuid, String pluginId, String error) {
+        logger.warn(String.format("failed to push the kvmagent part of feature plugin %s to host[uuid:%s] that was connecting when it changed: %s",
+                pluginId, hostUuid, error));
+        markDeploying(hostUuid, pluginId);
     }
 
     // the kvm playbook deploys what the push could not
@@ -317,46 +408,50 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
                 .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .eq(HostVO_.status, HostStatus.Connected)
                 .listTuple();
-        List<KVMHostAsyncHttpCallMsg> msgs = new ArrayList<>();
-        for (Tuple host : hosts) {
+        // base64 of each rpm once; a host gets those built for its architecture
+        Map<String, String> encoded = new TreeMap<>();
+        rpms.forEach((name, content) -> encoded.put(name, Base64.getEncoder().encodeToString(content)));
+        List<Tuple> targets = hosts.stream().filter(host -> encoded.keySet().stream()
+                .anyMatch(name -> name.split("/")[0].endsWith("-" + host.get(1, String.class)))).collect(Collectors.toList());
+        if (targets.isEmpty()) {
+            return;
+        }
+
+        logger.info(String.format("install the agent packages of feature plugin %s on %s hosts", pluginId, targets.size()));
+        new While<>(targets).step((host, completion) -> {
             FeaturePluginPackagesCmd cmd = new FeaturePluginPackagesCmd();
             cmd.pluginId = pluginId;
             cmd.sha256 = sha256;
             cmd.rpms = new TreeMap<>();
-            rpms.forEach((name, content) -> {
+            encoded.forEach((name, content) -> {
                 if (name.split("/")[0].endsWith("-" + host.get(1, String.class))) {
-                    cmd.rpms.put(name, Base64.getEncoder().encodeToString(content));
+                    cmd.rpms.put(name, content);
                 }
             });
-            if (cmd.rpms.isEmpty()) {
-                continue;
-            }
-
+            String hostUuid = host.get(0, String.class);
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-            msg.setHostUuid(host.get(0, String.class));
+            msg.setHostUuid(hostUuid);
             msg.setPath(KVMConstant.FEATURE_PLUGIN_PACKAGES_PATH);
             msg.setCommand(cmd);
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-            msgs.add(msg);
-        }
-        if (msgs.isEmpty()) {
-            return;
-        }
-
-        logger.info(String.format("install the agent packages of feature plugin %s on %s hosts", pluginId, msgs.size()));
-        bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusSteppingCallback(null) {
-            @Override
-            public void run(NeedReplyMessage msg, MessageReply reply) {
-                String hostUuid = ((KVMHostAsyncHttpCallMsg) msg).getHostUuid();
-                FeaturePluginPackagesRsp rsp = reply.isSuccess() ? ((KVMHostAsyncHttpCallReply) reply).toResponse(FeaturePluginPackagesRsp.class) : null;
-                if (rsp != null && rsp.isSuccess()) {
-                    logger.info(String.format("installed the agent packages %s of feature plugin %s on host[uuid:%s]",
-                            rsp.installed, pluginId, hostUuid));
-                } else {
-                    // installing the plugin then leaves this host to the kvm playbook
-                    logger.warn(String.format("failed to install the agent packages of feature plugin %s on host[uuid:%s]: %s",
-                            pluginId, hostUuid, rsp == null ? reply.getError() : rsp.getError()));
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    FeaturePluginPackagesRsp rsp = reply.isSuccess() ? ((KVMHostAsyncHttpCallReply) reply).toResponse(FeaturePluginPackagesRsp.class) : null;
+                    if (rsp != null && rsp.isSuccess()) {
+                        logger.info(String.format("installed the agent packages %s of feature plugin %s on host[uuid:%s]",
+                                rsp.installed, pluginId, hostUuid));
+                    } else {
+                        // installing the plugin then leaves this host to the kvm playbook
+                        logger.warn(String.format("failed to install the agent packages of feature plugin %s on host[uuid:%s]: %s",
+                                pluginId, hostUuid, rsp == null ? reply.getError() : rsp.getError()));
+                    }
+                    completion.done();
                 }
+            });
+        }, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class)).run(new WhileDoneCompletion(null) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
             }
         });
     }
