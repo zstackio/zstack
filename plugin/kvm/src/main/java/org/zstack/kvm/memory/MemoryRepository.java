@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -61,12 +62,11 @@ public class MemoryRepository {
     static final String OBSERVATION_UNREADABLE = "OBSERVATION_UNREADABLE";
     /** Hosts refreshed in one transaction. */
     private static final int REFRESH_BATCH = 200;
-    static final long FIRST_RETRY_MILLIS = TimeUnit.SECONDS.toMillis(30);
     static final long MAX_RETRY_MILLIS = TimeUnit.MINUTES.toMillis(10);
-    static final long HISTORY_MILLIS = TimeUnit.DAYS.toMillis(7);
 
     @Autowired private DatabaseFacade dbf;
     @Autowired private EventFacade evtf;
+    @Autowired private GlobalConfigFacade gcf;
     private final MemoryStandardConfigAdapter standardConfigs = new MemoryStandardConfigAdapter();
     private static final Gson GSON = new Gson();
 
@@ -223,33 +223,42 @@ public class MemoryRepository {
         });
     }
 
-    /** The most specific stored value wins; none leaves the setting unmanaged. */
-    private Object effectiveValue(EntityManager em, MemoryStandardField field, String host, String cluster) {
-        Object value = field.allows(MemoryStandardField.Scope.HOST) ? standardConfigs.readOverrideOwn(em, field.path(), host) : null;
-        if (value == null && cluster != null && field.allows(MemoryStandardField.Scope.CLUSTER)) {
-            value = standardConfigs.readOverrideOwn(em, field.path(), cluster);
+    /**
+     * The most specific stored value of each field wins; none leaves the setting unmanaged.
+     * The Host's and Cluster's overrides are read together under the Host's lock, so a concurrent
+     * change is never planned over by an older read; GlobalConfig values are the node's own.
+     */
+    private Map<MemoryStandardField, Object> effectiveValues(EntityManager em, String host, String cluster) {
+        Map<String, Map<MemoryStandardField, Object>> overrides = standardConfigs.readOverridesOwn(em,
+                cluster == null ? Collections.singletonList(host) : Arrays.asList(host, cluster));
+        Map<MemoryStandardField, Object> hostValues = overrides.getOrDefault(host, Collections.emptyMap());
+        Map<MemoryStandardField, Object> clusterValues = cluster == null ? Collections.emptyMap()
+                : overrides.getOrDefault(cluster, Collections.emptyMap());
+        Map<MemoryStandardField, Object> values = new EnumMap<>(MemoryStandardField.class);
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            Object value = field.allows(MemoryStandardField.Scope.HOST) ? hostValues.get(field) : null;
+            if (value == null && field.allows(MemoryStandardField.Scope.CLUSTER)) { value = clusterValues.get(field); }
+            if (value == null && field.allows(MemoryStandardField.Scope.GLOBAL)) { value = standardConfigs.readGlobalOwn(gcf, field); }
+            values.put(field, MemoryStandardConfigAdapter.isUnmanaged(value) ? null : value);
         }
-        if (value == null && field.allows(MemoryStandardField.Scope.GLOBAL)) {
-            value = standardConfigs.readGlobalOwn(em, field.path());
-        }
-        return MemoryStandardConfigAdapter.isUnmanaged(value) ? null : value;
+        return values;
     }
 
     Map<String, Object> desired(EntityManager em, String host, String control, License license) {
-        String cluster = hostCluster(host);
+        Map<MemoryStandardField, Object> values = effectiveValues(em, host, hostCluster(host));
         Map<String, Object> ksm = new LinkedHashMap<>();
-        ksm.put("enabled", effectiveValue(em, MemoryStandardField.KSM_ENABLED, host, cluster));
+        ksm.put("enabled", values.get(MemoryStandardField.KSM_ENABLED));
         Map<String, Object> zram = new LinkedHashMap<>();
         Map<String, Object> writeback = new LinkedHashMap<>();
         // The legacy host.ksm switch stays license-free; memory optimization does not.
         if (license == License.VALID) {
-            ksm.put("zeroPagesEnabled", effectiveValue(em, MemoryStandardField.KSM_ZERO_PAGES, host, cluster));
-            zram.put("enabled", effectiveValue(em, MemoryStandardField.ZRAM_ENABLED, host, cluster));
-            zram.put("logicalCapacityBytes", effectiveValue(em, MemoryStandardField.ZRAM_LOGICAL_CAPACITY, host, cluster));
-            zram.put("ramLimitBytes", effectiveValue(em, MemoryStandardField.ZRAM_RAM_LIMIT, host, cluster));
-            Object enabled = effectiveValue(em, MemoryStandardField.WRITEBACK_ENABLED, host, cluster);
+            ksm.put("zeroPagesEnabled", values.get(MemoryStandardField.KSM_ZERO_PAGES));
+            zram.put("enabled", values.get(MemoryStandardField.ZRAM_ENABLED));
+            zram.put("logicalCapacityBytes", values.get(MemoryStandardField.ZRAM_LOGICAL_CAPACITY));
+            zram.put("ramLimitBytes", values.get(MemoryStandardField.ZRAM_RAM_LIMIT));
+            Object enabled = values.get(MemoryStandardField.WRITEBACK_ENABLED);
             // Writeback runs inside ZRAM on the Host's prepared backend; without either it stays off.
-            boolean prepared = effectiveValue(em, MemoryStandardField.WRITEBACK_BACKEND_RESOURCE, host, cluster) != null;
+            boolean prepared = values.get(MemoryStandardField.WRITEBACK_BACKEND_RESOURCE) != null;
             boolean zramOn = Boolean.TRUE.equals(zram.get("enabled"));
             writeback.put("enabled", Boolean.TRUE.equals(enabled) && !(prepared && zramOn) ? Boolean.FALSE : enabled);
         } else {
@@ -354,10 +363,8 @@ public class MemoryRepository {
 
     /** Whether the Host's effective configuration turns ZRAM on now. */
     public boolean wantsZram(String host) {
-        return transaction(em -> {
-            String cluster = hostCluster(host);
-            return Boolean.TRUE.equals(effectiveValue(em, MemoryStandardField.ZRAM_ENABLED, host, cluster));
-        });
+        return transaction(em -> Boolean.TRUE.equals(
+                effectiveValues(em, host, hostCluster(host)).get(MemoryStandardField.ZRAM_ENABLED)));
     }
 
     public boolean isDrained(String host) {
@@ -372,7 +379,7 @@ public class MemoryRepository {
     }
 
     static long retryDelay(int failures) {
-        return Math.min(MAX_RETRY_MILLIS, FIRST_RETRY_MILLIS << Math.min(failures - 1, 10));
+        return Math.min(MAX_RETRY_MILLIS, MemoryOptimizationGlobalConfig.firstRetryMillis() << Math.min(failures - 1, 10));
     }
 
     /** The Host must receive its generation again, for example after it reconnected. */
@@ -387,12 +394,17 @@ public class MemoryRepository {
         });
     }
 
-    /** The current delivery of a Host, if it still needs one. */
+    /**
+     * The current delivery of a Host, if it needs one now. A Host waiting for its retry is sent again when
+     * it is due, also when a plan that changed nothing asks for a delivery; a new generation, a resend and
+     * an operator's request are due at once.
+     */
     @SuppressWarnings("unchecked")
     public Delivery pending(String host) {
         return transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, host);
             if (state == null || state.getDesired() == null || !CONVERGING.equals(state.getStatus())) { return null; }
+            if (state.getNextAttemptAt() != null && state.getNextAttemptAt() > System.currentTimeMillis()) { return null; }
             return new Delivery(host, state.getDesiredRevision(), JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class));
         });
     }
@@ -802,7 +814,7 @@ public class MemoryRepository {
     /** Finished operation records are kept for a week. */
     public void purgeHistory(long now) {
         transaction(em -> SQL.New("delete from MemoryTaskVO t where t.status <> :running and t.lastOpDate < :before")
-                .param("running", CONVERGING).param("before", new java.sql.Timestamp(now - HISTORY_MILLIS)).execute());
+                .param("running", CONVERGING).param("before", new java.sql.Timestamp(now - MemoryOptimizationGlobalConfig.historyRetentionMillis())).execute());
     }
 
     static String trim(String value) {

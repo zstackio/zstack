@@ -579,9 +579,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         Consumer<String> done = outcome -> {
             if (!answered.compareAndSet(false, true)) { return; }
             preparing.remove(host);
-            recordPreparation(host, task, outcome);
+            String recorded = recordPreparation(host, task, outcome);
             deliver(host);
-            finish.accept(outcome);
+            finish.accept(recorded);
         };
         afterApplyInFlight(host, deadline, () -> preparationCommand(host, generation, candidateId, done,
                 (command, capacity) -> sendPrepare(host, command, capacity, actor, deadline, 0, done)), done);
@@ -616,11 +616,17 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    @ExceptionSafe @Deferred
-    void recordPreparation(String host, String task, String outcome) {
-        Defer.guard(() -> logger.warn(String.format("Unable to record the backend preparation of Host[%s]", host)));
-        repository.finishTask(task, "success".equals(outcome) ? MemoryRepository.SUCCEEDED : MemoryRepository.FAILED,
-                "success".equals(outcome) ? null : outcome);
+    /** The outcome to answer: a preparation whose task is not recorded has a result the caller cannot rely on. */
+    String recordPreparation(String host, String task, String outcome) {
+        try {
+            repository.finishTask(task, "success".equals(outcome) ? MemoryRepository.SUCCEEDED : MemoryRepository.FAILED,
+                    "success".equals(outcome) ? null : outcome);
+            return outcome;
+        } catch (RuntimeException e) {
+            logger.error(String.format("Unable to record the backend preparation of Host[%s], task[%s], outcome[%s]",
+                    host, task, outcome), e);
+            return "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNRECORDED";
+        }
     }
 
     /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
@@ -814,7 +820,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 planConfiguration(unreadable, ZramChange.NONE);
             }
         }
-        if (now - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {
+        if (now - lastHistoryPurge >= MemoryOptimizationGlobalConfig.historyPurgeMillis()) {
             lastHistoryPurge = now;
             repository.purgeHistory(now);
         }
@@ -873,7 +879,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         syncCapabilityTags(host, response.state);
         lifecycleHooks.reconcileObservedBindings(host, response);
         lifecycleHooks.reconcileUnknownMigrationHolds(host);
-        failure[0] = null;
+        failure[0] = incompleteSample(response.state);
+    }
+
+    /** A sample the Agent could not complete counts as a failed observation; the Agent log names the cause. */
+    static String incompleteSample(Map<String, Object> state) {
+        if (Boolean.FALSE.equals(state.get("inventoryComplete"))) { return "VM_INVENTORY_INCOMPLETE"; }
+        Object zram = state.get("zram");
+        return zram instanceof Map && "unknown".equals(((Map<?, ?>) zram).get("serviceState")) ? "SERVICE_STATE_UNKNOWN" : null;
     }
 
     /** The capabilities a sample reports as supported, or null when the Agent could not discover them. */
