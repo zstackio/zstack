@@ -128,8 +128,10 @@ public class MemoryClusterOperationTest {
             if (failingTaskWrites) { throw new RuntimeException("database unavailable"); }
             finished.add(uuid + ":" + status);
         }
-        @Override public void failRunningTasks(Collection<String> hosts, String action, String reason) {
-            failedRunning.add(new TreeSet<>(hosts) + ":" + action + ":" + reason);
+        boolean failingTaskEnds;
+        @Override public void failRunningTasks(Collection<String> hosts, String action, Collection<String> kept, String reason) {
+            if (failingTaskEnds) { throw new RuntimeException("database unavailable"); }
+            failedRunning.add(new TreeSet<>(hosts) + ":" + action + ":" + new TreeSet<>(kept) + ":" + reason);
         }
         @Override public void recordPreparedBackend(String host, String resource, long capacity) {
             preparedBackend = resource; preparedCapacity = capacity;
@@ -446,6 +448,10 @@ public class MemoryClusterOperationTest {
         assertEquals("the prepared backend still reaches the Host", "apply",
                 manager.commands.get(manager.commands.size() - 1).get("path"));
 
+        manager.finishInterruptedPreparations();
+        assertEquals("a result waiting to be written again is not taken for an interrupted preparation",
+                Collections.singletonList("[host1, host2]:prepareWritebackBackend:[prepare]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"),
+                repository.failedRunning);
         manager.recordUnrecordedPreparations();
         assertTrue("a scan while the database still refuses keeps the result", repository.finished.isEmpty());
         repository.failingTaskWrites = false;
@@ -456,12 +462,27 @@ public class MemoryClusterOperationTest {
         assertEquals("a recorded result is written once", 1, repository.finished.size());
     }
 
-    @Test public void aPreparationARestartInterruptedIsNotLeftRunning() throws Exception {
+    @Test public void anInterruptedPreparationIsEndedByALaterObservationWhenTheDatabaseRefusedIt() throws Exception {
         setup();
-        manager.failInterruptedPreparations();
-        assertEquals("the restarted node ends the running preparations of its Hosts as unknown",
-                Collections.singletonList(new TreeSet<>(repository.hostsWithState()) + ":"
-                        + MemoryBackendPreparationRules.ACTION + ":MEMORY_RESULT_UNKNOWN: MANAGEMENT_NODE_RESTARTED"),
+        repository.failingTaskEnds = true;
+        manager.finishInterruptedPreparations();
+        assertTrue("a write the database refuses ends nothing", repository.failedRunning.isEmpty());
+        repository.failingTaskEnds = false;
+        manager.finishInterruptedPreparations();
+        assertEquals("the next observation ends the interrupted preparations of the node's Hosts as unknown",
+                Collections.singletonList("[host1, host2]:prepareWritebackBackend:[]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"),
+                repository.failedRunning);
+    }
+
+    @Test public void aPreparationInProgressIsNotTakenForAnInterruptedOne() throws Exception {
+        setup();
+        scriptPreparation();
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+        assertEquals("the preparation waits for the Agent", 1, manager.held.size());
+        manager.finishInterruptedPreparations();
+        assertEquals("only Hosts without a preparation on this node are ended",
+                Collections.singletonList("[host2]:prepareWritebackBackend:[]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"),
                 repository.failedRunning);
     }
 

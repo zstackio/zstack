@@ -211,7 +211,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     @Override public void managementNodeReady() {
         clearTakenOverJobs();
-        failInterruptedPreparations();
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override public TimeUnit getTimeUnit() { return TimeUnit.SECONDS; }
             @Override public long getInterval() { return 5; }
@@ -587,8 +586,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         AtomicBoolean answered = new AtomicBoolean();
         Consumer<String> done = outcome -> {
             if (!answered.compareAndSet(false, true)) { return; }
-            preparing.remove(host);
+            // Recorded before the Host is free, so a scan never takes this task for an interrupted one.
             recordPreparation(host, task, outcome);
+            preparing.remove(host);
             deliver(host);
             // A result the platform has not recorded is unknown to the caller; the next scans record it.
             finish.accept(unrecordedPreparations.containsKey(task) ? "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNRECORDED" : outcome);
@@ -644,13 +644,18 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         new HashMap<>(unrecordedPreparations).forEach((task, unrecorded) -> recordPreparation(unrecorded.host, task, unrecorded.outcome));
     }
 
-    /** A preparation this node ran when it stopped has an unknown result; its task is not left running. */
+    /**
+     * A running preparation of a Host this node manages that no preparation of this node owns was interrupted, by a
+     * restart or a takeover; its result is unknown. Each observation ends such tasks, so one not written now is
+     * tried again, and keeps the ones whose result waits to be written again.
+     */
     @ExceptionSafe @Deferred
-    void failInterruptedPreparations() {
-        Defer.guard(() -> logger.error("Unable to finish the backend preparations a management node restart interrupted"));
-        repository.failRunningTasks(repository.hostsWithState().stream().filter(destMaker::isManagedByUs)
-                        .collect(Collectors.toList()), MemoryBackendPreparationRules.ACTION,
-                "MEMORY_RESULT_UNKNOWN: MANAGEMENT_NODE_RESTARTED");
+    void finishInterruptedPreparations() {
+        Defer.guard(() -> logger.error("Unable to finish the interrupted backend preparations; the next observation tries again"));
+        List<String> hosts = repository.hostsWithState().stream().filter(destMaker::isManagedByUs)
+                .filter(host -> !preparing.contains(host)).collect(Collectors.toList());
+        repository.failRunningTasks(hosts, MemoryBackendPreparationRules.ACTION, new ArrayList<>(unrecordedPreparations.keySet()),
+                "MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED");
     }
 
     /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
@@ -843,6 +848,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     .filter(destMaker::isManagedByUs).collect(Collectors.toList()))) {
                 planConfiguration(unreadable, ZramChange.NONE);
             }
+            finishInterruptedPreparations();
         }
         recordUnrecordedPreparations();
         if (now - lastHistoryPurge >= MemoryOptimizationGlobalConfig.historyPurgeMillis()) {
