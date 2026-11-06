@@ -456,7 +456,12 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 boolean hasContent = Q.New(VmHostFileContentVO.class)
                         .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
                         .isExists();
-                if (hasContent && (context.sameHost || isFileLevelReadError(context.syncFromOriginHostError))) {
+                Timestamp latestChangeDate = Q.New(VmHostFileVO.class)
+                        .select(VmHostFileVO_.changeDate)
+                        .eq(VmHostFileVO_.uuid, context.vmHostFile.getUuid())
+                        .findValue();
+                if ((hasContent || latestChangeDate != null)
+                        && (context.sameHost || isFileLevelReadError(context.syncFromOriginHostError))) {
                     trigger.fail(operr(ORG_ZSTACK_KVM_10164,
                             "%s file[path:%s] of VM[uuid:%s] cannot be read on host[uuid:%s], it may be missing or corrupted; "
                                     + "restore the original file before starting the VM",
@@ -465,10 +470,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     return;
                 }
 
-                Timestamp latestChangeDate = Q.New(VmHostFileVO.class)
-                        .select(VmHostFileVO_.changeDate)
-                        .eq(VmHostFileVO_.uuid, context.vmHostFile.getUuid())
-                        .findValue();
                 if (latestChangeDate != null && !context.sameHost) {
                     trigger.fail(operr(
                             "vm host file content on management node may be stale: change is pending on host "
