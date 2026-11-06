@@ -15,6 +15,10 @@ import org.zstack.tag.SystemTag;
  */
 @TagDefinition
 public class KVMSystemTags {
+    public static final String FIRMWARE_HOST_UUID_TOKEN = "hostUuid";
+    public static PatternedSystemTag FIRMWARE_HOST = new PatternedSystemTag(
+            String.format("kvm::firmware::host::{%s}", FIRMWARE_HOST_UUID_TOKEN), VmInstanceVO.class);
+
     public static final String QEMU_IMG_VERSION_TOKEN = "version";
     public static PatternedSystemTag QEMU_IMG_VERSION = new PatternedSystemTag(String.format("qemu-img::version::{%s}", QEMU_IMG_VERSION_TOKEN), HostVO.class);
 

@@ -285,4 +285,16 @@
             <zstack:extension interface="org.zstack.header.cluster.ClusterUpdateOSExtensionPoint"/>
         </zstack:plugin>
     </bean>
+    <bean id="KVMVmFirmwareFlashCleanup" class="org.zstack.kvm.KVMVmFirmwareFlashCleanup">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmStateChangedExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmBeforeCreateOnHypervisorExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStartNewCreatedVmExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+        </zstack:plugin>
+    </bean>
 </beans>

@@ -1475,7 +1475,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterExpungeExtensionPoint.class),
                         arg -> arg.vmAfterExpunge(inv));
 
-                callVmJustBeforeDeleteFromDbExtensionPoint();
+                callVmJustBeforeDeleteFromDbExtensionPoint(VmInstanceDeletionPolicy.Direct);
 
                 dbf.reload(self);
                 dbf.removeCollection(self.getVmNics(), VmNicVO.class);
@@ -2854,9 +2854,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void callVmJustBeforeDeleteFromDbExtensionPoint() {
+    private void callVmJustBeforeDeleteFromDbExtensionPoint(VmInstanceDeletionPolicy deletionPolicy) {
         VmInstanceInventory inv = getSelfInventory();
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmJustBeforeDeleteFromDbExtensionPoint.class), p -> p.vmJustBeforeDeleteFromDb(inv));
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmJustBeforeDeleteFromDbExtensionPoint.class), p -> p.vmJustBeforeDeleteFromDb(inv, deletionPolicy));
     }
 
     private void callVmJustAfterDeleteFromDbExtensionPoint(VmInstanceInventory inv, String accountUuid) {
@@ -2877,7 +2877,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     if (self.getState() != VmInstanceState.Destroyed) {
                         changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     }
-                    callVmJustBeforeDeleteFromDbExtensionPoint();
+                    callVmJustBeforeDeleteFromDbExtensionPoint(deletionPolicy);
                     dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                     dbf.remove(getSelf());
                     dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
@@ -2886,7 +2886,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
-                            callVmJustBeforeDeleteFromDbExtensionPoint();
+                            callVmJustBeforeDeleteFromDbExtensionPoint(deletionPolicy);
 
                             sql(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).hardDelete();
                             sql(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getUuid())

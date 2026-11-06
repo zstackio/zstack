@@ -4,6 +4,8 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.compute.vm.DeleteVmGC
+import org.zstack.compute.vm.StopVmGC
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.header.host.HostCanonicalEvents
@@ -97,7 +99,7 @@ class VmGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${DeleteVmGC.class.getName()}"]
             }[0]
 
             assert cmd != null
@@ -121,7 +123,7 @@ class VmGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${DeleteVmGC.class.getName()}"]
             }[0]
 
             assert inv.status == GCStatus.Done.toString()
@@ -161,7 +163,7 @@ class VmGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${DeleteVmGC.class.getName()}"]
             }[0]
 
             // still destroy command sent even if the vm is recovered
@@ -196,7 +198,7 @@ class VmGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${DeleteVmGC.class.getName()}"]
             }[0]
 
             //destroy command still sent even if the vm is recovered because of some resource of vm released
@@ -275,7 +277,7 @@ class VmGCCase extends SubCase {
 
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${StopVmGC.class.getName()}"]
             }[0]
 
             assert cmd == null
@@ -305,7 +307,7 @@ class VmGCCase extends SubCase {
         retryInSecs {
             // the GC job is cancelled
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${StopVmGC.class.getName()}"]
             }[0]
 
             assert cmd == null
@@ -334,7 +336,7 @@ class VmGCCase extends SubCase {
         GarbageCollectorInventory inv = null
         retryInSecs {
             inv = queryGCJob {
-                conditions=["context~=%${vm.uuid}%"]
+                conditions=["context~=%${vm.uuid}%", "runnerClass=${StopVmGC.class.getName()}"]
             }[0]
 
             assert cmd != null
