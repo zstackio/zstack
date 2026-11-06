@@ -173,6 +173,11 @@ class TestCheck(CheckCase):
                           'v1-unsupported: org.zstack.tpm.TpmNamespace (zwatch namespace)',
                           'v1-unsupported: org.zstack.tpm.TpmVO (resource)'], problems)
 
+    def test_system_tag_definitions_are_refused_in_v1(self):
+        # the platform reads @TagDefinition classes at start only until P2b
+        classes = {'org.zstack.tpm.TpmSystemTags': ('Lorg/zstack/header/tag/TagDefinition;',)}
+        self.assertEqual(['v1-unsupported: org.zstack.tpm.TpmSystemTags (system tag)'], self.run_check(classes=classes))
+
     def test_check_package_without_lib(self):
         stage = os.path.join(self.tmp, 'drivers-only')
         os.makedirs(os.path.join(stage, 'drivers'))
@@ -206,6 +211,12 @@ class TestAgentCheck(CheckCase):
     def test_disallowed_agent_import(self):
         self.assertEqual(['disallowed-agent-import: kvmagent.plugins.vm_plugin in agent/kvmagent/tpm.py'],
                          self.agent_stage({'tpm.py': 'from kvmagent.plugins import vm_plugin\n'}))
+
+    def test_agent_part_over_10_mb_is_refused(self):
+        # every host gets the agent part in one command
+        problems = self.agent_stage({'blob.py': '# ' + os.urandom(12 * 1024 * 1024).hex() + '\n'})
+        self.assertEqual(1, len(problems))
+        self.assertTrue(problems[0].startswith('agent-too-large: '), problems)
 
     def test_allowed_agent_imports(self):
         self.assertEqual([], self.agent_stage({

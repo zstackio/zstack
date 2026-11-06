@@ -54,7 +54,10 @@ V1_UNSUPPORTED_SUPERS = {'org.zstack.header.query.APIQueryMessage': 'query API',
                          'org.zstack.zwatch.datatype.Namespace': 'zwatch namespace'}
 # ... and by annotation
 V1_UNSUPPORTED_ANNOTATIONS = {'Lorg/zstack/header/search/Inventory;': 'inventory',
-                              'Lorg/zstack/header/longjob/LongJobFor;': 'long job'}
+                              'Lorg/zstack/header/longjob/LongJobFor;': 'long job',
+                              'Lorg/zstack/header/tag/TagDefinition;': 'system tag'}
+# every host gets the agent part, plugin.yaml and agent/ as zstack-ctl packs them, in one command
+AGENT_ARCHIVE_LIMIT = 10 * 1024 * 1024
 
 
 def load_allowlist(path):
@@ -241,7 +244,24 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
     for f, module in agent_imports(stage):
         if not _agent_import_allowed(module):
             problems.append('disallowed-agent-import: %s in %s' % (module, f))
+    size = agent_archive_size(stage)
+    if size > AGENT_ARCHIVE_LIMIT:
+        problems.append('agent-too-large: %.1f MB > 10 MB' % (size / 1024.0 / 1024))
     return problems + ui_problems(stage, desc)
+
+
+def agent_archive_size(stage):
+    agent = os.path.join(stage, 'agent')
+    if not os.path.isdir(agent):
+        return 0
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode='w:gz') as tar:
+        tar.add(os.path.join(stage, DESCRIPTOR), DESCRIPTOR)
+        for dirpath, _, names in sorted(os.walk(agent)):
+            for n in sorted(names):
+                path = os.path.join(dirpath, n)
+                tar.add(path, os.path.relpath(path, agent))
+    return len(buf.getvalue())
 
 
 def ui_problems(stage, desc):
