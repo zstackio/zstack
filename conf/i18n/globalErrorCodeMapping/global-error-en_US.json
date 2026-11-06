@@ -4785,5 +4785,12 @@
   "ORG_ZSTACK_NETWORK_ZNS_10045": "cannot enable DHCP: L3[uuid:%s] has no Cloud-reserved DHCPv4 server IP",
   "ORG_ZSTACK_NETWORK_ZNS_10046": "DHCP service already exists on segment[uuid:%s] but GET returned empty",
   "ORG_ZSTACK_NETWORK_ZNS_10047": "cannot update DHCP: L3[uuid:%s] has no Cloud-reserved DHCPv4 server IP",
-  "ORG_ZSTACK_NETWORK_ZNS_10048": "failed to allocate DHCPv4 server IP for ZNS L3[uuid:%s]"
+  "ORG_ZSTACK_NETWORK_ZNS_10048": "failed to allocate DHCPv4 server IP for ZNS L3[uuid:%s]",
+  "ORG_ZSTACK_VPC_10052": "ip[%s] is not a valid IPv4 address",
+  "ORG_ZSTACK_VPC_10053": "dns record[domain:%s] has been added to vpc router[uuid:%s]",
+  "ORG_ZSTACK_VPC_10054": "dns record count of vpc router[uuid:%s] exceeds the limit[%s]",
+  "ORG_ZSTACK_VPC_10055": "domain[%s] is not a valid format",
+  "ORG_ZSTACK_VPC_10056": "ip[%s] is not in private network range of %s[uuid:%s]",
+  "ORG_ZSTACK_VPC_10057": "dns record[uuid:%s] is not found",
+  "ORG_ZSTACK_VPC_10058": "failed to sync dns record to vpc router[uuid:%s], because: %s"
 }
