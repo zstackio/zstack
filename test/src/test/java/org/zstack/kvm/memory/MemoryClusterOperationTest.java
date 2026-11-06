@@ -122,8 +122,14 @@ public class MemoryClusterOperationTest {
         }
         @Override public String startTask(String host, String action, String actor, long generation) { return "prepare"; }
         boolean failingTaskWrites;
+        final List<String> finished = new ArrayList<>();
+        final List<String> failedRunning = new ArrayList<>();
         @Override public void finishTask(String uuid, String status, String reason) {
             if (failingTaskWrites) { throw new RuntimeException("database unavailable"); }
+            finished.add(uuid + ":" + status);
+        }
+        @Override public void failRunningTasks(Collection<String> hosts, String action, String reason) {
+            failedRunning.add(new TreeSet<>(hosts) + ":" + action + ":" + reason);
         }
         @Override public void recordPreparedBackend(String host, String resource, long capacity) {
             preparedBackend = resource; preparedCapacity = capacity;
@@ -439,6 +445,24 @@ public class MemoryClusterOperationTest {
                 Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNRECORDED"), manager.outcomes);
         assertEquals("the prepared backend still reaches the Host", "apply",
                 manager.commands.get(manager.commands.size() - 1).get("path"));
+
+        manager.recordUnrecordedPreparations();
+        assertTrue("a scan while the database still refuses keeps the result", repository.finished.isEmpty());
+        repository.failingTaskWrites = false;
+        manager.recordUnrecordedPreparations();
+        assertEquals("once the database takes it, the scan records the preparation's own result",
+                Collections.singletonList("prepare:Succeeded"), repository.finished);
+        manager.recordUnrecordedPreparations();
+        assertEquals("a recorded result is written once", 1, repository.finished.size());
+    }
+
+    @Test public void aPreparationARestartInterruptedIsNotLeftRunning() throws Exception {
+        setup();
+        manager.failInterruptedPreparations();
+        assertEquals("the restarted node ends the running preparations of its Hosts as unknown",
+                Collections.singletonList(new TreeSet<>(repository.hostsWithState()) + ":"
+                        + MemoryBackendPreparationRules.ACTION + ":MEMORY_RESULT_UNKNOWN: MANAGEMENT_NODE_RESTARTED"),
+                repository.failedRunning);
     }
 
     @Test public void aPreparationResumesADrainedHostThatWantsZram() throws Exception {

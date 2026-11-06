@@ -111,6 +111,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private long lastObservation;
     private License lastLicense;
     private long lastHistoryPurge;
+    /** Preparation outcomes the database did not take, by task; each scan writes them again. */
+    private final Map<String, Unrecorded> unrecordedPreparations = new ConcurrentHashMap<>();
+
+    static final class Unrecorded {
+        final String host;
+        final String outcome;
+        Unrecorded(String host, String outcome) { this.host = host; this.outcome = outcome; }
+    }
 
     static final String SERVICE_ID = "memoryOptimization";
     static final String PAUSE = "pause", RESUME = "resume", DRAIN = "drain";
@@ -203,6 +211,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     @Override public void managementNodeReady() {
         clearTakenOverJobs();
+        failInterruptedPreparations();
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override public TimeUnit getTimeUnit() { return TimeUnit.SECONDS; }
             @Override public long getInterval() { return 5; }
@@ -579,9 +588,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         Consumer<String> done = outcome -> {
             if (!answered.compareAndSet(false, true)) { return; }
             preparing.remove(host);
-            String recorded = recordPreparation(host, task, outcome);
+            recordPreparation(host, task, outcome);
             deliver(host);
-            finish.accept(recorded);
+            // A result the platform has not recorded is unknown to the caller; the next scans record it.
+            finish.accept(unrecordedPreparations.containsKey(task) ? "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNRECORDED" : outcome);
         };
         afterApplyInFlight(host, deadline, () -> preparationCommand(host, generation, candidateId, done,
                 (command, capacity) -> sendPrepare(host, command, capacity, actor, deadline, 0, done)), done);
@@ -616,17 +626,31 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    /** The outcome to answer: a preparation whose task is not recorded has a result the caller cannot rely on. */
-    String recordPreparation(String host, String task, String outcome) {
-        try {
-            repository.finishTask(task, "success".equals(outcome) ? MemoryRepository.SUCCEEDED : MemoryRepository.FAILED,
-                    "success".equals(outcome) ? null : outcome);
-            return outcome;
-        } catch (RuntimeException e) {
-            logger.error(String.format("Unable to record the backend preparation of Host[%s], task[%s], outcome[%s]",
-                    host, task, outcome), e);
-            return "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNRECORDED";
-        }
+    /** Records the outcome on the preparation's task; one the database refuses is kept and written again by the next scans. */
+    @ExceptionSafe @Deferred
+    void recordPreparation(String host, String task, String outcome) {
+        Defer.guard(() -> {
+            unrecordedPreparations.put(task, new Unrecorded(host, outcome));
+            logger.error(String.format("Unable to record the backend preparation of Host[%s], task[%s], outcome[%s];"
+                    + " the next scan records it again", host, task, outcome));
+        });
+        repository.finishTask(task, "success".equals(outcome) ? MemoryRepository.SUCCEEDED : MemoryRepository.FAILED,
+                "success".equals(outcome) ? null : outcome);
+        unrecordedPreparations.remove(task);
+    }
+
+    /** Writes again the preparation outcomes the database refused. */
+    void recordUnrecordedPreparations() {
+        new HashMap<>(unrecordedPreparations).forEach((task, unrecorded) -> recordPreparation(unrecorded.host, task, unrecorded.outcome));
+    }
+
+    /** A preparation this node ran when it stopped has an unknown result; its task is not left running. */
+    @ExceptionSafe @Deferred
+    void failInterruptedPreparations() {
+        Defer.guard(() -> logger.error("Unable to finish the backend preparations a management node restart interrupted"));
+        repository.failRunningTasks(repository.hostsWithState().stream().filter(destMaker::isManagedByUs)
+                        .collect(Collectors.toList()), MemoryBackendPreparationRules.ACTION,
+                "MEMORY_RESULT_UNKNOWN: MANAGEMENT_NODE_RESTARTED");
     }
 
     /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
@@ -820,6 +844,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 planConfiguration(unreadable, ZramChange.NONE);
             }
         }
+        recordUnrecordedPreparations();
         if (now - lastHistoryPurge >= MemoryOptimizationGlobalConfig.historyPurgeMillis()) {
             lastHistoryPurge = now;
             repository.purgeHistory(now);
