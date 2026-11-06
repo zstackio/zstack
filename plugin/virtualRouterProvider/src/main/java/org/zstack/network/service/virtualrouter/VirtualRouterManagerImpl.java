@@ -98,6 +98,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.appliancevm.ApplianceVmConstant.APPLIANCE_VM_TYPE_SLB;
 import static org.zstack.compute.vm.VmSystemTags.MACHINE_TYPE_TOKEN;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
@@ -2586,11 +2587,26 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public List<String> getVirtualRouterVips(String vrUuid, List<String> vipUuids) {
         List<String> ret = new ArrayList<>();
         String peerUuid = haBackend.getVirtualRouterPeerUuid(vrUuid);
+        Set<String> slbVipUuids = new HashSet<>();
+        if (!vipUuids.isEmpty()) {
+            slbVipUuids.addAll(Q.New(VipVO.class)
+                    .in(VipVO_.uuid, vipUuids)
+                    .eq(VipVO_.serviceProvider, APPLIANCE_VM_TYPE_SLB)
+                    .select(VipVO_.uuid)
+                    .listValues());
+            slbVipUuids.addAll(Q.New(VipNetworkServicesRefVO.class)
+                    .in(VipNetworkServicesRefVO_.vipUuid, vipUuids)
+                    .eq(VipNetworkServicesRefVO_.serviceType, APPLIANCE_VM_TYPE_SLB)
+                    .select(VipNetworkServicesRefVO_.vipUuid)
+                    .listValues());
+        }
 
         for (String uuid : vipUuids) {
             List<String> vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), uuid);
             if (vrUuids == null || vrUuids.isEmpty()) {
-                ret.add(uuid);
+                if (!slbVipUuids.contains(uuid)) {
+                    ret.add(uuid);
+                }
                 continue;
             }
 
