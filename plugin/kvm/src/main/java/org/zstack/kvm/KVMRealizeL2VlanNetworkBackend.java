@@ -1,11 +1,14 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -17,16 +20,22 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
+import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgesCmd;
+import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgesResponse;
 import org.zstack.kvm.KVMAgentCommands.DeleteVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.DeleteVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -108,6 +117,119 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         } else {
             realize(l2Network, hostUuid, noStatusCheck, completion, KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH);
         }
+    }
+
+    @Override
+    public void realize(final List<L2NetworkInventory> l2Networks, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+        if (l2Networks == null || l2Networks.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        if (l2Networks.get(0).getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            new While<>(l2Networks).step((l2, c) -> {
+                realize(l2, hostUuid, noStatusCheck, new Completion(c) {
+                    @Override
+                    public void success() {
+                        c.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        c.addError(errorCode);
+                        c.allDone();
+                    }
+                }, KVMConstant.KVM_REALIZE_OVSDPDK_NETWORK_PATH);
+            }, 10).run(new WhileDoneCompletion(completion) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        completion.fail(errorCodeList.getCauses().get(0));
+                        return;
+                    }
+                    completion.success();
+                }
+            });
+            return;
+        }
+
+        List<String> l2Uuids = l2Networks.stream().map(L2NetworkInventory::getUuid).collect(Collectors.toList());
+        Map<String, String> existingBridgeNames = KVMHostUtils.getExistingBridgeNames(l2Uuids);
+        Map<String, Integer> mtuMap = new MtuGetter().getL2Mtus(l2Networks);
+
+        final List<CreateVlanBridgeCmd> allCmds = new ArrayList<>(l2Networks.size());
+        for (L2NetworkInventory l2Network : l2Networks) {
+            L2VlanNetworkInventory l2vlan = (L2VlanNetworkInventory) l2Network;
+            CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
+            cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
+            String bridgeName = existingBridgeNames.get(l2vlan.getUuid());
+            if (bridgeName == null) {
+                bridgeName = makeBridgeName(l2vlan.getUuid(), l2vlan.getVlan());
+            }
+            cmd.setBridgeName(bridgeName);
+            cmd.setVlan(l2vlan.getVlan());
+            cmd.setL2NetworkUuid(l2Network.getUuid());
+            cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
+            cmd.setMtu(mtuMap.get(l2Network.getUuid()));
+            allCmds.add(cmd);
+        }
+
+        int step = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.value(Integer.class);
+        List<CreateVlanBridgesCmd> batches = new ArrayList<>();
+        for (int i = 0; i < allCmds.size(); i += step) {
+            CreateVlanBridgesCmd batchCmd = new CreateVlanBridgesCmd();
+            batchCmd.setBridgeCmds(new ArrayList<>(allCmds.subList(i, Math.min(i + step, allCmds.size()))));
+            batches.add(batchCmd);
+        }
+
+        new While<>(batches).each((batchCmd, c) -> {
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setHostUuid(hostUuid);
+            msg.setCommand(batchCmd);
+            msg.setNoStatusCheck(noStatusCheck);
+            msg.setPath(KVMConstant.KVM_REALIZE_L2VLAN_NETWORKS_PATH);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+            bus.send(msg, new CloudBusCallBack(c) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        c.addError(reply.getError());
+                        c.allDone();
+                        return;
+                    }
+
+                    KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                    CreateVlanBridgesResponse rsp = hreply.toResponse(CreateVlanBridgesResponse.class);
+                    if (!rsp.isSuccess()) {
+                        ErrorCode err = operr("failed to create vlan bridges on kvm host[uuid:%s], because %s",
+                                hostUuid, rsp.getError());
+                        c.addError(err);
+                        c.allDone();
+                        return;
+                    }
+                    c.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                for (CreateVlanBridgeCmd cmd : allCmds) {
+                    if (!existingBridgeNames.containsKey(cmd.getL2NetworkUuid())) {
+                        SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(cmd.getL2NetworkUuid());
+                        creator.inherent = true;
+                        creator.ignoreIfExisting = true;
+                        creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                        creator.create();
+                    }
+                }
+                completion.success();
+            }
+        });
     }
 
     @Override

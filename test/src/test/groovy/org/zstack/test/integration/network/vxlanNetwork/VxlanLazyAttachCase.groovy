@@ -5,6 +5,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l2.L2NetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
@@ -391,6 +392,31 @@ class VxlanLazyAttachCase extends SubCase {
         for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd : vxlanCmd.bridgeCmds) {
             assert bridgeCmd.vni == vxlan2.vni || bridgeCmd.vni == vxlan1.vni
             assert bridgeCmd.mtu == 1450
+        }
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "1"
+        }
+
+        List<VxlanKvmAgentCommands.CreateVxlanBridgesCmd> vxlanBatchCmds = Collections.synchronizedList(new ArrayList<>())
+        env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            vxlanBatchCmds.add(JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class))
+            return rsp
+        }
+        fdbcmds.clear()
+        reconnectHost { uuid = host1.uuid }
+
+        assert vxlanBatchCmds.size() == 2
+        assert vxlanBatchCmds.collect { it.bridgeCmds.size() } == [1, 1]
+        assert fdbcmds.size() == 2
+        assert fdbcmds.collect { it.networkUuids.size() } == [1, 1]
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "100"
         }
 
     }

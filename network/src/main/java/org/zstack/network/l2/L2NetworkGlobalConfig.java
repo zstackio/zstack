@@ -12,4 +12,6 @@ public class L2NetworkGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig DeleteL2BridgePhysically = new GlobalConfig(CATEGORY, "deleteL2.bridge");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig RealizeL2NetworkBatchCount = new GlobalConfig(CATEGORY, "realize.batch.count");
 }

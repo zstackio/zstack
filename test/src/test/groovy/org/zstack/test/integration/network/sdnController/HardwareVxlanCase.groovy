@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l2.L2NetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.*
@@ -143,17 +144,61 @@ class HardwareVxlanCase extends SubCase {
 
         assert vx1.virtualNetworkId == 200
 
-        /* reconnect host will re-install vxlan config */
+        L2VxlanNetworkInventory vx2 = createL2HardwareVxlanNetwork {
+            poolUuid = hardPool.getUuid()
+            name = "hardVxlan2"
+            vni = 150
+            zoneUuid = zone.uuid
+        }
+        L2VxlanNetworkInventory vx3 = createL2HardwareVxlanNetwork {
+            poolUuid = hardPool.getUuid()
+            name = "hardVxlan3"
+            vni = 160
+            zoneUuid = zone.uuid
+        }
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "2"
+        }
+
+        List<KVMAgentCommands.CreateVlanBridgesCmd> batchCmds = Collections.synchronizedList(new ArrayList<>())
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            KVMAgentCommands.CreateVlanBridgesCmd bcmd = json(e.body, KVMAgentCommands.CreateVlanBridgesCmd.class)
+            batchCmds.add(bcmd)
+            if (bcmd.bridgeCmds != null && !bcmd.bridgeCmds.isEmpty()) {
+                createCmd = bcmd.bridgeCmds[0]
+            }
+            return rsp
+        }
+
+        /* reconnect host will re-install vxlan config in batches */
         createCmd = null
         reconnectHost {
             uuid = h1.uuid
         }
-        assert createCmd.physicalInterfaceName == hardPool.physicalInterface
-        assert createCmd.vlan == vx1.vni
-        assert createCmd.l2NetworkUuid == vx1.uuid
+        assert batchCmds.size() == 2
+        assert batchCmds.collect { it.bridgeCmds.size() } == [2, 1]
+        List<KVMAgentCommands.CreateVlanBridgeCmd> allRealized = batchCmds.collectMany { it.bridgeCmds }
+        assert allRealized.size() == 3
+        assert allRealized.every { it.physicalInterfaceName == hardPool.physicalInterface }
+        assert allRealized.collect { it.l2NetworkUuid }.toSet() == [vx1.uuid, vx2.uuid, vx3.uuid].toSet()
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "100"
+        }
 
         deleteL2Network {
             uuid = vx1.uuid
+        }
+        deleteL2Network {
+            uuid = vx2.uuid
+        }
+        deleteL2Network {
+            uuid = vx3.uuid
         }
     }
 }

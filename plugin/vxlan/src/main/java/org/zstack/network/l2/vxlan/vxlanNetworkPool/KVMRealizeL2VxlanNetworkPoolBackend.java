@@ -1,6 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -8,8 +9,10 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
@@ -20,6 +23,7 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
@@ -229,39 +233,68 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                         .listValues();
                 Integer dstport = dstports.get(0);
 
-                final VxlanKvmAgentCommands.CreateVxlanBridgesCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
-                cmd.setBridgeCmds(new ArrayList<>());
+                List<String> vxlanUuids = vxlanNetworkVOS.stream().map(VxlanNetworkVO::getUuid).collect(Collectors.toList());
+                Map<String, String> existingBridgeNames = KVMHostUtils.getExistingBridgeNames(vxlanUuids);
+                List<L2NetworkInventory> l2Invs = vxlanNetworkVOS.stream().map(L2VxlanNetworkInventory::valueOf).collect(Collectors.toList());
+                Map<String, Integer> mtuMap = new MtuGetter().getL2Mtus(l2Invs);
+
+                final List<VxlanKvmAgentCommands.CreateVxlanBridgeCmd> allBridgeCmds = new ArrayList<>(vxlanNetworkVOS.size());
                 for (VxlanNetworkVO vo : vxlanNetworkVOS) {
                     VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
                     bridgeCmd.setVtepIp((String) data.get(VTEP_IP));
-                    bridgeCmd.setBridgeName(KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()));
+                    String bridgeName = existingBridgeNames.get(vo.getUuid());
+                    if (bridgeName == null) {
+                        bridgeName = KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni());
+                    }
+                    bridgeCmd.setBridgeName(bridgeName);
                     bridgeCmd.setVni(vo.getVni());
                     bridgeCmd.setDstport(dstport);
                     bridgeCmd.setL2NetworkUuid(vo.getUuid());
-                    bridgeCmd.setMtu(new MtuGetter().getL2Mtu(L2VxlanNetworkInventory.valueOf(vo)));
-                    cmd.getBridgeCmds().add(bridgeCmd);
+                    bridgeCmd.setMtu(mtuMap.get(vo.getUuid()));
+                    allBridgeCmds.add(bridgeCmd);
                 }
 
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setHostUuid(hostUuid);
-                msg.setCommand(cmd);
-                msg.setNoStatusCheck(noStatusCheck);
-                msg.setPath(VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH);
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                bus.send(msg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
+                int step = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.value(Integer.class);
+                List<VxlanKvmAgentCommands.CreateVxlanBridgesCmd> batches = new ArrayList<>();
+                for (int i = 0; i < allBridgeCmds.size(); i += step) {
+                    VxlanKvmAgentCommands.CreateVxlanBridgesCmd batchCmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
+                    batchCmd.setBridgeCmds(new ArrayList<>(allBridgeCmds.subList(i, Math.min(i + step, allBridgeCmds.size()))));
+                    batches.add(batchCmd);
+                }
 
-                        KVMHostAsyncHttpCallReply hreply = reply.castReply();
-                        VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
-                        if (!rsp.isSuccess()) {
-                            ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
-                                    l2Network.getUuid(), l2Network.getType(), hostUuid, rsp.getError());
-                            trigger.fail(err);
+                new While<>(batches).each((batchCmd, c) -> {
+                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                    msg.setHostUuid(hostUuid);
+                    msg.setCommand(batchCmd);
+                    msg.setNoStatusCheck(noStatusCheck);
+                    msg.setPath(VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(msg, new CloudBusCallBack(c) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                c.addError(reply.getError());
+                                c.allDone();
+                                return;
+                            }
+
+                            KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                            VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
+                            if (!rsp.isSuccess()) {
+                                ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+                                        l2Network.getUuid(), l2Network.getType(), hostUuid, rsp.getError());
+                                c.addError(err);
+                                c.allDone();
+                                return;
+                            }
+                            c.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
                             return;
                         }
 
@@ -270,13 +303,14 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                                 l2Network.getUuid(), l2Network.getType(), hostUuid);
                         logger.debug(info);
 
-                        for (VxlanNetworkVO vo : vxlanNetworkVOS) {
-                            SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(vo.getUuid());
-                            creator.inherent = true;
-                            creator.ignoreIfExisting = true;
-                            creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN,
-                                    KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()))));
-                            creator.create();
+                        for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd : allBridgeCmds) {
+                            if (!existingBridgeNames.containsKey(bridgeCmd.getL2NetworkUuid())) {
+                                SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(bridgeCmd.getL2NetworkUuid());
+                                creator.inherent = true;
+                                creator.ignoreIfExisting = true;
+                                creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, bridgeCmd.getBridgeName())));
+                                creator.create();
+                            }
                         }
                         trigger.next();
                     }

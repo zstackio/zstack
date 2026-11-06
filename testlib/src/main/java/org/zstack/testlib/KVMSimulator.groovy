@@ -386,6 +386,7 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.CheckVlanBridgeResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORKS_PATH) { return new KVMAgentCommands.CreateVlanBridgesResponse() }
         spec.simulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH) {
             return new KVMAgentCommands.CreateVlanBridgeResponse()
         }

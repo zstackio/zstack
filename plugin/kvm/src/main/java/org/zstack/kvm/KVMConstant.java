@@ -24,6 +24,7 @@ public interface KVMConstant {
     String KVM_REALIZE_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/createbridge";
     String KVM_CHECK_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/checkbridge";
     String KVM_REALIZE_L2VLAN_NETWORK_PATH = "/network/l2vlan/createbridge";
+    String KVM_REALIZE_L2VLAN_NETWORKS_PATH = "/network/l2vlan/createbridges";
     String KVM_CHECK_L2VLAN_NETWORK_PATH = "/network/l2vlan/checkbridge";
     String KVM_DELETE_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/deletebridge";
     String KVM_DELETE_L2VLAN_NETWORK_PATH = "/network/l2vlan/deletebridge";
