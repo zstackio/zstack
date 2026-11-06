@@ -39,6 +39,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.network.l2.vxlan.vtep.*;
@@ -173,28 +174,43 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             return;
         }
 
+        int step = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.value(Integer.class);
+        List<List<String>> uuidBatches = new ArrayList<>();
+        for (int i = 0; i < vxlanNetworkUuids.size(); i += step) {
+            uuidBatches.add(new ArrayList<>(vxlanNetworkUuids.subList(i, Math.min(i + step, vxlanNetworkUuids.size()))));
+        }
+
         ErrorCodeList errList = new ErrorCodeList();
         new While<>(targets).step((host, completion1) -> {
             List<String> peers = new ArrayList<>();
             peers.add(msg.getVtepIp());
 
-            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
-            cmd.setPeers(peers);
-            cmd.setNetworkUuids(vxlanNetworkUuids);
+            new While<>(uuidBatches).each((batchUuids, batchCompletion) -> {
+                VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+                cmd.setPeers(peers);
+                cmd.setNetworkUuids(batchUuids);
 
-            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setHostUuid(host.getUuid());
-            kmsg.setCommand(cmd);
-            kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
-            kmsg.setNoStatusCheck(true);
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
-            bus.send(kmsg, new CloudBusCallBack(completion1) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(reply.getError().toString());
-                        errList.getCauses().add(reply.getError());
+                KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+                kmsg.setHostUuid(host.getUuid());
+                kmsg.setCommand(cmd);
+                kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
+                kmsg.setNoStatusCheck(true);
+                bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
+                bus.send(kmsg, new CloudBusCallBack(batchCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(reply.getError().toString());
+                            errList.getCauses().add(reply.getError());
+                            batchCompletion.allDone();
+                            return;
+                        }
+                        batchCompletion.done();
                     }
+                });
+            }).run(new WhileDoneCompletion(completion1) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
                     completion1.done();
                 }
             });
@@ -237,40 +253,62 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             return;
         }
 
+        int step = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.value(Integer.class);
+        List<List<String>> uuidBatches = new ArrayList<>();
+        for (int i = 0; i < vxlanNetworkUuids.size(); i += step) {
+            uuidBatches.add(new ArrayList<>(vxlanNetworkUuids.subList(i, Math.min(i + step, vxlanNetworkUuids.size()))));
+        }
+
+        List<RemoteVtepVO> allRemoteVteps = Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, msg.getPoolUuid()).list();
+        Map<String, Set<String>> remoteVtepsByCluster = new HashMap<>();
+        if (allRemoteVteps != null) {
+            for (RemoteVtepVO rvo : allRemoteVteps) {
+                remoteVtepsByCluster.computeIfAbsent(rvo.getClusterUuid(), k -> new HashSet<>()).add(rvo.getVtepIp());
+            }
+        }
+
         new While<>(targets).all((host, completion1) -> {
-            List<VtepVO> peerVteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid())
-                    .notEq(VtepVO_.hostUuid, host.getUuid()).list();
-            Set<String> peers = peerVteps.stream()
-                    .map(v -> v.getVtepIp())
+            Set<String> peers = vteps.stream()
+                    .filter(v -> !host.getUuid().equals(v.getHostUuid()))
+                    .map(VtepVO::getVtepIp)
                     .collect(Collectors.toSet());
 
             logger.info(String.format("populate fdb to host[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
                     host.getManagementIp(), msg.getPoolUuid(), vxlanNetworkUuids, host.getUuid()));
 
-            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
-            // if remote vtep ip exist ,add it
-            String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, host.getUuid()).findValue();
-            List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, msg.getPoolUuid()).eq(RemoteVtepVO_.clusterUuid, clusterUuid).listValues();
-            if (gwpeers.size() > 0) {
-                Set<String> gwp = new HashSet<String>(gwpeers);
-                peers.addAll(gwp);
+            String clusterUuid = host.getClusterUuid();
+            if (clusterUuid == null) {
+                clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, host.getUuid()).findValue();
             }
+            Set<String> gwpeers = remoteVtepsByCluster.get(clusterUuid);
+            if (gwpeers != null && !gwpeers.isEmpty()) {
+                peers.addAll(gwpeers);
+            }
+            List<String> peerList = new ArrayList<>(peers);
 
-            cmd.setPeers(new ArrayList<>(peers));
-            cmd.setNetworkUuids(vxlanNetworkUuids);
+            new While<>(uuidBatches).each((batchUuids, batchCompletion) -> {
+                VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+                cmd.setPeers(peerList);
+                cmd.setNetworkUuids(batchUuids);
 
-            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setHostUuid(host.getUuid());
-            kmsg.setCommand(cmd);
-            kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
-            kmsg.setNoStatusCheck(true);
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
-            bus.send(kmsg, new CloudBusCallBack(completion1) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(reply.getError().toString());
+                KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+                kmsg.setHostUuid(host.getUuid());
+                kmsg.setCommand(cmd);
+                kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
+                kmsg.setNoStatusCheck(true);
+                bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
+                bus.send(kmsg, new CloudBusCallBack(batchCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(reply.getError().toString());
+                        }
+                        batchCompletion.done();
                     }
+                });
+            }).run(new WhileDoneCompletion(completion1) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
                     completion1.done();
                 }
             });

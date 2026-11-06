@@ -1,11 +1,15 @@
 package org.zstack.sdnController.hardwareVxlan;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -20,13 +24,23 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
+import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgesCmd;
+import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgesResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -110,6 +124,122 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, final Completion completion) {
         realize(l2Network, hostUuid, false, completion);
+    }
+
+    @Override
+    public void realize(final List<L2NetworkInventory> l2Networks, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+        if (l2Networks == null || l2Networks.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<String> missingVoUuids = l2Networks.stream()
+                .filter(l2 -> !(l2 instanceof HardwareL2VxlanNetworkInventory))
+                .map(L2NetworkInventory::getUuid)
+                .collect(Collectors.toList());
+        List<HardwareL2VxlanNetworkVO> missingVos = missingVoUuids.isEmpty() ? Collections.emptyList() :
+                Q.New(HardwareL2VxlanNetworkVO.class)
+                        .in(HardwareL2VxlanNetworkVO_.uuid, missingVoUuids)
+                        .list();
+        Map<String, HardwareL2VxlanNetworkVO> voMap = missingVos.stream()
+                .collect(Collectors.toMap(HardwareL2VxlanNetworkVO::getUuid, Function.identity()));
+
+        List<HardwareL2VxlanNetworkInventory> vxlans = new ArrayList<>(l2Networks.size());
+        for (L2NetworkInventory l2 : l2Networks) {
+            if (l2 instanceof HardwareL2VxlanNetworkInventory) {
+                vxlans.add((HardwareL2VxlanNetworkInventory) l2);
+            } else {
+                HardwareL2VxlanNetworkVO vo = voMap.get(l2.getUuid());
+                if (vo != null) {
+                    vxlans.add(HardwareL2VxlanNetworkInventory.valueOf(vo));
+                }
+            }
+        }
+
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
+        Map<String, HardwareVxlanHelper.VxlanHostMappingStruct> mappingMap =
+                HardwareVxlanHelper.getHardwareVxlanMappingVxlanIds(vxlans, host);
+        List<String> l2Uuids = vxlans.stream().map(HardwareL2VxlanNetworkInventory::getUuid).collect(Collectors.toList());
+        Map<String, String> existingBridgeNames = KVMHostUtils.getExistingBridgeNames(l2Uuids);
+        Map<String, Integer> mtuMap = new MtuGetter().getL2Mtus(new ArrayList<>(vxlans));
+
+        final List<CreateVlanBridgeCmd> allCmds = new ArrayList<>(vxlans.size());
+        for (HardwareL2VxlanNetworkInventory vxlan : vxlans) {
+            HardwareVxlanHelper.VxlanHostMappingStruct struct = mappingMap.get(vxlan.getUuid());
+            Integer vlanId = struct.getVlanId();
+            String physicalInterface = struct.getPhysicalInterface();
+
+            CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
+            cmd.setPhysicalInterfaceName(physicalInterface);
+            String bridgeName = existingBridgeNames.get(vxlan.getUuid());
+            if (bridgeName == null) {
+                bridgeName = makeBridgeName(vxlan.getUuid(), vlanId);
+            }
+            cmd.setBridgeName(bridgeName);
+            cmd.setVlan(vlanId);
+            cmd.setMtu(mtuMap.get(vxlan.getUuid()));
+            cmd.setL2NetworkUuid(vxlan.getUuid());
+            cmd.setIsolated(vxlan.getIsolated());
+            allCmds.add(cmd);
+        }
+
+        int step = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.value(Integer.class);
+        List<CreateVlanBridgesCmd> batches = new ArrayList<>();
+        for (int i = 0; i < allCmds.size(); i += step) {
+            CreateVlanBridgesCmd batchCmd = new CreateVlanBridgesCmd();
+            batchCmd.setBridgeCmds(new ArrayList<>(allCmds.subList(i, Math.min(i + step, allCmds.size()))));
+            batches.add(batchCmd);
+        }
+
+        new While<>(batches).each((batchCmd, c) -> {
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setHostUuid(hostUuid);
+            msg.setCommand(batchCmd);
+            msg.setNoStatusCheck(noStatusCheck);
+            msg.setPath(KVMConstant.KVM_REALIZE_L2VLAN_NETWORKS_PATH);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+            bus.send(msg, new CloudBusCallBack(c) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        c.addError(reply.getError());
+                        c.allDone();
+                        return;
+                    }
+
+                    KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                    CreateVlanBridgesResponse rsp = hreply.toResponse(CreateVlanBridgesResponse.class);
+                    if (!rsp.isSuccess()) {
+                        ErrorCode err = operr(ORG_ZSTACK_SDNCONTROLLER_HARDWAREVXLAN_10014,
+                                "failed to create bridges for hardwareVxlan on kvm host[uuid:%s], because %s",
+                                hostUuid, rsp.getError());
+                        c.addError(err);
+                        c.allDone();
+                        return;
+                    }
+                    c.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                for (CreateVlanBridgeCmd cmd : allCmds) {
+                    if (!existingBridgeNames.containsKey(cmd.getL2NetworkUuid())) {
+                        SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(cmd.getL2NetworkUuid());
+                        creator.inherent = true;
+                        creator.ignoreIfExisting = true;
+                        creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                        creator.create();
+                    }
+                }
+                completion.success();
+            }
+        });
     }
 
     public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {

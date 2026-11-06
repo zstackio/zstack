@@ -28,4 +28,7 @@ public class L2NetworkGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig BridgeMulticastSnooping = new GlobalConfig(CATEGORY, "bridge.multicastSnooping");
 
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig RealizeL2NetworkBatchCount = new GlobalConfig(CATEGORY, "realize.batch.count");
+
 }
