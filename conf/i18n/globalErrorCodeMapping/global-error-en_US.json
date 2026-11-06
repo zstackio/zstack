@@ -4739,6 +4739,7 @@
   "ORG_ZSTACK_IMAGE_10046": "The image with UUID [uuid:%s] and name [name:%s] has not been deleted from the backup storage with UUID [uuid:%s].",
   "ORG_ZSTACK_IMAGE_10045": "The image with UUID [uuid:%s] and name [name:%s] is not available on the backup storage with UUID [uuid:%s].",
   "ORG_ZSTACK_IMAGE_10044": "The image with UUID [uuid:%s] and name [name:%s] has not been deleted from any backup storage.",
+  "ORG_ZSTACK_IMAGE_10048": "The image or VM requires CPU architecture [%s], but the candidate hosts are %s. Please choose an image and a cluster with the same architecture.",
   "ORG_ZSTACK_IMAGE_10043": "The image with UUID [uuid:%s] and name [name:%s] has a status [status:%s] on the backup storage with UUID [backup storage uuid:%s], which is not Deleted.",
   "ORG_ZSTACK_IMAGE_10040": "detach iso with uuid\u003d%s failed, errors are %s",
   "ORG_ZSTACK_VPCFIREWALL_10058": "delete firewall rule on vRouter[%s] because %s",

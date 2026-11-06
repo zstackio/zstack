@@ -37990,5 +37990,24 @@
     "arguments": [],
     "line": 166,
     "fileName": "src/main/java/org/zstack/sns/platform/universalsms/SNSUniversalSmsEndpoint.java"
+  },
+  {
+    "raw": "the image or vm requires cpu architecture[%s], but the candidate hosts are %s, please choose an image and a cluster with the same architecture",
+    "en_US": "the image or vm requires cpu architecture[{0}], but the candidate hosts are {1}, please choose an image and a cluster with the same architecture",
+    "zh_CN": "镜像或云主机要求 CPU 架构[{0}]，但候选物理机架构为 {1}，请选择架构一致的镜像和集群",
+    "arguments": [
+      "finalArchitecture",
+      "hostArchitectures"
+    ],
+    "line": 2768,
+    "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
+  },
+  {
+    "raw": "no candidate host has the cpu architecture required by the image or vm",
+    "en_US": "no candidate host has the cpu architecture required by the image or vm",
+    "zh_CN": "没有候选物理机符合镜像或云主机要求的 CPU 架构",
+    "arguments": [],
+    "line": 2776,
+    "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   }
 ]
