@@ -11,6 +11,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l2.L2NetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
@@ -224,10 +225,11 @@ public class AttachL2NetworkCase extends SubCase{
                                     String.format("cluster.uuid=%s", cluster.uuid)]}
 
         for (int i = l2s.size(); i < 100; i++) {
+            String nicName = (i <= 35) ? String.format("eth%d", i) : "eth0"
             L2VlanNetworkInventory vlan = createL2VlanNetwork {
                 zoneUuid = zone.uuid
                 name = String.format("eth0-vlan-%d", i)
-                physicalInterface = "eth0"
+                physicalInterface = nicName
                 vlan = i
             }
 
@@ -237,23 +239,69 @@ public class AttachL2NetworkCase extends SubCase{
             }
         }
 
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "30"
+        }
+
+        List<KVMAgentCommands.CheckPhysicalNetworkInterfaceCmd> checkNicBatches = Collections.synchronizedList(new ArrayList<>())
+        env.afterSimulator(KVMConstant.KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH) { rsp, HttpEntity<String> e ->
+            checkNicBatches.add(json(e.body, KVMAgentCommands.CheckPhysicalNetworkInterfaceCmd.class))
+            return rsp
+        }
+
         KVMAgentCommands.CreateBridgeCmd createCmd = null
         env.afterSimulator(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             createCmd = json(e.body, KVMAgentCommands.CreateBridgeCmd.class)
             return rsp
         }
 
-        env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+        List<KVMAgentCommands.CreateVlanBridgesCmd> vlanBatches = Collections.synchronizedList(new ArrayList<>())
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
             assert createCmd != null
+            vlanBatches.add(json(e.body, KVMAgentCommands.CreateVlanBridgesCmd.class))
             return rsp
         }
 
-        addKVMHost {
+        HostInventory newHost = addKVMHost {
             name = "test"
             managementIp = "127.0.0.2"
             username = "root"
             password = "password"
             clusterUuid = cluster.uuid
+        }
+
+        assert checkNicBatches.size() == 2
+        assert checkNicBatches.collect { it.interfaceNames.size() } == [30, 5]
+        assert vlanBatches.size() == 4
+        assert vlanBatches.collect { it.bridgeCmds.size() } == [30, 30, 30, 9]
+
+        /* test fail-fast when 2nd batch fails during reconnectHost */
+        vlanBatches.clear()
+        boolean failSecondBatch = true
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORKS_PATH) { KVMAgentCommands.CreateVlanBridgesResponse rsp, HttpEntity<String> e ->
+            KVMAgentCommands.CreateVlanBridgesCmd cmd = json(e.body, KVMAgentCommands.CreateVlanBridgesCmd.class)
+            vlanBatches.add(cmd)
+            if (failSecondBatch && vlanBatches.size() == 2) {
+                rsp.success = false
+                rsp.error = "unable to create vlan bridge[name:${cmd.bridgeCmds[0].bridgeName}, vlan:${cmd.bridgeCmds[0].vlan}] from device[${cmd.bridgeCmds[0].physicalInterfaceName}], because mock failure"
+            }
+            return rsp
+        }
+
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = newHost.uuid
+            }
+        }
+        assert vlanBatches.size() == 2
+
+        failSecondBatch = false
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.name
+            value = "100"
         }
     }
 

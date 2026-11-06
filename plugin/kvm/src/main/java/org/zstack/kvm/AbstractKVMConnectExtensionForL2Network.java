@@ -21,12 +21,14 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractKVMConnectExtensionForL2Network {
@@ -47,6 +49,15 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
         List<L2NetworkVO> vos = q.getResultList();
         List<L2NetworkInventory> ret = new ArrayList<L2NetworkInventory>(vos.size());
         List<L2NetworkInventory> noVlanL2Networks = new ArrayList<>();
+        List<String> vlanUuids = vos.stream()
+                .filter(vo -> L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(vo.getType()))
+                .map(L2NetworkVO::getUuid)
+                .collect(Collectors.toList());
+        List<L2VlanNetworkVO> vlanVos = vlanUuids.isEmpty() ? Collections.emptyList() :
+                Q.New(L2VlanNetworkVO.class).in(L2VlanNetworkVO_.uuid, vlanUuids).list();
+        Map<String, L2VlanNetworkVO> vlanVoMap = vlanVos.stream()
+                .collect(Collectors.toMap(L2VlanNetworkVO::getUuid, Function.identity()));
+
         for (L2NetworkVO vo : vos) {
             VSwitchType vSwitchType = VSwitchType.valueOf(vo.getvSwitchType());
             if (!vSwitchType.isAttachToCluster()) {
@@ -55,8 +66,10 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(vo.getType())) {
                 noVlanL2Networks.add(L2NetworkInventory.valueOf(vo));
             } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(vo.getType())) {
-                L2VlanNetworkVO vlanvo = dbf.getEntityManager().find(L2VlanNetworkVO.class, vo.getUuid());
-                ret.add(L2VlanNetworkInventory.valueOf(vlanvo));
+                L2VlanNetworkVO vlanvo = vlanVoMap.get(vo.getUuid());
+                if (vlanvo != null) {
+                    ret.add(L2VlanNetworkInventory.valueOf(vlanvo));
+                }
             } else {
                 ret.add(L2NetworkInventory.valueOf(vo));
             }
@@ -96,16 +109,10 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
                 final List<L2NetworkInventory> l2NetworksCheckList =
                         l2Networks.stream()
                                 .collect(Collectors.collectingAndThen(Collectors.toCollection(()->new TreeSet<>(Comparator.comparing(L2NetworkInventory::getPhysicalInterface))),ArrayList::new));
-                int step = 100;
+                int step = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount.value(Integer.class);
                 int size = l2NetworksCheckList.size();
-                int count = size / 100;
-                if (size - count * 100 > 0) {
-                    count++;
-                }
-
-                for (int i = 0; i < count; i++) {
-                    int end = (i + 1) * step;
-                    List<String> interfaces = l2NetworksCheckList.subList(i * step, Math.min(end, l2NetworksCheckList.size()))
+                for (int i = 0; i < size; i += step) {
+                    List<String> interfaces = l2NetworksCheckList.subList(i, Math.min(i + step, size))
                             .stream()
                             .map(L2NetworkInventory::getPhysicalInterface)
                             .collect(Collectors.toList());
@@ -184,9 +191,20 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> vlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
-                new While<>(vlanNetworks).step((l2, c) -> {
-                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), VSwitchType.valueOf(l2.getvSwitchType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
-                    ext.realize(l2, hostUuid, true, new Completion(c) {
+                if (vlanNetworks.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+                Map<String, List<L2NetworkInventory>> groupedByVSwitch = new LinkedHashMap<>();
+                for (L2NetworkInventory l2 : vlanNetworks) {
+                    groupedByVSwitch.computeIfAbsent(l2.getvSwitchType(), k -> new ArrayList<>()).add(l2);
+                }
+                new While<>(new ArrayList<>(groupedByVSwitch.entrySet())).each((entry, c) -> {
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(
+                            L2NetworkType.valueOf(L2NetworkConstant.L2_VLAN_NETWORK_TYPE),
+                            VSwitchType.valueOf(entry.getKey()),
+                            HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    ext.realize(entry.getValue(), hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {
                             c.done();
@@ -198,7 +216,7 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
                             c.allDone();
                         }
                     });
-                }, 10).run(new WhileDoneCompletion(trigger) {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {

@@ -5,6 +5,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.TagType;
@@ -16,9 +17,11 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -118,6 +121,20 @@ public class KVMHostUtils {
         }
 
         return generateNewBridgeName(l2Uuid);
+    }
+
+    public static Map<String, String> getExistingBridgeNames(List<String> l2Uuids) {
+        if (l2Uuids == null || l2Uuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> result = new HashMap<>();
+        for (SystemTagInventory inv : KVMSystemTags.L2_BRIDGE_NAME.getTagInventories(l2Uuids)) {
+            Map<String, String> tokens = KVMSystemTags.L2_BRIDGE_NAME.getTokensByTag(inv.getTag());
+            if (tokens != null && tokens.get(KVMSystemTags.L2_BRIDGE_NAME_TOKEN) != null) {
+                result.put(inv.getResourceUuid(), tokens.get(KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
+            }
+        }
+        return result;
     }
 
     private static void validateFormatString(String format) {

@@ -6,6 +6,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -30,10 +31,12 @@ import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -55,10 +58,20 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
         q.setParameter("clusterUuid", clusterUuid);
         q.setParameter("type", VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE);
         List<String> l2uuids = q.getResultList();
+        if (l2uuids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<VxlanNetworkPoolVO> poolVos = Q.New(VxlanNetworkPoolVO.class)
+                .in(VxlanNetworkPoolVO_.uuid, l2uuids)
+                .list();
+        Map<String, VxlanNetworkPoolVO> poolMap = poolVos.stream()
+                .collect(Collectors.toMap(VxlanNetworkPoolVO::getUuid, Function.identity()));
         List<L2NetworkInventory> ret = new ArrayList<L2NetworkInventory>(l2uuids.size());
         for (String l2uuid : l2uuids) {
-            VxlanNetworkPoolVO poolvo = dbf.getEntityManager().find(VxlanNetworkPoolVO.class, l2uuid);
-            ret.add(L2VxlanNetworkPoolInventory.valueOf(poolvo));
+            VxlanNetworkPoolVO poolvo = poolMap.get(l2uuid);
+            if (poolvo != null) {
+                ret.add(L2VxlanNetworkPoolInventory.valueOf(poolvo));
+            }
         }
         return ret;
     }

@@ -28,4 +28,11 @@
         <category>l2Network</category>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <name>realize.batch.count</name>
+        <description>batch count when realizing l2 networks on host</description>
+        <defaultValue>100</defaultValue>
+        <category>l2Network</category>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
