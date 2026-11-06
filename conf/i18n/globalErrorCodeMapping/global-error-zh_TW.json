@@ -3950,7 +3950,7 @@
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10011": "帳戶[%s]不允許操作默認安全组",
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10010": "帳戶[%s]無法操作默認安全组[%s]",
   "ORG_ZSTACK_SNS_10026": "無法将电子郵件地址更新为 %s，該地址已在端點[uuid:%s]中儲在",
-  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "vm 的 nic[uuid:%s] 只有一個安全组，無法从安全组[uuid:%s] 中刪除該 nic",
+  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "網卡[uuid:%s]必須至少綁定一個安全組，因為專案[uuid:%s]要求使用安全組",
   "ORG_ZSTACK_SNS_10024": "不能将相同的电子郵件地址添加到終端點[uuid:%s]",
   "ORG_ZSTACK_SNS_10023": "無法找到插件[%s]",
   "ORG_ZSTACK_SNS_10022": "無法創建具有相同地址[%s:%s]的SNMP平台",

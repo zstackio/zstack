@@ -80,7 +80,7 @@ public class SecurityGroupPermissionChecker {
     void validateCreateSecurityGroupSelection(String accountUuid, Map<String, List<String>> groups,
                                              Map<String, List<String>> requested, Map<String, List<String>> inherited) {
         if (requested == null || inherited == null) {
-            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10146, "security group selection source is missing"));
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10146, "could not check vm security groups because the list of requested or inherited groups is missing"));
         }
 
         Set<String> checked = requested.values().stream().flatMap(Collection::stream)
@@ -92,7 +92,7 @@ public class SecurityGroupPermissionChecker {
             for (String uuid : inheritedUuids) {
                 if (!AccountConstant.isAdminPermission(acntMgr.getOwnerAccountUuidOfResource(uuid)) || !entry.getValue().contains(uuid)) {
                     throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10143,
-                            "security group[uuid:%s] cannot be inherited on L3 network[uuid:%s]", uuid, entry.getKey()));
+                            "cannot inherit security group[uuid:%s] on L3 network[uuid:%s]. The group must be owned by the initial admin account and included in the vm security group list for that network", uuid, entry.getKey()));
                 }
             }
             List<String> toCheck = entry.getValue().stream().filter(uuid -> !inheritedUuids.contains(uuid))
@@ -130,7 +130,7 @@ public class SecurityGroupPermissionChecker {
             throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10140, "security group[uuid:%s] does not exist", securityGroupUuid));
         }
         if (!AccountConstant.isAdminPermission(acntMgr.getOwnerAccountUuidOfResource(securityGroupUuid))) {
-            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10135, "only security groups owned by admin can be shared, security group[uuid:%s] is not owned by admin", securityGroupUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10135, "cannot share security group[uuid:%s] because it is not owned by the initial admin account", securityGroupUuid));
         }
     }
 
@@ -158,7 +158,7 @@ public class SecurityGroupPermissionChecker {
         for (VmNicSecurityGroupRefVO ref : Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, securityGroupUuid).<VmNicSecurityGroupRefVO>list()) {
             String accountUuid = acntMgr.getOwnerAccountUuidOfResource(ref.getVmInstanceUuid());
             if (canUse(accountUuid, securityGroupUuid) && !canUseAfterSharing(accountUuid, ownerAccountUuid, targetPublic, targetAccounts)) {
-                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10136, "cannot revoke security group[uuid:%s] from account[uuid:%s], vm[uuid:%s] nic[uuid:%s] still uses it",
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10136, "cannot revoke access to security group[uuid:%s] for account[uuid:%s] because vm[uuid:%s] still uses it on nic[uuid:%s]",
                         securityGroupUuid, accountUuid, ref.getVmInstanceUuid(), ref.getVmNicUuid()));
             }
         }
@@ -167,7 +167,7 @@ public class SecurityGroupPermissionChecker {
                 .notEq(SecurityGroupRuleVO_.securityGroupUuid, securityGroupUuid).<SecurityGroupRuleVO>list()) {
             String accountUuid = acntMgr.getOwnerAccountUuidOfResource(rule.getSecurityGroupUuid());
             if (canUse(accountUuid, securityGroupUuid) && !canUseAfterSharing(accountUuid, ownerAccountUuid, targetPublic, targetAccounts)) {
-                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10149, "cannot revoke security group[uuid:%s] from account[uuid:%s], security group[uuid:%s] rule[uuid:%s] still references it",
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10149, "cannot revoke access to security group[uuid:%s] for account[uuid:%s] because security group[uuid:%s] still references it in rule[uuid:%s]",
                         securityGroupUuid, accountUuid, rule.getSecurityGroupUuid(), rule.getUuid()));
             }
         }
@@ -183,13 +183,13 @@ public class SecurityGroupPermissionChecker {
         }
         VmNicSecurityGroupRefVO ref = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, securityGroupUuid).limit(1).find();
         if (ref != null) {
-            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10137, "cannot delete shared security group[uuid:%s], vm[uuid:%s] nic[uuid:%s] still uses it",
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10137, "cannot delete shared security group[uuid:%s] because vm[uuid:%s] still uses it on nic[uuid:%s]",
                     securityGroupUuid, ref.getVmInstanceUuid(), ref.getVmNicUuid()));
         }
         SecurityGroupRuleVO rule = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, securityGroupUuid)
                 .notEq(SecurityGroupRuleVO_.securityGroupUuid, securityGroupUuid).limit(1).find();
         if (rule != null) {
-            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10150, "cannot delete shared security group[uuid:%s], security group[uuid:%s] rule[uuid:%s] still references it",
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10150, "cannot delete shared security group[uuid:%s] because security group[uuid:%s] still references it in rule[uuid:%s]",
                     securityGroupUuid, rule.getSecurityGroupUuid(), rule.getUuid()));
         }
     }
@@ -202,7 +202,7 @@ public class SecurityGroupPermissionChecker {
                 .eq(VmNicSecurityGroupRefVO_.vmInstanceUuid, vmUuid).listValues();
         for (String sgUuid : sgUuids) {
             if (!canUse(targetAccountUuid, sgUuid)) {
-                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10138, "cannot transfer vm[uuid:%s] to account[uuid:%s], detach security group[uuid:%s] first because the target account has no permission to use it",
+                throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10138, "cannot transfer vm[uuid:%s] to account[uuid:%s] because the account has no permission to use security group[uuid:%s]. Detach the security group first",
                         vmUuid, targetAccountUuid, sgUuid));
             }
         }

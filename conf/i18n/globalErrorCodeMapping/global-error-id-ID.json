@@ -3950,7 +3950,7 @@
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10011": "akun[%s] tidak diizinkan melakukan operasi pada grup keamanan default",
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10010": "akun[%s] tidak dapat melakukan operasi pada grup keamanan default[%s]",
   "ORG_ZSTACK_SNS_10026": "tidak dapat memperbarui alamat email menjadi %s karena sudah ada di titik akhir [UUID:%s]",
-  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "antarmuka jaringan vm [UUID: %s] hanya dapat menjadi bagian dari satu grup keamanan; oleh karena itu, tidak dapat dihapus dari grup keamanan saat ini [UUID: %s].",
+  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "Antarmuka jaringan VM [UUID: %s] harus tetap terhubung ke setidaknya satu grup keamanan karena proyek [UUID: %s] mewajibkan penggunaan grup keamanan.",
   "ORG_ZSTACK_SNS_10024": "tidak dapat menambahkan alamat email yang sama ke titik akhir[uuid:%s]",
   "ORG_ZSTACK_SNS_10023": "tidak dapat menemukan plugin[%s]",
   "ORG_ZSTACK_SNS_10022": "tidak dapat membuat platform SNMP dengan alamat yang sama[%s:%s]",

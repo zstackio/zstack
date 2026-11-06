@@ -157,7 +157,7 @@ class SharedSecurityGroupCase extends SubCase {
             def result = new ShareResourceAction(resourceUuids: resourceIds, accountUuids: [accounts.A.uuid], sessionId: adminSession()).call()
 
             assert result.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10151" : "legacy sharing must reject security groups: actual=${result.error}"
-            assert result.error.details.contains("APISetSecurityGroupSharingMsg") : "rejection must identify the security group sharing API: actual=${result.error.details}"
+            assert result.error.details.contains("Use SetSecurityGroupSharing instead") : "rejection must point to SetSecurityGroupSharing: actual=${result.error.details}"
             assert sharingSnapshot(sharedGroup.uuid) == beforeGroup : "rejected legacy sharing must preserve group authorizations"
             assert sharingSnapshot(legacySharingL3Uuid) == beforeNetwork : "mixed-resource rejection must not share the network"
         }
@@ -295,7 +295,7 @@ class SharedSecurityGroupCase extends SubCase {
             def result = new RevokeResourceSharingAction(resourceUuids: resourceIds, all: true, sessionId: adminSession()).call()
 
             assert result.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10151" : "legacy recall must reject security groups: actual=${result.error}"
-            assert result.error.details.contains("APISetSecurityGroupSharingMsg") : "rejection must identify the security group sharing API: actual=${result.error.details}"
+            assert result.error.details.contains("Use SetSecurityGroupSharing instead") : "rejection must point to SetSecurityGroupSharing: actual=${result.error.details}"
             assert sharingSnapshot(sharedGroup.uuid) == beforeGroup : "rejected legacy recall must preserve every group authorization field"
             assert [legacySharingL3Uuid, unsuitableL3Uuid].collectEntries { [(it): sharingSnapshot(it)] } == beforeNetworks : "mixed-resource rejection must preserve every network authorization"
             assert Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmA.vmNics[0].uuid)

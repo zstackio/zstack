@@ -3860,7 +3860,7 @@
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10011": "Konto [%s] ist nicht berechtigt, Operationen auf der Standardsicherheitsgruppe durchzuführen",
   "ORG_ZSTACK_IAM2_SECURITYGROUP_10010": "Konto [%s] kann keine Operationen auf der Standardsicherheitsgruppe [%s] durchführen",
   "ORG_ZSTACK_SNS_10026": "E-Mail-Adresse kann nicht auf %s aktualisiert werden, da sie bereits im Endpunkt [UUID:%s] existiert",
-  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "Die Netzwerkschnittstelle der VM [UUID: %s] kann nur Teil einer Sicherheitsgruppe sein; daher kann sie nicht aus der aktuellen Sicherheitsgruppe [UUID: %s] entfernt werden.",
+  "ORG_ZSTACK_IAM2_SECURITYGROUP_10012": "Die Netzwerkschnittstelle der VM [UUID: %s] muss mindestens einer Sicherheitsgruppe zugeordnet bleiben, da das Projekt [UUID: %s] Sicherheitsgruppen vorschreibt.",
   "ORG_ZSTACK_SNS_10024": "Dieselbe E-Mail-Adresse kann nicht zum Endpunkt [UUID:%s] hinzugefügt werden",
   "ORG_ZSTACK_SNS_10023": "Plugin [%s] kann nicht gefunden werden",
   "ORG_ZSTACK_SNS_10022": "SNMP-Plattform mit derselben Adresse [%s:%s] kann nicht erstellt werden",
