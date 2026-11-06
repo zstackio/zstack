@@ -12,6 +12,7 @@ public class PolicyStatement {
     private String name;
     private PolicyStatementEffect effect;
     private List<String> principals;
+    private List<String> requiredActions;
     private List<String> actions;
     private List<String> resources;
 
@@ -47,6 +48,14 @@ public class PolicyStatement {
         this.principals = principals;
     }
 
+    public List<String> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(List<String> requiredActions) {
+        this.requiredActions = requiredActions;
+    }
+
     public List<String> getActions() {
         return actions;
     }
@@ -79,6 +88,7 @@ public class PolicyStatement {
         private String name;
         private PolicyStatementEffect effect;
         private List<String> principals;
+        private List<String> requiredActions;
         private List<String> actions;
         private List<String> resources;
 
@@ -100,6 +110,11 @@ public class PolicyStatement {
             return this;
         }
 
+        public PolicyStatementBuilder requiredActions(List<String> requiredActions) {
+            this.requiredActions = requiredActions;
+            return this;
+        }
+
         public PolicyStatementBuilder actions(List<String> actions) {
             this.actions = actions;
             return this;
@@ -116,6 +131,7 @@ public class PolicyStatement {
             policyStatement.setName(name);
             policyStatement.setEffect(effect);
             policyStatement.setPrincipals(principals);
+            policyStatement.setRequiredActions(requiredActions);
             policyStatement.setActions(actions);
             policyStatement.setResources(resources);
             return policyStatement;
