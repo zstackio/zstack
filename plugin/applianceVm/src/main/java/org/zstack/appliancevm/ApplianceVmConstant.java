@@ -8,6 +8,7 @@ package org.zstack.appliancevm;
  */
 public class ApplianceVmConstant {
     public static final String APPLIANCE_VM_TYPE = "ApplianceVm";
+    public static final String APPLIANCE_VM_TYPE_SLB = "SLB";
     public static final String SERVICE_ID = "applianceVm";
 
     public static final String KVM_CHANNEL_AGENT_PATH = "/var/lib/zstack/kvm/agentSocket";
