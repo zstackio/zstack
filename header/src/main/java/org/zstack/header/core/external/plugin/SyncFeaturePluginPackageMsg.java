@@ -8,10 +8,20 @@ import org.zstack.header.message.NeedReplyMessage;
  * store the package (if any) in the local plugin repository, then reconcile the local plugin files.
  */
 public class SyncFeaturePluginPackageMsg extends NeedReplyMessage {
+    // the plugin whose load failure fails the sync, null if none: a peer reports the other plugins in their status
+    private String pluginId;
     private String packageName;
     private String sha256;
     @NoLogging
     private String content;
+
+    public String getPluginId() {
+        return pluginId;
+    }
+
+    public void setPluginId(String pluginId) {
+        this.pluginId = pluginId;
+    }
 
     public String getPackageName() {
         return packageName;

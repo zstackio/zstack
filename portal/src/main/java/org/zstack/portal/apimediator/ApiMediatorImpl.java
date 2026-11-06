@@ -424,7 +424,8 @@ public class ApiMediatorImpl extends AbstractService implements
 
     @Override
     public void featurePluginLoaded(LoadedFeaturePlugin plugin) {
-        ((ApiMessageProcessorImpl) processor).addServiceConfigs(plugin.filesUnder("serviceConfig/"), plugin.getClassLoader());
+        ((ApiMessageProcessorImpl) processor).addServiceConfigs(plugin.filesUnder("serviceConfig/"), plugin.getClassLoader(),
+                plugin.getApplicationContext());
     }
 
     @Override

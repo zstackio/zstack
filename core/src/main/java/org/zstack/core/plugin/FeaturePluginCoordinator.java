@@ -154,7 +154,16 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         for (FeaturePluginInventory r : FeaturePlugins.records()) {
             // a record with a status of zstack-ctl's has no files to load
             if (r.getStatus() == null && r.getSha256() != null) {
-                wanted.put(r.getId(), r);
+                if (FeaturePlugins.hasMnPart(r.getId())) {
+                    wanted.put(r.getId(), r);
+                } else {
+                    // drivers and agent parts only, nothing to load on the management node
+                    FeaturePlugins.setState(r.getId(), FeaturePluginInventory.STATUS_LOADED, null);
+                    ErrorCode err = licenseError(new PluginDescriptor(r.getId(), r.getVersion(), r.getLicenseAddon()), LicenseCheckPoint.LOAD);
+                    if (err != null) {
+                        FeaturePlugins.setState(r.getId(), FeaturePluginInventory.STATUS_UNLICENSED, err.getReadableDetails());
+                    }
+                }
             }
         }
 
@@ -236,12 +245,6 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     }
 
     /**
-     * Sends the package (null after an uninstall) to the other running management nodes, which lay it out and apply
-     * the records.
-     *
-     * @return host name of a node -> why it could not apply the change
-     */
-    /**
      * Applies the change on this node and on the running peers at the same time.
      *
      * @param pluginId the plugin whose load failure here counts as a failure, null if none does
@@ -251,7 +254,7 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         Future<Map<String, String>> peers = thdf.submit(new Task<Map<String, String>>() {
             @Override
             public Map<String, String> call() {
-                return syncToPeers(packagePath);
+                return syncToPeers(packagePath, pluginId);
             }
 
             @Override
@@ -276,7 +279,13 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         return failures;
     }
 
-    Map<String, String> syncToPeers(String packagePath) {
+    /**
+     * Sends the package (null after an uninstall) to the other running management nodes, which lay it out and apply
+     * the records.
+     *
+     * @return host name of a node -&gt; why it could not apply the change to pluginId
+     */
+    Map<String, String> syncToPeers(String packagePath, String pluginId) {
         String content = null;
         String sha256 = null;
         if (packagePath != null) {
@@ -292,6 +301,7 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         Map<String, String> failures = new LinkedHashMap<>();
         for (ManagementNodeVO peer : runningPeers()) {
             SyncFeaturePluginPackageMsg msg = new SyncFeaturePluginPackageMsg();
+            msg.setPluginId(pluginId);
             msg.setPackageName(packagePath == null ? null : new File(packagePath).getName());
             msg.setSha256(sha256);
             msg.setContent(content);
@@ -352,8 +362,10 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
             Map<String, Object> result = runCtlJson("reconcile --json");
             refreshDrivers();
             Map<String, String> failures = applyAndPublish(agentChanged(result));
-            if (!failures.isEmpty()) {
-                reply.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", failures));
+            // a plugin that fails here for another reason does not fail the change of another plugin
+            String failure = msg.getPluginId() == null ? null : failures.get(msg.getPluginId());
+            if (failure != null) {
+                reply.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", Collections.singletonMap(msg.getPluginId(), failure)));
             }
         } catch (OperationFailureException e) {
             reply.setError(e.getErrorCode());

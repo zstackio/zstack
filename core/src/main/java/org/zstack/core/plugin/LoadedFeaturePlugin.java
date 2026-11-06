@@ -1,5 +1,7 @@
 package org.zstack.core.plugin;
 
+import org.springframework.context.ApplicationContext;
+
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
@@ -17,14 +19,23 @@ public class LoadedFeaturePlugin {
     private final List<Class<?>> classes;
     private final Map<String, File> files;
     private final List<Class<?>> entities;
+    private final ApplicationContext context;
 
     public LoadedFeaturePlugin(String id, ClassLoader classLoader, List<Class<?>> classes, Map<String, File> files,
-                               List<Class<?>> entities) {
+                               List<Class<?>> entities, ApplicationContext context) {
+        this.context = context;
         this.id = id;
         this.classLoader = classLoader;
         this.classes = Collections.unmodifiableList(classes);
         this.files = Collections.unmodifiableMap(files);
         this.entities = Collections.unmodifiableList(entities);
+    }
+
+    /**
+     * The plugin's Spring context, whose parent is the platform's: it finds the beans of both.
+     */
+    public ApplicationContext getApplicationContext() {
+        return context;
     }
 
     public String getId() {

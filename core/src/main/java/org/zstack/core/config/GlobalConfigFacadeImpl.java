@@ -467,9 +467,11 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 toSave.add(config.toVO());
             }
 
+            // a category no definition uses is a feature plugin's (its id), whose values stay while it is not installed
+            Set<String> definedCategories = configsFromXml.values().stream().map(GlobalConfig::getCategory).collect(Collectors.toSet());
             for (GlobalConfig config : configsFromDatabase.values()) {
                 if (!configsFromXml.containsKey(config.getIdentity())) {
-                    if (!keptCategories.contains(config.getCategory())) {
+                    if (!keptCategories.contains(config.getCategory()) && definedCategories.contains(config.getCategory())) {
                         toRemove.add(config);
                     }
                 } else {

@@ -13,6 +13,9 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.aspectj.AnnotationTransactionAspect;
+import org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.util.ReflectionUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusGson;
@@ -33,6 +36,7 @@ import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACDescription;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
 import org.zstack.utils.FeaturePluginClasses;
 import org.zstack.utils.Utils;
 import org.zstack.utils.YamlUtils;
@@ -40,12 +44,15 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.metamodel.EntityType;
 import javax.sql.DataSource;
+
 import java.beans.Introspector;
 import java.io.File;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -54,6 +61,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -270,7 +278,7 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
             }
 
             p.context = springContext(p, files);
-            p.view = new LoadedFeaturePlugin(id, p.classLoader, p.classes, files, p.entities);
+            p.view = new LoadedFeaturePlugin(id, p.classLoader, p.classes, files, p.entities, p.context);
             return p;
         } catch (Throwable t) {
             release(p);
@@ -316,29 +324,35 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
         return ctx;
     }
 
+    // each step is recorded before it runs, so that deactivate also undoes one that failed halfway
     private void activate(Plugin p) {
         FeaturePluginClasses.add(p.classLoader);
+        // the REST server masks the @NoLogging fields of the plugin's messages when it adds their routes
+        LogSafeGson.addClasses(p.classes);
         if (p.emf != null) {
+            checkEntityNames(p);
+            p.unitRegistered = true;
             FeaturePluginPersistenceUnits.register(p.id, p.emf, dataSource(), p.entities);
             ((DatabaseFacadeImpl) dbf).addPluginEntities(p.entities);
-            p.unitRegistered = true;
         }
 
-        APIMessage.addPluginApiClasses(p.classes);
         p.apisAdded = true;
+        APIMessage.addPluginApiClasses(p.classes);
+        // undoes itself when it fails
         p.rbac = RBAC.addDescriptions(p.classes.stream().filter(c -> RBACDescription.class.isAssignableFrom(c)
                 && !c.isInterface() && !Modifier.isAbstract(c.getModifiers())).collect(Collectors.toList()));
 
         for (FeaturePluginRuntimeExtensionPoint ext : new ArrayList<>(pluginRgty.getExtensionList(FeaturePluginRuntimeExtensionPoint.class))) {
-            ext.featurePluginLoaded(p.view);
             p.runtimeExtensions.add(ext);
+            ext.featurePluginLoaded(p.view);
         }
 
-        ((PluginRegistryImpl) pluginRgty).addExtensions(p.extensions, p.classLoader);
         p.extensionsAdded = true;
+        ((PluginRegistryImpl) pluginRgty).addExtensions(p.extensions, p.classLoader);
         for (Object o : instancesOf(p, Service.class)) {
-            bus.registerService((Service) o);
-            p.services.add((Service) o);
+            CountingService s = new CountingService((Service) o);
+            p.services.add(s);
+            bus.registerService(s);
         }
         for (Object o : instancesOf(p, Component.class)) {
             if (!((Component) o).start()) {
@@ -350,6 +364,67 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
             for (Object o : instancesOf(p, ManagementNodeReadyExtensionPoint.class)) {
                 ((ManagementNodeReadyExtensionPoint) o).managementNodeReady();
             }
+        }
+    }
+
+    // JPQL names entities by their simple names, which must stay unique among the platform and the loaded plugins
+    private void checkEntityNames(Plugin p) {
+        Set<String> platform = dbf.getEntityManager().getMetamodel().getEntities().stream()
+                .map(EntityType::getName).collect(Collectors.toSet());
+        for (Class<?> e : p.entities) {
+            String owner = FeaturePluginPersistenceUnits.ownerOf(e.getSimpleName());
+            if (platform.contains(e.getSimpleName()) || (owner != null && !owner.equals(p.id))) {
+                throw new CloudRuntimeException(String.format("entity %s of feature plugin %s has the name of an entity of %s",
+                        e.getName(), p.id, owner == null ? "the platform" : "feature plugin " + owner));
+            }
+        }
+    }
+
+    /**
+     * A plugin service as the cloud bus sees it, counting the messages being handled so that unloading can wait for
+     * them; what a service continues later from a callback is not counted.
+     */
+    static class CountingService implements Service {
+        final Service service;
+        final AtomicInteger handling = new AtomicInteger();
+
+        CountingService(Service service) {
+            this.service = service;
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            handling.incrementAndGet();
+            try {
+                service.handleMessage(msg);
+            } finally {
+                handling.decrementAndGet();
+            }
+        }
+
+        @Override
+        public String getId() {
+            return service.getId();
+        }
+
+        @Override
+        public int getSyncLevel() {
+            return service.getSyncLevel();
+        }
+
+        @Override
+        public List<String> getAliasIds() {
+            return service.getAliasIds();
+        }
+
+        @Override
+        public boolean start() {
+            return service.start();
+        }
+
+        @Override
+        public boolean stop() {
+            return service.stop();
         }
     }
 
@@ -420,12 +495,15 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
     // waits for the messages the plugin's services are still handling
     private void drain(Plugin p) {
         Set<String> ids = p.services.stream().map(Service::getId).collect(Collectors.toSet());
+        Map<String, AtomicInteger> handling = p.services.stream().filter(s -> s instanceof CountingService)
+                .collect(Collectors.toMap(Service::getId, s -> ((CountingService) s).handling, (a, b) -> a));
         long deadline = System.currentTimeMillis() + DRAIN_MILLIS;
         while (!ids.isEmpty() && System.currentTimeMillis() < deadline) {
             Map<String, SyncTaskStatistic> stats = ((ThreadFacadeImpl) thdf).getSyncTaskStatistics();
             ids.removeIf(id -> {
                 SyncTaskStatistic s = stats.get(id);
-                return s == null || (s.getCurrentRunningThreadNum() == 0 && s.getPendingTaskNum() == 0);
+                AtomicInteger n = handling.get(id);
+                return (n == null || n.get() == 0) && (s == null || (s.getCurrentRunningThreadNum() == 0 && s.getPendingTaskNum() == 0));
             });
             if (!ids.isEmpty()) {
                 try {
@@ -461,8 +539,10 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
         JSONObjectUtil.forgetTypes(cl);
         CloudBusGson.forgetTypes(cl);
         LogSafeGson.forgetTypes(cl);
+        LogSafeGson.removeClasses(cl);
         ((ThreadFacadeImpl) thdf).purgeTimers();
         CachedIntrospectionResults.clearClassLoader(cl);
+        quietly("drop the transaction attributes of feature plugin " + p.id, FeaturePluginLoader::clearTransactionAttributes);
         ReflectionUtils.clearCache();
         AnnotationUtils.clearCache();
         ResolvableType.clearCache();
@@ -475,6 +555,16 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
                 throw new CloudRuntimeException(e);
             }
         });
+    }
+
+    // the @Transactional attributes are cached by method, the plugin's among them; the cache fills again as methods run
+    private static void clearTransactionAttributes() {
+        TransactionAttributeSource tas = AnnotationTransactionAspect.aspectOf().getTransactionAttributeSource();
+        if (tas instanceof AbstractFallbackTransactionAttributeSource) {
+            Field f = ReflectionUtils.findField(AbstractFallbackTransactionAttributeSource.class, "attributeCache");
+            ReflectionUtils.makeAccessible(f);
+            ((Map<?, ?>) ReflectionUtils.getField(f, tas)).clear();
+        }
     }
 
     /**

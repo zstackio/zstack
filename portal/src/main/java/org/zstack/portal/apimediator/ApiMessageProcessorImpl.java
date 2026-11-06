@@ -4,6 +4,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.context.ApplicationContext;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -113,7 +114,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 File cfg = new File(p);
                 Unmarshaller unmarshaller = context.createUnmarshaller();
                 Service schema = (Service) unmarshaller.unmarshal(cfg);
-                createDescriptor(schema, cfg.getAbsolutePath(), null);
+                createDescriptor(schema, cfg.getAbsolutePath(), null, null);
             }
 
             if (!this.unitTestOn) {
@@ -124,7 +125,8 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         }
     }
 
-    private void prepareInterceptors(ApiMessageDescriptor desc, Service.Message mschema, Service schema) {
+    // beans: the Spring context of a feature plugin loaded at runtime, null for the platform's own messages
+    private void prepareInterceptors(ApiMessageDescriptor desc, Service.Message mschema, Service schema, ApplicationContext beans) {
         ComponentLoader loader = Platform.getComponentLoader();
         List<ApiMessageInterceptor> interceptors = new ArrayList<ApiMessageInterceptor>();
         List<String> icNames = new ArrayList<String>();
@@ -132,7 +134,8 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         icNames.addAll(schema.getInterceptor());
         for (String name : icNames) {
             try {
-                ApiMessageInterceptor ic = loader.getComponentByBeanName(name);
+                ApiMessageInterceptor ic = beans == null ? loader.getComponentByBeanName(name)
+                        : beans.getBean(name, ApiMessageInterceptor.class);
                 interceptors.add(ic);
             } catch (NoSuchBeanDefinitionException ne) {
                 if (this.minimalOn) {
@@ -178,12 +181,12 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     /**
      * API messages a feature plugin loaded at runtime declares in its service config files.
      */
-    public void addServiceConfigs(List<File> files, ClassLoader cl) {
+    public void addServiceConfigs(List<File> files, ClassLoader cl, ApplicationContext beans) {
         try {
             JAXBContext context = JAXBContext.newInstance("org.zstack.portal.apimediator.schema");
             for (File cfg : files) {
                 Service schema = (Service) context.createUnmarshaller().unmarshal(cfg);
-                createDescriptor(schema, cfg.getAbsolutePath(), cl);
+                createDescriptor(schema, cfg.getAbsolutePath(), cl, beans);
             }
         } catch (JAXBException e) {
             throw new CloudRuntimeException(e);
@@ -198,7 +201,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         }
     }
 
-    private void createDescriptor(Service schema, String cfgPath, ClassLoader cl) {
+    private void createDescriptor(Service schema, String cfgPath, ClassLoader cl, ApplicationContext beans) {
         for (Service.Message mschema : schema.getMessage()) {
             Class msgClz = null;
             try {
@@ -220,7 +223,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             desc.setConfigPath(cfgPath);
             desc.setClazz(msgClz);
 
-            prepareInterceptors(desc, mschema, schema);
+            prepareInterceptors(desc, mschema, schema, beans);
             List<org.zstack.header.Service> services = pluginRgty.getExtensionList(org.zstack.header.Service.class);
             if (services.stream().anyMatch(it -> bus.makeLocalServiceId(desc.getServiceId()).equals(it.getId()))) {
                 supportApis.add(desc.getClazz().getSimpleName());

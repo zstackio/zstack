@@ -22,6 +22,8 @@ public class FeaturePlugins {
     private static final String ROOT = "feature-plugins";
 
     private static List<FeaturePluginInventory> records;
+    // ids of the recorded plugins with a management node part; drivers and agent parts have nothing to load here
+    private static volatile Set<String> mnParts = Collections.emptySet();
     // plugin id -> {status, error} of loading it; a record's own status (left by zstack-ctl) comes first
     private static final Map<String, String[]> states = new ConcurrentHashMap<>();
     // class loader -> id of the plugin loaded by it
@@ -80,6 +82,10 @@ public class FeaturePlugins {
         return new ArrayList<>(records);
     }
 
+    static boolean hasMnPart(String id) {
+        return mnParts.contains(id);
+    }
+
     static void setState(String id, String status, String error) {
         states.put(id, new String[]{status, error});
     }
@@ -106,18 +112,20 @@ public class FeaturePlugins {
 
     private static List<FeaturePluginInventory> load() {
         List<FeaturePluginInventory> ret = new ArrayList<>();
+        Set<String> withMn = new HashSet<>();
         File[] files = recordDir().listFiles((d, n) -> n.endsWith(".yaml"));
         if (files != null) {
             for (File f : files) {
-                ret.add(loadRecord(f));
+                ret.add(loadRecord(f, withMn));
             }
         }
         ret.sort(Comparator.comparing(FeaturePluginInventory::getId));
+        mnParts = withMn;
         return ret;
     }
 
     @SuppressWarnings("unchecked")
-    private static FeaturePluginInventory loadRecord(File file) {
+    private static FeaturePluginInventory loadRecord(File file, Set<String> withMn) {
         FeaturePluginInventory inv = new FeaturePluginInventory();
         inv.setId(file.getName().replaceAll("\\.yaml$", ""));
         try {
@@ -127,6 +135,9 @@ public class FeaturePlugins {
             inv.setCategory(String.valueOf(desc.get("category")));
             inv.setVersion(String.valueOf(desc.get("version")));
             inv.setSha256((String) desc.get("sha256"));
+            if (desc.get("mn") != null) {
+                withMn.add(inv.getId());
+            }
             Map<String, Object> license = (Map<String, Object>) desc.get("license");
             inv.setLicenseAddon(license == null ? null : (String) license.get("addon"));
 

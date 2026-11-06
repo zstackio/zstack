@@ -175,6 +175,12 @@ public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
             changed.add(ext.getReferenceInterface());
         }
         refreshInterfaces(changed, cl);
+        // the extension points the plugin defined itself go with it
+        for (Map<Class, ?> m : Arrays.<Map<Class, ?>>asList(extensionsByInterfaceClass, extensionAsMap, extensionListAsMap,
+                extensionAsMapKeys, extensionListAsMapKeys)) {
+            m.keySet().removeIf(c -> c.getClassLoader() == cl);
+        }
+        extensionsByInterfaceName.values().removeIf(List::isEmpty);
     }
 
     @SuppressWarnings("unchecked")

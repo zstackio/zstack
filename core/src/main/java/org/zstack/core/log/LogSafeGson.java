@@ -19,6 +19,7 @@ import org.zstack.utils.logging.CLogger;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -37,7 +38,7 @@ public class LogSafeGson {
     /**
      * class and its need be masked fields
      */
-    private static final Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> maskFields = new ConcurrentHashMap<>();
     /**
      * field with annotation @NoLogging(behavior = NoLogging.Behavior.Auto) will be collect to this map
      *
@@ -46,7 +47,7 @@ public class LogSafeGson {
      *
      * this should be used for base abstractions
      */
-    private static final Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> autoFields = new ConcurrentHashMap<>();
 
     /**
      * used for class implements Serializable or Message for potential sensitive check
@@ -56,7 +57,7 @@ public class LogSafeGson {
      *
      * all class not annotated with NoLogging will be store in potentialSensitiveFields.
      */
-    private static final Map<Class, Set<FieldNoLogging>> potentialSensitiveFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> potentialSensitiveFields = new ConcurrentHashMap<>();
 
     private static final List<Class<?>> searchClasses = Arrays.asList(Serializable.class, Message.class);
     private static final Gson logSafeGson;
@@ -135,6 +136,26 @@ public class LogSafeGson {
 
                 cacheNoLoggingInfo(clz);
             }
+        }
+    }
+
+    /**
+     * The classes of a feature plugin loaded at runtime, which the scan at class initialization did not see.
+     */
+    public static void addClasses(Collection<Class<?>> classes) {
+        for (Class<?> clz : classes) {
+            if (!clz.isInterface() && searchClasses.stream().anyMatch(it -> it.isAssignableFrom(clz))) {
+                cacheNoLoggingInfo(clz);
+            }
+        }
+    }
+
+    /**
+     * Drops the classes of an unloaded feature plugin.
+     */
+    public static void removeClasses(ClassLoader cl) {
+        for (Map<Class, Set<FieldNoLogging>> m : Arrays.asList(maskFields, autoFields, potentialSensitiveFields)) {
+            m.keySet().removeIf(clz -> clz.getClassLoader() == cl);
         }
     }
 

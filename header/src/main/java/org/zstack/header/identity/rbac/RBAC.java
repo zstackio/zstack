@@ -499,6 +499,28 @@ public class RBAC {
         int g = readableResources.size();
         int b = roleBuilders.size();
         int c = roleContributors.size();
+        try {
+            return addDescriptions(descriptionClasses, ret, b, c, p, r, g);
+        } catch (RuntimeException | Error e) {
+            // a description that fails leaves nothing of the plugin behind
+            ret.contributedActions.forEach((role, actions) -> role.allowedActions.removeAll(actions));
+            truncate(permissions, p);
+            truncate(readableResources, g);
+            truncate(roles, r);
+            truncate(roleBuilders, b);
+            truncate(roleContributors, c);
+            throw e;
+        }
+    }
+
+    private static void truncate(List<?> l, int size) {
+        if (l.size() > size) {
+            l.subList(size, l.size()).clear();
+        }
+    }
+
+    private static PluginRbac addDescriptions(Collection<Class<?>> descriptionClasses, PluginRbac ret, int b, int c, int p,
+                                              int r, int g) {
         for (Class<?> dclz : descriptionClasses) {
             RBACDescription rd;
             try {

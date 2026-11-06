@@ -130,6 +130,14 @@ public class FeaturePluginPersistenceUnits {
         unitOfStatement.clear();
     }
 
+    /**
+     * @return the id of the loaded feature plugin with an entity of this simple name, null if none
+     */
+    public static String ownerOf(String entityName) {
+        Unit u = byName.get(entityName);
+        return u == null ? null : u.pluginId;
+    }
+
     static boolean isEmpty() {
         return units.isEmpty();
     }
@@ -250,11 +258,13 @@ public class FeaturePluginPersistenceUnits {
     }
 
     private static void flushPluginUnits() {
-        for (Unit u : units.values()) {
-            EntityManagerHolder h = (EntityManagerHolder) TransactionSynchronizationManager.getResource(u.emf);
-            if (h != null) {
-                h.getEntityManager().flush();
-            }
+        units.values().forEach(FeaturePluginPersistenceUnits::flushPluginUnit);
+    }
+
+    private static void flushPluginUnit(Unit u) {
+        EntityManagerHolder h = (EntityManagerHolder) TransactionSynchronizationManager.getResource(u.emf);
+        if (h != null) {
+            h.getEntityManager().flush();
         }
     }
 
@@ -294,8 +304,12 @@ public class FeaturePluginPersistenceUnits {
                         return m.invoke(platformEntityManager, args);
                     }
                     Unit u = route(m, args);
-                    if (u == null && "flush".equals(m.getName())) {
+                    if (u == null && ("flush".equals(m.getName()) || "createNativeQuery".equals(m.getName()))) {
+                        // native SQL may read plugin tables too
                         flushPluginUnits();
+                    } else if (u != null && m.getName().startsWith("create")) {
+                        // a plugin session runs outside a Hibernate transaction and does not flush before its queries
+                        flushPluginUnit(u);
                     }
                     try {
                         return m.invoke(u == null ? platformEntityManager : entityManager(u), args);
