@@ -224,7 +224,11 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             desc.setClazz(msgClz);
 
             prepareInterceptors(desc, mschema, schema, beans);
-            List<org.zstack.header.Service> services = pluginRgty.getExtensionList(org.zstack.header.Service.class);
+            List<org.zstack.header.Service> services = new ArrayList<>(pluginRgty.getExtensionList(org.zstack.header.Service.class));
+            // a feature plugin's services are registered after its APIs, from its own context
+            if (beans != null) {
+                services.addAll(beans.getBeansOfType(org.zstack.header.Service.class).values());
+            }
             if (services.stream().anyMatch(it -> bus.makeLocalServiceId(desc.getServiceId()).equals(it.getId()))) {
                 supportApis.add(desc.getClazz().getSimpleName());
             }

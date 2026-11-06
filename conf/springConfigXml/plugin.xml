@@ -25,6 +25,7 @@
     <bean id="FeaturePluginLoader" class="org.zstack.core.plugin.FeaturePluginLoader">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
 

@@ -71,7 +71,7 @@ import java.util.stream.Collectors;
  * restart. A plugin has a class loader, a Spring context (a child of the platform's) and a persistence unit of its
  * own; its parts are registered with the platform and dropped again in the reverse order.
  */
-public class FeaturePluginLoader implements ApplicationContextAware, ManagementNodeReadyExtensionPoint {
+public class FeaturePluginLoader implements ApplicationContextAware, ManagementNodeReadyExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(FeaturePluginLoader.class);
     static final long DRAIN_MILLIS = TimeUnit.SECONDS.toMillis(5);
     private static final String SPRING_FOLDER = "pluginSpringConfigXml/";
@@ -132,6 +132,20 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
     @Override
     public void managementNodeReady() {
         nodeReady = true;
+    }
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    // the management node stops the platform's components when it stops; the plugins' components are started here
+    @Override
+    public boolean stop() {
+        for (Plugin p : loaded.values()) {
+            stopComponents(p);
+        }
+        return true;
     }
 
     public boolean isLoaded(String id) {
@@ -461,17 +475,8 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
             quietly(String.format("unregister service %s", s.getId()), () -> bus.unregisterService(s));
         }
         drain(p);
-        List<Component> components = new ArrayList<>(p.components);
-        Collections.reverse(components);
-        for (Component c : components) {
-            quietly(String.format("stop %s", c.getClass().getName()), c::stop);
-        }
-        int cancelled = ((ThreadFacadeImpl) thdf).cancelTasksOf(p.classLoader);
-        if (cancelled > 0) {
-            logger.warn(String.format("feature plugin %s left %d periodic tasks running when it stopped, cancelled them", p.id, cancelled));
-        }
+        stopComponents(p);
         p.services.clear();
-        p.components.clear();
 
         if (p.extensionsAdded) {
             quietly("drop extensions of feature plugin " + p.id, () -> ((PluginRegistryImpl) pluginRgty).removeExtensions(p.extensions, p.classLoader));
@@ -489,6 +494,20 @@ public class FeaturePluginLoader implements ApplicationContextAware, ManagementN
             ((DatabaseFacadeImpl) dbf).removePluginEntities(p.entities);
             FeaturePluginPersistenceUnits.unregister(p.id);
             p.unitRegistered = false;
+        }
+    }
+
+    // in the reverse order they started, then the periodic tasks they left
+    private void stopComponents(Plugin p) {
+        List<Component> components = new ArrayList<>(p.components);
+        p.components.clear();
+        Collections.reverse(components);
+        for (Component c : components) {
+            quietly(String.format("stop %s", c.getClass().getName()), c::stop);
+        }
+        int cancelled = ((ThreadFacadeImpl) thdf).cancelTasksOf(p.classLoader);
+        if (cancelled > 0) {
+            logger.warn(String.format("feature plugin %s left %d periodic tasks running when it stopped, cancelled them", p.id, cancelled));
         }
     }
 

@@ -1778,7 +1778,11 @@ public class RestServer implements Component, CloudBusEventListener, FeaturePlug
                 }
             }
         }
-        responseAnnotationByClass.remove(((RestRequest) clz.getAnnotation(RestRequest.class)).responseClass());
+        // a platform event the plugin's API reuses still answers the platform's APIs
+        Class responseClass = ((RestRequest) clz.getAnnotation(RestRequest.class)).responseClass();
+        if (responseClass.getClassLoader() == clz.getClassLoader()) {
+            responseAnnotationByClass.remove(responseClass);
+        }
     }
 
     @Override
