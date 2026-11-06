@@ -47,6 +47,8 @@ public class MemoryRepository {
     static final String RELEASED = "Released";
     static final String CONVERGING = "Converging";
     static final String FAILED = "Failed";
+    static final String RUNNING = "Running";
+    static final String SUPERSEDED = "Superseded";
     static final int FAILURES_BEFORE_FAILED = 5;
 
     /** Whether a valid Cloud License allows the optimization that a plan configures. */
@@ -319,7 +321,7 @@ public class MemoryRepository {
                 state.setDesiredRevision(generation); state.setDesired(desired);
                 state.setStatus(CONVERGING); state.setReason(null); state.setFailures(0);
                 state.setNextAttemptAt(System.currentTimeMillis());
-                finishTasks(em, host, generation - 1, "Superseded", "Superseded by generation " + generation);
+                finishTasks(em, host, generation - 1, SUPERSEDED, "Superseded by generation " + generation);
             } else if (origin == Origin.OPERATOR && !CONVERGING.equals(state.getStatus())) {
                 // An operator asking again resends the current generation, also to a Host that gave up.
                 state.setStatus(CONVERGING); state.setFailures(0); state.setNextAttemptAt(System.currentTimeMillis());
@@ -344,7 +346,18 @@ public class MemoryRepository {
 
     /** A task that is finished by its caller rather than by a Host generation. */
     public String startTask(String host, String action, String actor, long generation) {
-        return transaction(em -> newTask(em, host, action, actor, generation, "Running"));
+        return transaction(em -> newTask(em, host, action, actor, generation, RUNNING));
+    }
+
+    /** The Hosts' tasks of the action still running end Failed with the reason; nothing else finishes them. */
+    public void failRunningTasks(Collection<String> hosts, String action, String reason) {
+        if (hosts.isEmpty()) { return; }
+        transaction(em -> {
+            SQL.New(MemoryTaskVO.class).in(MemoryTaskVO_.hostUuid, hosts).eq(MemoryTaskVO_.action, action)
+                    .eq(MemoryTaskVO_.status, RUNNING).set(MemoryTaskVO_.status, FAILED)
+                    .set(MemoryTaskVO_.reason, trim(reason)).update();
+            return null;
+        });
     }
 
     public void finishTask(String uuid, String status, String reason) {
@@ -813,8 +826,10 @@ public class MemoryRepository {
 
     /** Finished operation records are kept for a week. */
     public void purgeHistory(long now) {
-        transaction(em -> SQL.New("delete from MemoryTaskVO t where t.status <> :running and t.lastOpDate < :before")
-                .param("running", CONVERGING).param("before", new java.sql.Timestamp(now - MemoryOptimizationGlobalConfig.historyRetentionMillis())).execute());
+        // Only finished operations: a running or converging one still waits for its result.
+        transaction(em -> SQL.New("delete from MemoryTaskVO t where t.status in (:finished) and t.lastOpDate < :before")
+                .param("finished", Arrays.asList(SUCCEEDED, FAILED, SUPERSEDED))
+                .param("before", new java.sql.Timestamp(now - MemoryOptimizationGlobalConfig.historyRetentionMillis())).execute());
     }
 
     static String trim(String value) {
