@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>netprobe</id>
+
+    <message>
+        <name>org.zstack.plugin.netprobe.APICreateNetProbeTaskMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.plugin.netprobe.APIDeleteNetProbeTaskMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.plugin.netprobe.APIGetNetProbeTasksMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.plugin.netprobe.APIGetNetProbeResultsMsg</name>
+    </message>
+</service>

@@ -1,0 +1,10 @@
+{
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10000": "拨测目标 %s 必须是 IPv4 地址或主机名",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10001": "TCP 拨测需要 1～65535 之间的端口",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10002": "HTTP 拨测的地址必须以 http:// 或 https:// 开头：%s",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10003": "超时 %d 秒必须小于间隔 %d 秒",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10004": "物理机[uuid:%s]不是 KVM 物理机",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10005": "物理机[uuid:%s]未连接",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10006": "已有 %d 个拨测任务，达到上限",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10007": "拨测任务[uuid:%s]不存在"
+}

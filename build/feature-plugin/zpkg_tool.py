@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Check, pack and sign ZStack feature plugin packages (.zpkg).
+"""Build, check, pack and sign ZStack feature plugin packages (.zpkg).
 
-  check --plugin-dir DIR --platform-lib WEB-INF/lib [--jdeps-output FILE] [--allowlist FILE]
-  pack  --plugin-dir DIR --out DIR
+  build --plugin-dir DIR [--ui-dir UI] --out DIR [--platform-lib WEB-INF/lib] [--key PRIVATE_KEY_PEM] [--mvn-args ARGS]
+  check --plugin-dir DIR [--ui-dir UI] --platform-lib WEB-INF/lib [--jdeps-output FILE] [--allowlist FILE]
+  pack  --plugin-dir DIR [--ui-dir UI] --out DIR
   sign  --package PKG --key PRIVATE_KEY_PEM
 
 DIR is either a plugin project made from template/ (plugin.yaml, pom.xml, target/*.jar, src/main/zpkg/)
-or an unpacked package (plugin.yaml, lib/, classes/, db/, drivers/, agent/, ui/).
+or an unpacked package (plugin.yaml, lib/, classes/, db/, drivers/, agent/, ui/). UI is the plugin's UI
+package in zstack-ui-next (dist/ built by `pnpm run build`, routes.json, menus.json, slots.json, locale/).
+build runs `mvn clean package` in DIR and `pnpm run build` in UI, then check (with --platform-lib), pack and
+sign (with --key).
 """
 import argparse
 import ast
@@ -17,6 +21,7 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import struct
 import subprocess
@@ -47,6 +52,9 @@ AGENT_ALLOWED_MODULES = ('zstacklib.utils.jsonobject', 'zstacklib.utils.http', '
 ERROR_CODE = re.compile(r'^ORG_ZSTACK_[A-Z0-9_]+_\d{5}$')
 JAR_VERSION = re.compile(r'^(.*?)-\d[\w.]*\.jar$')
 ENTITY = 'Ljavax/persistence/Entity;'
+REST_REQUEST = 'Lorg/zstack/header/rest/RestRequest;'
+# the upgrade gate holds and the UI channel lets through only writes under /<plugin id>/
+WRITE_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
 # what the platform registers only when it starts until P2b (SDK spec 2.5): by super class or interface ...
 V1_UNSUPPORTED_SUPERS = {'org.zstack.header.query.APIQueryMessage': 'query API',
                          'org.zstack.header.vo.ResourceVO': 'resource',
@@ -86,8 +94,8 @@ def jdeps_references(output, platform_jars):
     return refs
 
 
-def class_info(data):
-    """The name of a class file, the strings of its constant pool, and its super class and interfaces."""
+def _constant_pool(data):
+    """The UTF-8 and class entries of a class file's constant pool, and where the pool ends."""
     count = struct.unpack('>H', data[8:10])[0]
     pos, index = 10, 1
     utf8, classes = {}, {}
@@ -104,12 +112,72 @@ def class_info(data):
             pos += 1 + sizes[tag]
         # long and double take two slots
         index += 2 if tag in (5, 6) else 1
+    return utf8, classes, pos
+
+
+def class_info(data):
+    """The name of a class file, the strings of its constant pool, and its super class and interfaces."""
+    utf8, classes, pos = _constant_pool(data)
     this_class, super_class, count = struct.unpack('>HHH', data[pos + 2:pos + 8])
     interfaces = struct.unpack('>%dH' % count, data[pos + 8:pos + 8 + 2 * count])
 
     def name(index):
         return utf8[classes[index]].replace('/', '.')
     return name(this_class), list(utf8.values()), [name(i) for i in (super_class,) + interfaces if i]
+
+
+def rest_requests(data):
+    """The (paths, method) of the @RestRequest on a class file, from its class-level RuntimeVisibleAnnotations."""
+    utf8, _, pos = _constant_pool(data)
+
+    def u2(at):
+        return struct.unpack('>H', data[at:at + 2])[0]
+
+    def skip_attributes(at):
+        count = u2(at)
+        at += 2
+        for _ in range(count):
+            at += 6 + struct.unpack('>I', data[at + 2:at + 6])[0]
+        return at
+
+    def element(at):
+        tag = chr(data[at])
+        if tag == 'e':
+            return utf8[u2(at + 3)], at + 5
+        if tag == '[':
+            values, count, at = [], u2(at + 1), at + 3
+            for _ in range(count):
+                value, at = element(at)
+                values.append(value)
+            return values, at
+        if tag == '@':
+            return annotation(at + 1)
+        return (utf8[u2(at + 1)] if tag == 's' else None), at + 3
+
+    def annotation(at):
+        type_name, count, values, at = utf8[u2(at)], u2(at + 2), {}, at + 4
+        for _ in range(count):
+            name = utf8[u2(at)]
+            values[name], at = element(at + 2)
+        return (type_name, values), at
+
+    pos += 8 + 2 * u2(pos + 6)
+    for _ in ('fields', 'methods'):
+        count, pos = u2(pos), pos + 2
+        for _ in range(count):
+            pos = skip_attributes(pos + 6)
+    found = []
+    count, pos = u2(pos), pos + 2
+    for _ in range(count):
+        end = pos + 6 + struct.unpack('>I', data[pos + 2:pos + 6])[0]
+        if utf8.get(u2(pos)) == 'RuntimeVisibleAnnotations':
+            at = pos + 8
+            for _ in range(u2(pos + 6)):
+                (type_name, values), at = annotation(at)
+                if type_name == REST_REQUEST:
+                    found.append(([values['path']] + (values.get('optionalPaths') or []), values.get('method')))
+        pos = end
+    return found
 
 
 def plugin_jars(stage):
@@ -122,7 +190,9 @@ def plugin_classes(stage):
             with zipfile.ZipFile(jar) as z:
                 for name in z.namelist():
                     if name.endswith('.class'):
-                        yield class_info(z.read(name))
+                        data = z.read(name)
+                        name, strings, supers = class_info(data)
+                        yield name, strings, supers, rest_requests(data) if REST_REQUEST in strings else []
         except zipfile.BadZipfile:
             continue
 
@@ -211,8 +281,12 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
     prefix = 'ORG_ZSTACK_PLUGIN_%s_' % desc['id'].upper().replace('-', '_')
     entities = set((desc.get('mn') or {}).get('entities') or [])
     classes = sorted(plugin_classes(stage))
-    hierarchy = dict((name, supers) for name, _, supers in classes)
-    for name, strings, _ in classes:
+    hierarchy = dict((name, supers) for name, _, supers, _ in classes)
+    for name, strings, _, requests in classes:
+        for paths, method in requests:
+            if method in WRITE_METHODS:
+                problems += ['write-path-prefix: %s %s %s' % (name, method, p) for p in paths
+                             if p != '/' + desc['id'] and not p.startswith('/%s/' % desc['id'])]
         for s in strings:
             if ERROR_CODE.match(s) and not s.startswith(prefix):
                 problems.append('error-code-prefix: %s' % s)
@@ -223,7 +297,7 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
         if kind:
             problems.append('v1-unsupported: %s (%s)' % (name, kind))
     # JPQL names entities by their simple names
-    plugin_entities = [name for name, strings, _ in classes if ENTITY in strings]
+    plugin_entities = [name for name, strings, _, _ in classes if ENTITY in strings]
     if plugin_entities:
         taken = platform_entity_names(platform_lib)
         problems += ['entity-name-taken: %s' % n for n in plugin_entities if n.rsplit('.', 1)[-1] in taken]
@@ -300,8 +374,9 @@ def ui_problems(stage, desc):
     return problems
 
 
-def staging(plugin_dir, tmp):
-    """Lays a plugin project out as a package; an unpacked package is used as it is."""
+def staging(plugin_dir, tmp, ui_dir=None):
+    """Lays a plugin project out as a package; an unpacked package is used as it is. ui_dir: the plugin's UI package
+    in zstack-ui-next, already built."""
     if not os.path.exists(os.path.join(plugin_dir, 'pom.xml')):
         return plugin_dir
     stage = os.path.join(tmp, 'stage')
@@ -322,6 +397,13 @@ def staging(plugin_dir, tmp):
         folder = 'drivers' if 'drivers/%s' % os.path.basename(jar) in drivers else 'lib'
         os.makedirs(os.path.join(stage, folder), exist_ok=True)
         shutil.copy(jar, os.path.join(stage, folder))
+    if ui_dir:
+        # the paths plugin.yaml's ui part names (SDK spec 7.1)
+        shutil.copytree(os.path.join(ui_dir, 'dist'), os.path.join(stage, 'ui', 'remote'))
+        for name in ('routes.json', 'menus.json', 'slots.json'):
+            if os.path.exists(os.path.join(ui_dir, name)):
+                shutil.copy(os.path.join(ui_dir, name), os.path.join(stage, 'ui'))
+        shutil.copytree(os.path.join(ui_dir, 'locale'), os.path.join(stage, 'ui', 'locale'))
     return stage
 
 
@@ -386,13 +468,22 @@ def sign(package, key):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command')
+    b = sub.add_parser('build')
+    b.add_argument('--plugin-dir', required=True)
+    b.add_argument('--ui-dir')
+    b.add_argument('--out', required=True)
+    b.add_argument('--platform-lib', help='WEB-INF/lib of the platform the plugin is built for; no check without it')
+    b.add_argument('--key', help='private key to sign the package with; unsigned without it')
+    b.add_argument('--mvn-args', default='', help='more arguments of mvn, e.g. "-o -Dmaven.repo.local=DIR"')
     c = sub.add_parser('check')
     c.add_argument('--plugin-dir', required=True)
+    c.add_argument('--ui-dir')
     c.add_argument('--platform-lib', required=True, help='WEB-INF/lib of the platform the plugin is built for')
     c.add_argument('--jdeps-output', help='use this jdeps -verbose:class output instead of running jdeps')
     c.add_argument('--allowlist', default=os.path.join(HERE, 'allowlist-v1.txt'))
     p = sub.add_parser('pack')
     p.add_argument('--plugin-dir', required=True)
+    p.add_argument('--ui-dir')
     p.add_argument('--out', required=True)
     s = sub.add_parser('sign')
     s.add_argument('--package', required=True)
@@ -402,18 +493,27 @@ def main():
     if args.command == 'sign':
         sign(args.package, args.key)
         return
+    if args.command not in ('build', 'check', 'pack'):
+        parser.print_help()
+        return
+    if args.command == 'build':
+        subprocess.check_call(['mvn', '-B', '-q'] + shlex.split(args.mvn_args) + ['clean', 'package'], cwd=args.plugin_dir)
+        if args.ui_dir:
+            subprocess.check_call(['pnpm', 'run', 'build'], cwd=args.ui_dir)
     tmp = tempfile.mkdtemp()
     try:
-        stage = staging(args.plugin_dir, tmp)
-        if args.command == 'check':
-            problems = check(stage, args.platform_lib, args.allowlist, args.jdeps_output)
+        stage = staging(args.plugin_dir, tmp, args.ui_dir)
+        if args.command == 'check' or (args.command == 'build' and args.platform_lib):
+            problems = check(stage, args.platform_lib, getattr(args, 'allowlist', None) or os.path.join(HERE, 'allowlist-v1.txt'),
+                             getattr(args, 'jdeps_output', None))
             for problem in problems:
                 print(problem)
-            sys.exit(1 if problems else 0)
-        elif args.command == 'pack':
-            print(pack(stage, args.out))
-        else:
-            parser.print_help()
+            if problems or args.command == 'check':
+                sys.exit(1 if problems else 0)
+        package = pack(stage, args.out)
+        if args.command == 'build' and args.key:
+            sign(package, args.key)
+        print(package)
     finally:
         shutil.rmtree(tmp)
 

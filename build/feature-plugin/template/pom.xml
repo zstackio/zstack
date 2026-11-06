@@ -52,6 +52,13 @@
             <version>${spring.version}</version>
             <scope>provided</scope>
         </dependency>
+        <!-- @RestRequest names its HTTP method with spring-web's HttpMethod -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>${spring.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>

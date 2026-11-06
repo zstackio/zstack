@@ -1,0 +1,20 @@
+id: net-probe
+name: 网络拨测
+version: 1.0.0
+category: network
+vendor: zstack
+requires:
+  sdk: ">=1.0 <2"
+mn:
+  jars: [lib/net-probe-1.0.0.jar]
+  config: [classes/pluginSpringConfigXml/net-probe.xml, classes/serviceConfig/net-probe.xml]
+  entities: [org.zstack.plugin.netprobe.NetProbeTaskVO, org.zstack.plugin.netprobe.NetProbeResultVO]
+  migrations: db/
+kvmagent:
+  plugins: agent/kvmagent/
+ui:
+  remote: ui/remote/
+  routes: ui/routes.json
+  menus: ui/menus.json
+  slots: ui/slots.json
+  i18n: ui/locale/

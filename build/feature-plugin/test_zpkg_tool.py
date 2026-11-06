@@ -54,7 +54,8 @@ class CheckCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp)
 
-    def run_check(self, refs=(), classes=None, desc=None, plugin_jars=(), global_configs=None, supers=None):
+    def run_check(self, refs=(), classes=None, desc=None, plugin_jars=(), global_configs=None, supers=None,
+                  class_files=None):
         stage = os.path.join(self.tmp, 'stage')
         os.makedirs(os.path.join(stage, 'lib'))
         d = {'id': 'tpm', 'version': '1.0.0', 'requires': {'sdk': '>=1.0 <2'}, 'mn': {'entities': []}}
@@ -64,6 +65,8 @@ class CheckCase(unittest.TestCase):
         with zipfile.ZipFile(os.path.join(stage, 'lib', 'tpm-1.0.0.jar'), 'w') as jar:
             for name, strings in (classes or {'org.zstack.tpm.TpmManager': ()}).items():
                 jar.writestr(name.replace('.', '/') + '.class', make_class(name, strings, (supers or {}).get(name, ())))
+            for name, data in (class_files or {}).items():
+                jar.writestr(name.replace('.', '/') + '.class', data)
         for j in plugin_jars:
             open(os.path.join(stage, 'lib', j), 'w').close()
         for name, content in (global_configs or {}).items():
@@ -112,6 +115,10 @@ class TestCheck(CheckCase):
         refs = ['org.zstack.header.host.HostVO', 'org.zstack.header.host.HostVO_',
                 'org.zstack.header.host.HostEO', 'org.zstack.header.host.HostStatus']
         self.assertEqual([], self.run_check(refs=refs))
+
+    def test_reading_hosts_woven_is_allowed(self):
+        # the AspectJ compiler of the template names the declaring metamodel of HostVO_.uuid, HostAO_
+        self.assertEqual([], self.run_check(refs=['org.zstack.header.host.HostAO_']))
 
     def test_host_base_class_stays_disallowed(self):
         self.assertEqual(['disallowed-reference: org.zstack.header.host.HostAO'],
@@ -177,6 +184,47 @@ class TestCheck(CheckCase):
         # the platform reads @TagDefinition classes at start only until P2b
         classes = {'org.zstack.tpm.TpmSystemTags': ('Lorg/zstack/header/tag/TagDefinition;',)}
         self.assertEqual(['v1-unsupported: org.zstack.tpm.TpmSystemTags (system tag)'], self.run_check(classes=classes))
+
+    def test_write_api_paths_must_start_with_the_plugin_id(self):
+        # the upgrade gate holds and the UI channel lets through only writes under /<plugin id>/
+        javac = shutil.which('javac')
+        if not javac:
+            self.skipTest('javac is not on PATH')
+        src = os.path.join(self.tmp, 'src')
+        sources = {
+            'org/zstack/header/rest/RestRequest.java':
+                'package org.zstack.header.rest;\n'
+                '@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)\n'
+                'public @interface RestRequest { String path(); String[] optionalPaths() default {};\n'
+                '    org.springframework.http.HttpMethod method(); Class responseClass(); }\n',
+            'org/springframework/http/HttpMethod.java':
+                'package org.springframework.http;\n'
+                'public enum HttpMethod { GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE }\n',
+        }
+        apis = {'APICreateTpmKeyMsg': 'path = "/tpm/keys", method = HttpMethod.POST',
+                'APIAttachTpmMsg': 'path = "/hosts/{uuid}/tpm", method = HttpMethod.PUT',
+                'APIGetHostTpmMsg': 'path = "/hosts/{uuid}/tpm", method = HttpMethod.GET',
+                'APIDeleteTpmKeyMsg': 'path = "/tpm/keys/{uuid}", optionalPaths = {"/keys/{uuid}"}, method = HttpMethod.DELETE'}
+        for name, args in apis.items():
+            sources['org/zstack/tpm/%s.java' % name] = (
+                'package org.zstack.tpm;\nimport org.springframework.http.HttpMethod;\n'
+                'import org.zstack.header.rest.RestRequest;\n'
+                '@RestRequest(%s, responseClass = Object.class)\n'
+                'public class %s { @Deprecated private String uuid; public String getUuid() { return uuid; } }\n' % (args, name))
+        for path, text in sources.items():
+            os.makedirs(os.path.dirname(os.path.join(src, path)), exist_ok=True)
+            with open(os.path.join(src, path), 'w') as f:
+                f.write(text)
+        out = os.path.join(self.tmp, 'classes')
+        os.makedirs(out)
+        subprocess.check_call([javac, '-d', out] + [os.path.join(src, p) for p in sources])
+        class_files = {}
+        for name in apis:
+            with open(os.path.join(out, 'org', 'zstack', 'tpm', name + '.class'), 'rb') as f:
+                class_files['org.zstack.tpm.' + name] = f.read()
+        self.assertEqual(['write-path-prefix: org.zstack.tpm.APIAttachTpmMsg PUT /hosts/{uuid}/tpm',
+                          'write-path-prefix: org.zstack.tpm.APIDeleteTpmKeyMsg DELETE /keys/{uuid}'],
+                         self.run_check(class_files=class_files))
 
     def test_check_package_without_lib(self):
         stage = os.path.join(self.tmp, 'drivers-only')
@@ -422,11 +470,23 @@ class TestStaging(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp)
 
-    def stage(self, desc):
+    def stage(self, desc, ui_dir=None):
         with open(os.path.join(self.project, 'plugin.yaml'), 'w') as f:
             yaml.safe_dump(desc, f)
-        stage = zpkg_tool.staging(self.project, self.tmp)
+        stage = zpkg_tool.staging(self.project, self.tmp, ui_dir)
         return sorted(os.path.relpath(os.path.join(d, n), stage) for d, _, ns in os.walk(stage) for n in ns)
+
+    def test_ui_project_goes_to_ui(self):
+        # the UI part is a package in zstack-ui-next: its build output is the remote module
+        ui = os.path.join(self.tmp, 'ui')
+        for name in ('dist/mf-manifest.json', 'dist/static/js/index.js', 'routes.json', 'menus.json', 'slots.json',
+                     'locale/zh-CN.json', 'locale/en-US.json', 'src/index.ts', 'package.json'):
+            os.makedirs(os.path.dirname(os.path.join(ui, name)), exist_ok=True)
+            open(os.path.join(ui, name), 'w').close()
+        self.assertEqual(['lib/hsm-test-1.0.0.jar', 'plugin.yaml', 'ui/locale/en-US.json', 'ui/locale/zh-CN.json',
+                          'ui/menus.json', 'ui/remote/mf-manifest.json', 'ui/remote/static/js/index.js', 'ui/routes.json',
+                          'ui/slots.json'],
+                         self.stage({'id': 'hsm-test', 'version': '1.0.0'}, ui))
 
     def test_project_jar_goes_to_lib(self):
         self.assertEqual(['lib/hsm-test-1.0.0.jar', 'plugin.yaml'], self.stage({'id': 'hsm-test', 'version': '1.0.0'}))

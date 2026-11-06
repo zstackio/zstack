@@ -1,0 +1,10 @@
+{
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10000": "the probe target %s must be an IPv4 address or a host name",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10001": "a TCP probe needs a port between 1 and 65535",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10002": "the URL of an HTTP probe must start with http:// or https://: %s",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10003": "the timeout %d seconds must be less than the interval %d seconds",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10004": "host[uuid:%s] is not a KVM host",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10005": "host[uuid:%s] is not connected",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10006": "there are already %d probe tasks, the most allowed",
+  "ORG_ZSTACK_PLUGIN_NET_PROBE_10007": "probe task[uuid:%s] is not found"
+}
