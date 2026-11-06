@@ -11,6 +11,24 @@ public class AsyncRestQueryResult {
     private String uuid;
     private AsyncRestState state;
     private APIEvent result;
+    private String ownerAccountUuid;
+    private String ownerUserUuid;
+
+    public String getOwnerAccountUuid() {
+        return ownerAccountUuid;
+    }
+
+    public void setOwnerAccountUuid(String ownerAccountUuid) {
+        this.ownerAccountUuid = ownerAccountUuid;
+    }
+
+    public String getOwnerUserUuid() {
+        return ownerUserUuid;
+    }
+
+    public void setOwnerUserUuid(String ownerUserUuid) {
+        this.ownerUserUuid = ownerUserUuid;
+    }
 
     public String getUuid() {
         return uuid;

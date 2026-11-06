@@ -390,6 +390,11 @@ public class ZSClient {
         }
 
         private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret, String path) throws Exception {
+            calculateAccessKeySignature(reqBuilder, accessKeyId, accessKeySecret, info.httpMethod, "/v1" + path);
+        }
+
+        private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret,
+                                                 String method, String uri) throws Exception {
             ZonedDateTime date = ZonedDateTime.now();
             DateTimeFormatter fmt = formatter;
             if (getConfig() != null && getConfig().accessKeyDateStr != null) {
@@ -401,8 +406,8 @@ public class ZSClient {
 
             String dateStr = date.format(fmt);
             StringBuilder sb = new StringBuilder();
-            sb.append(info.httpMethod).append("\n");
-            sb.append(dateStr).append("\n").append("/v1").append(path);
+            sb.append(method).append("\n");
+            sb.append(dateStr).append("\n").append(uri);
 
             Mac mac = Mac.getInstance(Constants.ACCESS_KEY_ALGORITHM);
             SecretKeySpec secret = new SecretKeySpec(accessKeySecret.getBytes(), Constants.ACCESS_KEY_ALGORITHM);
@@ -620,17 +625,40 @@ public class ZSClient {
             }
         }
 
+        private Request pollingRequest(String url) throws Exception {
+            Request.Builder builder = new Request.Builder().url(url)
+                    .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString()).get();
+            Object requestIp = action.getParameterValue(Constants.REQUEST_IP);
+            if (requestIp != null) {
+                builder.addHeader(Constants.HEADER_REQUEST_IP, String.valueOf(requestIp));
+            }
+            if (info.needSession) {
+                String accessKeyId = (String) action.getParameterValue(Constants.ACCESS_KEY_KEYID);
+                String accessKeySecret = (String) action.getParameterValue(Constants.ACCESS_KEY_KEY_SECRET);
+                if (accessKeyId != null && accessKeySecret != null) {
+                    String path = HttpUrl.parse(url).encodedPath();
+                    String context = config.contextPath;
+                    if (context != null && !context.isEmpty()) {
+                        context = "/" + context.replaceAll("^/+|/+$", "");
+                        if (path.startsWith(context + "/")) {
+                            path = path.substring(context.length());
+                        }
+                    }
+                    calculateAccessKeySignature(builder, accessKeyId, accessKeySecret, "GET", path);
+                } else {
+                    builder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH,
+                            action.getParameterValue(Constants.SESSION_ID)));
+                }
+            }
+            return builder.build();
+        }
+
         private void asyncPollResult(final String url) {
             final long current = System.currentTimeMillis();
             final long timeout = this.getTimeout();
             final long expiredTime = current + timeout;
             final long i = this.getInterval();
 
-            final Object sessionId = action.getParameterValue(Constants.SESSION_ID);
-            final Object accessKeyId = action.getParameterValue(Constants.ACCESS_KEY_KEYID);
-            final Object accessKeySecret = action.getParameterValue(Constants.ACCESS_KEY_KEY_SECRET);
-
-            final Object requestIp = action.getParameterValue(Constants.REQUEST_IP);
             final Timer timer = new Timer();
 
             timer.schedule(new TimerTask() {
@@ -644,19 +672,8 @@ public class ZSClient {
 
                 @Override
                 public void run() {
-                    Request.Builder builder = new Request.Builder()
-                            .url(url)
-                            .addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, sessionId))
-                            .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString())
-                            .get();
-
-                    if (requestIp != null) {
-                        builder.addHeader(Constants.HEADER_REQUEST_IP, String.valueOf(requestIp));
-                    }
-
-                    Request req = builder.build();
-
                     try {
+                        Request req = pollingRequest(url);
                         try (Response response = http.newCall(req).execute()) {
                             if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
                                 done(httpError(response.code(), response.body().string()));
@@ -714,23 +731,9 @@ public class ZSClient {
             long expiredTime = current + timeout;
             long interval = this.getInterval();
 
-            Object sessionId = action.getParameterValue(Constants.SESSION_ID);
-            Object requestIp = action.getParameterValue(Constants.REQUEST_IP);
-
             while (current < expiredTime) {
-                Request.Builder builder = new Request.Builder()
-                        .url(url)
-                        .addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, sessionId))
-                        .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString())
-                        .get();
-
-                if (requestIp != null) {
-                    builder.addHeader(Constants.HEADER_REQUEST_IP, String.valueOf(requestIp));
-                }
-
-                Request req = builder.build();
-
                 try {
+                    Request req = pollingRequest(url);
                     try (Response response = http.newCall(req).execute()) {
                         if (response.code() != 200 && response.code() != 503 && response.code() != 202) {
                             return httpError(response.code(), response.body().string());
@@ -750,6 +753,8 @@ public class ZSClient {
                     //ignore
                 } catch (IOException e) {
                     Thread.currentThread().interrupt();
+                    throw new ApiException(e);
+                } catch (Exception e) {
                     throw new ApiException(e);
                 }
             }

@@ -48,6 +48,9 @@ import org.zstack.header.MapField;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityByPassCheck;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.APIValidateSessionMsg;
+import org.zstack.header.identity.APIValidateSessionReply;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.log.MaskSensitiveInfo;
@@ -804,7 +807,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 if (finalApiSpan != null) {
                     finalApiSpan.setStatus(StatusCode.OK);
                 }
-                handleJobQuery(req, rsp);
+                handleJobQuery(entity, req, rsp);
                 return;
             }
 
@@ -894,9 +897,32 @@ public class RestServer implements Component, CloudBusEventListener {
         return true;
     }
 
-    private void handleJobQuery(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    private void handleJobQuery(HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         if (!req.getMethod().equals(HttpMethod.GET.name())) {
             sendRestErrorResponse(HttpStatus.METHOD_NOT_ALLOWED.value(), "only GET method is allowed for querying job status", rsp);
+            return;
+        }
+
+        SessionInventory caller;
+        try {
+            caller = authenticate(entity, req);
+            if (caller == null || StringUtils.isBlank(caller.getAccountUuid())
+                    || StringUtils.isBlank(caller.getUserUuid()) || StringUtils.isBlank(caller.getUuid())) {
+                throw new RestException(HttpStatus.UNAUTHORIZED.value(), "a valid authentication is required for querying job status");
+            }
+            if (!caller.isNoSessionEvaluation()) {
+                APIValidateSessionMsg check = new APIValidateSessionMsg();
+                check.setSessionUuid(caller.getUuid());
+                bus.makeLocalServiceId(check, AccountConstant.SERVICE_ID);
+                MessageReply reply = bus.call(check);
+                if (!(reply instanceof APIValidateSessionReply) || !reply.isSuccess()
+                        || !((APIValidateSessionReply) reply).isValidSession()) {
+                    throw new RestException(HttpStatus.UNAUTHORIZED.value(), "the session is invalid or expired");
+                }
+            }
+        } catch (RestException e) {
+            int status = e.statusCode == HttpStatus.BAD_REQUEST.value() ? HttpStatus.UNAUTHORIZED.value() : e.statusCode;
+            sendRestErrorResponse(status, e.error, rsp);
             return;
         }
 
@@ -906,6 +932,12 @@ public class RestServer implements Component, CloudBusEventListener {
 
         if (ret.getState() == AsyncRestState.expired) {
             sendRestErrorResponse(HttpStatus.NOT_FOUND.value(), "the job has been expired", rsp);
+            return;
+        }
+
+        if (!caller.getAccountUuid().equals(ret.getOwnerAccountUuid())
+                || !caller.getUserUuid().equals(ret.getOwnerUserUuid())) {
+            sendRestErrorResponse(HttpStatus.FORBIDDEN.value(), "the job belongs to another principal or has no verifiable owner", rsp);
             return;
         }
 
@@ -1113,51 +1145,53 @@ public class RestServer implements Component, CloudBusEventListener {
         });
     }
 
+    private SessionInventory authenticate(HttpEntity<String> entity, HttpServletRequest req) throws RestException {
+        String auth = entity.getHeaders().getFirst("Authorization");
+        if (auth == null) {
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), "missing header 'Authorization'");
+        }
+
+        auth = auth.trim();
+        RestAuthenticationType authType = null;
+        RestAuthenticationParams params = new RestAuthenticationParams();
+        if (auth.startsWith(RestConstants.HEADER_OAUTH)) {
+            authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_AUTH);
+            params.authKey = auth.replaceFirst(RestConstants.HEADER_OAUTH, "").trim();
+        } else if (auth.startsWith(RestConstants.HEADER_ACCESSKEY)) {
+            authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_ACCESSKEY);
+            String dateStr = entity.getHeaders().getFirst(RestConstants.HEADER_DATE);
+            params.date = dateStr;
+            checkTime(dateStr, RestGlobalConfig.CHECK_TIME_ZONE.value(Boolean.class));
+
+            String str = auth.replaceFirst(RestConstants.HEADER_ACCESSKEY, "").trim();
+            String[] res = str.split(":");
+            if (res.length != 2) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(), "accessKey format is 'ZStack AccessKeyId:Signature'");
+            }
+            params.authKey = str;
+            params.method = req.getMethod();
+            params.contentMd5 = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_MD5);
+            params.contentType = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_TYPE);
+            params.uri = getDecodedUrl(req);
+        } else {
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Authorization type must be '%s'", RestConstants.HEADER_OAUTH));
+        }
+
+        RestAuthenticationBackend bkd = restAuthBackends.get(authType);
+        if (bkd == null) {
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("unable to find RestAuthenticationBackend[provider type: %s]", authType));
+        }
+        return bkd.doAuth(params);
+    }
+
     private void handleApi(Api api, Map body, String parameterName, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
         if (body == null) {
             // for some POST request, the body may be null, for example, attach primary storage to a cluster
             body = new HashMap();
         }
 
-        SessionInventory session = null;
-        if (!api.apiClass.isAnnotationPresent(SuppressCredentialCheck.class)) {
-            String auth = entity.getHeaders().getFirst("Authorization");
-            if (auth == null) {
-                throw new RestException(HttpStatus.BAD_REQUEST.value(), "missing header 'Authorization'");
-            }
-
-            auth = auth.trim();
-            RestAuthenticationType authType = null;
-            RestAuthenticationParams params = new RestAuthenticationParams();
-            if (auth.startsWith(RestConstants.HEADER_OAUTH)) {
-                authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_AUTH);
-                params.authKey = auth.replaceFirst(RestConstants.HEADER_OAUTH, "").trim();
-            } else if (auth.startsWith(RestConstants.HEADER_ACCESSKEY)) {
-                authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_ACCESSKEY);
-                String dateStr = entity.getHeaders().getFirst(RestConstants.HEADER_DATE);
-                params.date = dateStr;
-                checkTime(dateStr, RestGlobalConfig.CHECK_TIME_ZONE.value(Boolean.class));
-
-                String str = auth.replaceFirst(RestConstants.HEADER_ACCESSKEY, "").trim();
-                String[] res = str.split(":");
-                if (res.length != 2) {
-                    throw new RestException(HttpStatus.BAD_REQUEST.value(), "accessKey format is 'ZStack AccessKeyId:Signature'");
-                }
-                params.authKey = str;
-                params.method = req.getMethod();
-                params.contentMd5 = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_MD5);
-                params.contentType = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_TYPE);
-                params.uri = getDecodedUrl(req);
-            } else {
-                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Authorization type must be '%s'", RestConstants.HEADER_OAUTH));
-            }
-
-            RestAuthenticationBackend bkd = restAuthBackends.get(authType);
-            if (bkd == null) {
-                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("unable to find RestAuthenticationBackend[provider type: %s]", authType));
-            }
-            session = bkd.doAuth(params);
-        }
+        SessionInventory session = api.apiClass.isAnnotationPresent(SuppressCredentialCheck.class)
+                ? null : authenticate(entity, req);
 
         if (APIQueryMessage.class.isAssignableFrom(api.apiClass)) {
             handleQueryApi(api, session, req, rsp);

@@ -3584,7 +3584,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
             @Override
             public void run(SyncTaskChain chain) {
                 FlattenVolumeReply reply = new FlattenVolumeReply();
-                flattenVolume(new Completion(chain) {
+                flattenVolume(msg, new Completion(chain) {
                     @Override
                     public void success() {
                         refreshVO();
@@ -3653,9 +3653,25 @@ public class VolumeBase extends AbstractVolume implements Volume {
         }
     }
 
-    private void flattenVolume(Completion completion) {
+    private void flattenVolume(FlattenVolumeMsg msg, Completion completion) {
+        refreshVO();
+        VolumeInventory volume = getSelfInventory();
+        if (msg.getBeforeFirstStartVmUuid() != null) {
+            VmInstanceVO vm = dbf.findByUuid(msg.getBeforeFirstStartVmUuid(), VmInstanceVO.class);
+            if (vm == null || vm.getState() != VmInstanceState.Starting
+                    || self.getStatus() != VolumeStatus.Ready
+                    || !msg.getBeforeFirstStartVmUuid().equals(self.getVmInstanceUuid())) {
+                completion.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10037,
+                        "volume[uuid:%s] is not ready for offline flatten before VM[uuid:%s] first start",
+                        self.getUuid(), msg.getBeforeFirstStartVmUuid()));
+                return;
+            }
+            // The create flow waits here before creating the domain. Only this
+            // operation inventory is physically offline; keep the DB association.
+            volume.setVmInstanceUuid(null);
+        }
         FlattenVolumeOnPrimaryStorageMsg mmsg = new FlattenVolumeOnPrimaryStorageMsg();
-        mmsg.setVolume(getSelfInventory());
+        mmsg.setVolume(volume);
         bus.makeTargetServiceIdByResourceUuid(mmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
         bus.send(mmsg, new CloudBusCallBack(completion) {
             @Override

@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
+import org.zstack.compute.vm.devices.TpmBootModeApiInterceptor;
 import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
@@ -280,8 +281,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     public VmInstanceBase(VmInstanceVO vo) {
         this.self = vo;
-        this.syncThreadName = "Vm-" + vo.getUuid();
+        this.syncThreadName = makeSyncSignature(vo.getUuid());
         this.originalCopy = ObjectUtils.newAndCopy(vo, vo.getClass());
+    }
+
+    public static String makeSyncSignature(String vmUuid) {
+        return "Vm-" + vmUuid;
     }
 
     protected VmInstanceVO refreshVO() {
@@ -3943,6 +3948,39 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(APISetVmBootModeMsg msg) {
+        serializeBootModeOperation(msg, taskChain -> setVmBootMode(msg, new NoErrorCompletion(msg, taskChain) {
+            @Override
+            public void done() {
+                taskChain.next();
+            }
+        }));
+    }
+
+    private void serializeBootModeOperation(APIMessage msg, java.util.function.Consumer<SyncTaskChain> operation) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("%s-for-vm-%s", msg.getClass().getSimpleName(), self.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                try {
+                    operation.accept(chain);
+                } catch (Exception e) {
+                    bus.replyErrorByMessageType(msg, e);
+                    chain.next();
+                }
+            }
+        });
+    }
+
+    private void setVmBootMode(APISetVmBootModeMsg msg, NoErrorCompletion completion) {
         final boolean[] bootModeChanged = {false};
 
         FlowChain chain = new SimpleFlowChain();
@@ -3950,6 +3988,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             String __name__ = "set-vm-boot-mode";
 
             String originLevel;
+            boolean tagChangeStarted;
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -3958,12 +3997,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 VmSystemTags.BOOT_MODE_TOKEN);
 
                 originLevel = bootMode;
+                try {
+                    TpmBootModeApiInterceptor.checkBootModeChangeAllowed(self.getUuid(), msg.getBootMode());
+                } catch (ApiMessageInterceptionException e) {
+                    trigger.fail(e.getError());
+                    return;
+                }
 
                 if (bootMode != null && bootMode.equals(msg.getBootMode())) {
                     trigger.next();
                     return;
                 }
 
+                tagChangeStarted = true;
                 if (msg.getBootMode() == null) {
                     VmSystemTags.BOOT_MODE.delete(self.getUuid());
                 } else {
@@ -3975,12 +4021,18 @@ public class VmInstanceBase extends AbstractVmInstance {
                     creator.create();
                 }
 
-                bootModeChanged[0] = true;
+                bootModeChanged[0] = !Objects.equals(
+                        bootMode == null ? ImageBootMode.Legacy.toString() : bootMode,
+                        msg.getBootMode() == null ? ImageBootMode.Legacy.toString() : msg.getBootMode());
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
+                if (!tagChangeStarted) {
+                    trigger.rollback();
+                    return;
+                }
                 if (originLevel == null) {
                     VmSystemTags.BOOT_MODE.delete(self.getUuid());
                 } else {
@@ -4006,22 +4058,37 @@ public class VmInstanceBase extends AbstractVmInstance {
                 APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
                 evt.setError(errCode);
                 bus.publish(evt);
+                completion.done();
             }
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
                 APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
-                bus.publish(evt);
-
                 if (bootModeChanged[0]) {
                     vidm.deleteAllDeviceAddressesByVm(self.getUuid());
                 }
+                bus.publish(evt);
+                completion.done();
             }
         }).start();
     }
 
     private void handle(APIDeleteVmBootModeMsg msg) {
+        serializeBootModeOperation(msg, chain -> {
+            deleteVmBootMode(msg);
+            chain.next();
+        });
+    }
+
+    private void deleteVmBootMode(APIDeleteVmBootModeMsg msg) {
         APIDeleteVmBootModeEvent evt = new APIDeleteVmBootModeEvent(msg.getId());
+        try {
+            TpmBootModeApiInterceptor.checkBootModeChangeAllowed(self.getUuid(), null);
+        } catch (ApiMessageInterceptionException e) {
+            evt.setError(e.getError());
+            bus.publish(evt);
+            return;
+        }
         VmSystemTags.BOOT_MODE.delete(self.getUuid());
         bus.publish(evt);
     }

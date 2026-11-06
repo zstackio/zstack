@@ -13,6 +13,9 @@ import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.log.LogSafeGson;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -59,6 +62,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     protected ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private ThreadFacade thdf;
 
     private List<SystemTag> systemTags = new ArrayList<>();
     private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
@@ -630,6 +635,48 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private void handleApiMessage(APIMessage msg) {
+        for (SystemTagApiMessageExtensionPoint extension : pluginRgty.getExtensionList(SystemTagApiMessageExtensionPoint.class)) {
+            String resourceUuid = extension.getResourceUuid(msg);
+            if (resourceUuid == null) {
+                continue;
+            }
+            String owner = bus.makeTargetServiceIdByResourceUuid(TagConstant.SERVICE_ID, resourceUuid);
+            if (!getId().equals(owner)) {
+                msg.setServiceId(owner);
+                bus.send(msg);
+                return;
+            }
+            thdf.chainSubmit(new ChainTask(msg) {
+                @Override
+                public String getSyncSignature() {
+                    return extension.getSyncSignature(resourceUuid);
+                }
+
+                @Override
+                public String getName() {
+                    return String.format("system-tag-%s-for-%s", msg.getClass().getSimpleName(), resourceUuid);
+                }
+
+                @Override
+                public void run(SyncTaskChain chain) {
+                    try {
+                        extension.beforeHandle(msg);
+                        dispatchApiMessage(msg);
+                    } catch (ApiMessageInterceptionException e) {
+                        bus.replyErrorByMessageType(msg, e.getError());
+                    } catch (Exception e) {
+                        bus.replyErrorByMessageType(msg, e);
+                    } finally {
+                        chain.next();
+                    }
+                }
+            });
+            return;
+        }
+        dispatchApiMessage(msg);
+    }
+
+    private void dispatchApiMessage(APIMessage msg) {
         if (msg instanceof APICreateUserTagMsg) {
             handle((APICreateUserTagMsg) msg);
         } else if (msg instanceof APICreateSystemTagMsg) {
