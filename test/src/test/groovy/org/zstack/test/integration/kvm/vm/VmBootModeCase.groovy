@@ -43,6 +43,7 @@ class VmBootModeCase extends SubCase{
 
     void testSetVmBootMode() {
         def vm = env.inventoryByName("vm") as VmInstanceInventory
+        stopVmInstance { uuid = vm.uuid }
 
         assert Q.New(VmInstanceDeviceAddressVO.class)
                 .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vm.uuid)
@@ -52,7 +53,7 @@ class VmBootModeCase extends SubCase{
 
         setVmBootMode {
             uuid = vm.uuid
-            bootMode = "Legacy"
+            bootMode = "UEFI"
         }
 
         assert VmSystemTags.BOOT_MODE.hasTag(vm.uuid)
@@ -62,7 +63,7 @@ class VmBootModeCase extends SubCase{
 
         setVmBootMode {
             uuid = vm.uuid
-            bootMode = "UEFI"
+            bootMode = "Legacy"
         }
 
         assert VmSystemTags.BOOT_MODE.hasTag(vm.uuid)

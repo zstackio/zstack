@@ -191,6 +191,11 @@ public class VolumeSnapshotApiInterceptor implements GlobalApiMessageInterceptor
     }
 
     private void validate(APIUngroupVolumeSnapshotGroupMsg msg) {
+        VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getUuid(), VolumeSnapshotGroupVO.class);
+        if (isWithMemoryForSnapshotGroup(group)) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001,
+                    "volume snapshot group[uuid:%s] holds memory snapshots, cannot be ungrouped", msg.getUuid()));
+        }
         boolean hasSecurityAttachment = Q.New(VmHostBackupFileVO.class)
                 .eq(VmHostBackupFileVO_.resourceUuid, msg.getUuid())
                 .isExists();

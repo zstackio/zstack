@@ -14,6 +14,7 @@ import org.zstack.header.Component;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -39,7 +40,7 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
     private ThreadFacade thdf;
 
     // cache 2000 API results
-    private Map<String, APIEvent> results = Collections.synchronizedMap(new LRUMap(RestGlobalProperty.MAX_CACHED_API_RESULTS));
+    private Map<String, AsyncRestQueryResult> results = Collections.synchronizedMap(new LRUMap(RestGlobalProperty.MAX_CACHED_API_RESULTS));
     private Future cleanupThread;
 
     @Override
@@ -76,10 +77,15 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
             d = RequestData.fromJson(vo.getRequestData());
         }
 
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!CoreGlobalProperty.UNIT_TEST_ON && d != null) {
             // don't use the cache for unit test
             // we want to test the database
-            results.put(evt.getApiId(), evt);
+            AsyncRestQueryResult result = new AsyncRestQueryResult();
+            result.setUuid(evt.getApiId());
+            result.setState(AsyncRestState.done);
+            result.setResult(evt);
+            setOwner(result, d);
+            results.put(evt.getApiId(), result);
         }
 
         return d;
@@ -90,17 +96,22 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
         AsyncRestQueryResult result = new AsyncRestQueryResult();
         result.setUuid(uuid);
 
-        APIEvent evt = results.get(uuid);
-        if (evt != null) {
-            result.setState(AsyncRestState.done);
-            result.setResult(evt);
-            return result;
+        AsyncRestQueryResult cached = results.get(uuid);
+        if (cached != null) {
+            return cached;
         }
 
         AsyncRestVO vo = dbf.findByUuid(uuid, AsyncRestVO.class);
         if (vo == null) {
             result.setState(AsyncRestState.expired);
             return result;
+        }
+
+        try {
+            setOwner(result, RequestData.fromJson(vo.getRequestData()));
+        } catch (RuntimeException e) {
+            // Legacy or damaged requests without a trustworthy owner must not disclose a result.
+            logger.warn(String.format("cannot recover owner of async REST job[uuid:%s]", uuid));
         }
 
         if (vo.getState() != AsyncRestState.done) {
@@ -112,12 +123,23 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
             result.setState(AsyncRestState.done);
             result.setResult(ApiEventResult.fromJson(vo.getResult()));
 
-            results.put(uuid, result.getResult());
+            results.put(uuid, result);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
 
         return result;
+    }
+
+    private static void setOwner(AsyncRestQueryResult result, RequestData request) {
+        if (request == null || request.apiMessage == null) {
+            return;
+        }
+        SessionInventory session = request.apiMessage.getSession();
+        if (session != null) {
+            result.setOwnerAccountUuid(session.getAccountUuid());
+            result.setOwnerUserUuid(session.getUserUuid());
+        }
     }
 
     @Override

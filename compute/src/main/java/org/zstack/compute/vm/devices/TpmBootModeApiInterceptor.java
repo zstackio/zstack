@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.db.Q;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -16,8 +17,12 @@ import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.APIDeleteVmBootModeMsg;
 import org.zstack.header.vm.APISetVmBootModeMsg;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.tag.SystemTagApiMessageExtensionPoint;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.header.tpm.TpmErrors.VM_BOOT_MODE_ERROR;
@@ -25,7 +30,34 @@ import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_DEVICES_10011;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_DEVICES_10012;
 
-public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
+public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor, SystemTagApiMessageExtensionPoint {
+    @Override
+    public String getResourceUuid(APIMessage msg) {
+        if (msg instanceof APICreateSystemTagMsg) {
+            APICreateSystemTagMsg create = (APICreateSystemTagMsg) msg;
+            return VmInstanceVO.class.getSimpleName().equals(create.getResourceType()) ? create.getResourceUuid() : null;
+        }
+        if (msg instanceof APICreateSystemTagsMsg) {
+            APICreateSystemTagsMsg create = (APICreateSystemTagsMsg) msg;
+            return VmInstanceVO.class.getSimpleName().equals(create.getResourceType()) ? create.getResourceUuid() : null;
+        }
+        String tagUuid = msg instanceof APIUpdateSystemTagMsg ? ((APIUpdateSystemTagMsg) msg).getUuid()
+                : msg instanceof APIDeleteTagMsg ? ((APIDeleteTagMsg) msg).getUuid() : null;
+        SystemTagVO tag = tagUuid == null ? null : findSystemTag(tagUuid);
+        return tag != null && VmInstanceVO.class.getSimpleName().equals(tag.getResourceType())
+                ? tag.getResourceUuid() : null;
+    }
+
+    @Override
+    public String getSyncSignature(String resourceUuid) {
+        return VmInstanceBase.makeSyncSignature(resourceUuid);
+    }
+
+    @Override
+    public void beforeHandle(APIMessage msg) {
+        intercept(msg);
+    }
+
     @Override
     @SuppressWarnings("rawtypes")
     public List<Class> getMessageClassToIntercept() {
@@ -67,11 +99,11 @@ public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
     }
 
     private void validate(APISetVmBootModeMsg msg) {
-        checkTpmAllowsBootMode(msg.getVmInstanceUuid(), msg.getBootMode());
+        checkBootModeChangeAllowed(msg.getVmInstanceUuid(), msg.getBootMode());
     }
 
     private void validate(APIDeleteVmBootModeMsg msg) {
-        checkTpmAllowsBootMode(msg.getVmInstanceUuid(), null);
+        checkBootModeChangeAllowed(msg.getVmInstanceUuid(), null);
     }
 
     private void validate(APICreateSystemTagMsg msg) {
@@ -96,14 +128,14 @@ public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
 
         if (isVmBootModeTag(tag.getResourceType(), tag.getTag())
                 || isVmBootModeTag(tag.getResourceType(), msg.getTag())) {
-            checkTpmAllowsBootMode(tag.getResourceUuid(), bootModeOf(msg.getTag()));
+            checkBootModeChangeAllowed(tag.getResourceUuid(), bootModeOf(msg.getTag()));
         }
     }
 
     private void validate(APIDeleteTagMsg msg) {
         SystemTagVO tag = findSystemTag(msg.getUuid());
         if (tag != null && isVmBootModeTag(tag.getResourceType(), tag.getTag())) {
-            checkTpmAllowsBootMode(tag.getResourceUuid(), null);
+            checkBootModeChangeAllowed(tag.getResourceUuid(), null);
         }
     }
 
@@ -150,8 +182,23 @@ public class TpmBootModeApiInterceptor implements GlobalApiMessageInterceptor {
 
     private void checkTpmAllowsBootModeTag(String resourceType, String resourceUuid, String tag) {
         if (isVmBootModeTag(resourceType, tag)) {
-            checkTpmAllowsBootMode(resourceUuid, bootModeOf(tag));
+            checkBootModeChangeAllowed(resourceUuid, bootModeOf(tag));
         }
+    }
+
+    public static void checkBootModeChangeAllowed(String vmUuid, String bootMode) {
+        String current = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vmUuid, VmSystemTags.BOOT_MODE_TOKEN);
+        String effectiveCurrent = current == null ? ImageBootMode.Legacy.toString() : current;
+        String effectiveTarget = bootMode == null ? ImageBootMode.Legacy.toString() : bootMode;
+        if (!Objects.equals(effectiveCurrent, effectiveTarget)) {
+            VmInstanceState state = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid)
+                    .select(VmInstanceVO_.state).findValue();
+            if (state != null && state != VmInstanceState.Created && state != VmInstanceState.Stopped) {
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10011, VM_BOOT_MODE_ERROR,
+                        "cannot change boot mode of VM[uuid:%s] in state %s; stop the VM first", vmUuid, state));
+            }
+        }
+        checkTpmAllowsBootMode(vmUuid, bootMode);
     }
 
     public static void checkTpmAllowsBootMode(String vmUuid, String bootMode) {
