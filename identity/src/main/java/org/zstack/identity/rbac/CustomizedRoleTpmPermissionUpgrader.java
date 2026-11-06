@@ -1,9 +1,8 @@
 package org.zstack.identity.rbac;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyStatementEffect;
 import org.zstack.header.identity.rbac.PolicyMatcher;
@@ -38,9 +37,6 @@ public class CustomizedRoleTpmPermissionUpgrader implements ManagementNodeReadyE
 
     private static final PolicyMatcher matcher = new PolicyMatcher();
 
-    @Autowired
-    private DatabaseFacade dbf;
-
     @Override
     public void managementNodeReady() {
         if (!IdentityGlobalProperty.UPGRADE_CUSTOMIZED_ROLE_TPM_PERMISSION) {
@@ -63,7 +59,8 @@ public class CustomizedRoleTpmPermissionUpgrader implements ManagementNodeReadyE
                     upgraded++;
                 }
             } catch (Exception e) {
-                logger.warn(String.format("failed to grant TPM APIs to customized role[uuid:%s]: %s", roleUuid, e.getMessage()), e);
+                throw new CloudRuntimeException(String.format(
+                        "failed to grant TPM APIs to customized role[uuid:%s]", roleUuid), e);
             }
         }
 
@@ -79,18 +76,11 @@ public class CustomizedRoleTpmPermissionUpgrader implements ManagementNodeReadyE
                 .map(vo -> PolicyStatement.fromJSON(vo.getStatement()))
                 .collect(Collectors.toList());
 
-        List<String> missing = new ArrayList<>();
-        for (String tpmAction : TPM_ACTIONS) {
-            if (!anyStatementMatches(statements, PolicyStatementEffect.Allow, tpmAction)
-                    && !anyStatementMatches(statements, PolicyStatementEffect.Deny, tpmAction)) {
-                missing.add(tpmAction);
-            }
-        }
-
-        if (missing.isEmpty()) {
+        if (hasVmUpdateDeny(statements)) {
             return false;
         }
 
+        List<RolePolicyStatementVO> changed = new ArrayList<>();
         for (int i = 0; i < vos.size(); i++) {
             PolicyStatement statement = statements.get(i);
             if (statement.getEffect() == null
@@ -99,25 +89,47 @@ public class CustomizedRoleTpmPermissionUpgrader implements ManagementNodeReadyE
                 continue;
             }
 
+            List<String> missing = TPM_ACTIONS.stream()
+                    .filter(action -> !matches(statement, action)
+                            && !anyStatementMatches(statements, PolicyStatementEffect.Deny, action))
+                    .collect(Collectors.toList());
+            if (missing.isEmpty()) {
+                continue;
+            }
+
             missing.forEach(statement::addAction);
-            final RolePolicyStatementVO vo = vos.get(i);
+            RolePolicyStatementVO vo = vos.get(i);
             vo.setStatement(JSONObjectUtil.toJsonString(statement));
-            final String missingStr = missing.toString();
-            new SQLBatch() {
-                @Override
-                protected void scripts() {
-                    merge(vo);
-                }
-            }.execute();
-            logger.info(String.format("granted %s to customized role[uuid:%s] statement[uuid:%s]", missingStr, roleUuid, vo.getUuid()));
-            return true;
+            changed.add(vo);
         }
 
-        return false;
+        if (changed.isEmpty()) {
+            return false;
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                changed.forEach(this::merge);
+            }
+        }.execute();
+        logger.info(String.format("granted TPM APIs to %d statement(s) of customized role[uuid:%s]",
+                changed.size(), roleUuid));
+        return true;
     }
 
     private static boolean anyStatementMatches(List<PolicyStatement> statements, PolicyStatementEffect effect, String api) {
         return statements.stream().anyMatch(s -> s.getEffect() == effect && matches(s, api));
+    }
+
+    private static boolean hasVmUpdateDeny(List<PolicyStatement> statements) {
+        // Preserve roles with a full API deny, including principal-scoped denies:
+        // expanding an Allow alone could bypass that boundary for some members.
+        // A field-level deny still permits other VM updates.
+        return statements.stream().anyMatch(s -> s.getEffect() == PolicyStatementEffect.Deny
+                && s.getActions() != null
+                && s.getActions().stream().anyMatch(action -> !action.contains(":")
+                && matcher.match(action, VM_PERMISSION_ANCHOR)));
     }
 
     private static boolean matches(PolicyStatement statement, String api) {
