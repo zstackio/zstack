@@ -17,8 +17,8 @@ public class MemorySummaryInventory {
         inventory.setZramWritebackBytes(134217728L);
         inventory.setExpectedHosts(2);
         inventory.setCoveredHosts(2);
-        inventory.setQuality("COMPLETE");
-        inventory.setCurrentStatus(java.util.Collections.singletonMap("APPLIED", 2));
+        inventory.setQuality("Fresh");
+        inventory.setCurrentStatus(java.util.Collections.singletonMap("active", 2));
         inventory.setCurrentStatusSampleTime(1791583200000L);
         inventory.setCurrentStatusTtlMillis(60000L);
         return inventory;

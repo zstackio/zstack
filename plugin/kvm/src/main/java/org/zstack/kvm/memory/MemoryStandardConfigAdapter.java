@@ -1,10 +1,10 @@
 package org.zstack.kvm.memory;
 
-import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigVO;
 
 import org.zstack.core.db.Q;
-import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.resourceconfig.ResourceConfigVO_;
 
 import javax.persistence.EntityManager;
@@ -33,17 +33,28 @@ public final class MemoryStandardConfigAdapter {
         return readStored(field, row.getValue());
     }
 
-    /** Value owned by the GlobalConfig row, including its schema default. */
-    public Object readGlobalOwn(EntityManager em, String path) {
-        MemoryStandardField field = MemoryStandardField.forPath(path);
-        GlobalConfigVO row = globalRow(em, field);
-        return readGlobalStored(field, row);
+    /** The values each resource owns for every field, in one query; a missing field means inherit. */
+    public Map<String, Map<MemoryStandardField, Object>> readOverridesOwn(EntityManager em, Collection<String> resourceUuids) {
+        Map<String, MemoryStandardField> byName = new HashMap<>();
+        for (MemoryStandardField field : MemoryStandardField.values()) { byName.put(field.category() + "/" + field.configName(), field); }
+        Set<String> names = Arrays.stream(MemoryStandardField.values()).map(MemoryStandardField::configName).collect(Collectors.toSet());
+        Map<String, Map<MemoryStandardField, Object>> result = new HashMap<>();
+        List<ResourceConfigVO> rows = Q.New(ResourceConfigVO.class).in(ResourceConfigVO_.resourceUuid, resourceUuids)
+                .in(ResourceConfigVO_.name, names).list();
+        for (ResourceConfigVO row : rows) {
+            MemoryStandardField field = byName.get(row.getCategory() + "/" + row.getName());
+            Object value = field == null ? null : readResourceStored(field, row, row.getResourceUuid());
+            if (value != null) { result.computeIfAbsent(row.getResourceUuid(), k -> new EnumMap<>(MemoryStandardField.class)).put(field, value); }
+        }
+        return result;
     }
 
-    private static Object readGlobalStored(MemoryStandardField field, GlobalConfigVO row) {
-        String value = row == null ? field.config().getDefaultValue() : row.getValue();
+    /** Value of the GlobalConfig as the management node holds it, including its schema default. */
+    public Object readGlobalOwn(GlobalConfigFacade gcf, MemoryStandardField field) {
+        GlobalConfig live = gcf.getAllConfig().get(GlobalConfig.produceIdentity(field.category(), field.configName()));
+        String value = live == null ? null : live.value();
         if (value == null || value.trim().isEmpty()) {
-            value = row == null ? field.config().getDefaultValue() : row.getDefaultValue();
+            value = live == null ? field.config().getDefaultValue() : live.getDefaultValue();
         }
         return readStored(field, value);
     }
@@ -105,8 +116,4 @@ public final class MemoryStandardConfigAdapter {
                 .eq(ResourceConfigVO_.name, field.configName()).eq(ResourceConfigVO_.resourceUuid, resourceUuid).find();
     }
 
-    private static GlobalConfigVO globalRow(EntityManager em, MemoryStandardField field) {
-        return Q.New(GlobalConfigVO.class).eq(GlobalConfigVO_.category, field.category())
-                .eq(GlobalConfigVO_.name, field.configName()).find();
-    }
 }

@@ -121,7 +121,10 @@ public class MemoryClusterOperationTest {
             return result;
         }
         @Override public String startTask(String host, String action, String actor, long generation) { return "prepare"; }
-        @Override public void finishTask(String uuid, String status, String reason) { }
+        boolean failingTaskWrites;
+        @Override public void finishTask(String uuid, String status, String reason) {
+            if (failingTaskWrites) { throw new RuntimeException("database unavailable"); }
+        }
         @Override public void recordPreparedBackend(String host, String resource, long capacity) {
             preparedBackend = resource; preparedCapacity = capacity;
         }
@@ -420,6 +423,21 @@ public class MemoryClusterOperationTest {
         assertEquals(true, first.get("resetConfirmed"));
         assertTrue(repository.plans.contains("host1:prepareWritebackBackend:null"));
         assertEquals("the prepared backend reaches the Host in its next generation", "apply",
+                manager.commands.get(manager.commands.size() - 1).get("path"));
+    }
+
+    @Test public void aPreparationWhoseResultCannotBeRecordedIsNotASuccess() throws Exception {
+        setup();
+        MemoryAgentResponse done = reply("Succeeded", null, null);
+        done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
+        scriptPreparation(done);
+        repository.failingTaskWrites = true;
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+
+        assertEquals("a result the platform did not record is unknown to the caller",
+                Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNRECORDED"), manager.outcomes);
+        assertEquals("the prepared backend still reaches the Host", "apply",
                 manager.commands.get(manager.commands.size() - 1).get("path"));
     }
 

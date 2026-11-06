@@ -41,4 +41,20 @@ public class MemoryReadApisTest {
                 MemoryOptimizationManager.supportedCapabilities(state));
         assertNull(MemoryOptimizationManager.supportedCapabilities(Collections.emptyMap()));
     }
+
+    @Test public void aSampleTheAgentCouldNotCompleteIsAFailedObservation() {
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("inventoryComplete", true);
+        state.put("zram", Collections.singletonMap("serviceState", "active"));
+        assertNull(MemoryOptimizationManager.incompleteSample(state));
+        state.put("zram", Collections.singletonMap("serviceState", "unknown"));
+        assertEquals("a service state systemd could not report is a failed observation",
+                "SERVICE_STATE_UNKNOWN", MemoryOptimizationManager.incompleteSample(state));
+        state.put("inventoryComplete", false);
+        assertEquals("VMs libvirt could not list are a failed observation",
+                "VM_INVENTORY_INCOMPLETE", MemoryOptimizationManager.incompleteSample(state));
+        state.put("inventoryComplete", true);
+        state.put("zram", Collections.singletonMap("serviceState", "absent"));
+        assertNull("a Host without the managed service is not a failure", MemoryOptimizationManager.incompleteSample(state));
+    }
 }
