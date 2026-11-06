@@ -68,7 +68,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
         evalDenyStatements(denyStatements);
 
-        if (evalAllowStatements(allowStatements)) {
+        if (evalAllowStatements(allowStatements, polices)) {
             // allowed
             return;
         }
@@ -86,6 +86,11 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {
+        return evalAllowStatements(policies, getPoliciesForAPI());
+    }
+
+    private boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies,
+                                        List<PolicyInventory> snapshot) {
         Set<String> apiNeedToCheck = new HashSet<>();
         apiNeedToCheck.add(rbacEntity.getApiName());
         apiNeedToCheck.addAll(rbacEntity.getAdditionalApisToCheck());
@@ -93,7 +98,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         for (Map.Entry<PolicyInventory, List<PolicyStatement>> e : policies.entrySet()) {
             PolicyInventory policy = e.getKey();
             for (PolicyStatement statement : e.getValue()) {
-                if (!isPrincipalMatched(statement.getPrincipals())) {
+                if (!isStatementApplicable(statement, rbacEntity.getApiMessage().getSession())
+                        || !hasRequiredActions(statement, snapshot, rbacEntity.getApiMessage().getSession())) {
                     continue;
                 }
 
@@ -120,27 +126,84 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {
+        return isPrincipalMatched(principals, rbacEntity.getApiMessage().getSession());
+    }
+
+    protected boolean isStatementApplicable(PolicyStatement statement, SessionInventory session) {
+        return isPrincipalMatched(statement.getPrincipals(), session);
+    }
+
+    protected boolean hasRequiredActions(PolicyStatement statement, List<PolicyInventory> snapshot,
+                                         SessionInventory session) {
+        return hasRequiredActions(statement, snapshot, session, new HashSet<>());
+    }
+
+    private boolean hasRequiredActions(PolicyStatement statement, List<PolicyInventory> snapshot,
+                                       SessionInventory session, Set<String> evaluating) {
+        boolean marked = statement.getActions() != null
+                && statement.getActions().stream().anyMatch(PolicyUtils::isConditionalAction);
+        if (statement.getRequiredActions() == null || statement.getRequiredActions().isEmpty()) {
+            return !marked;
+        }
+        if (statement.getActions() == null || !statement.getActions().stream().allMatch(PolicyUtils::isConditionalAction)) {
+            return false;
+        }
+        return statement.getRequiredActions().stream()
+                .allMatch(api -> hasApiPermission(api, snapshot, session, evaluating));
+    }
+
+    private boolean hasApiPermission(String api, List<PolicyInventory> snapshot,
+                                     SessionInventory session, Set<String> evaluating) {
+        if (api == null || api.contains(":") || evaluating.size() >= 64 || !evaluating.add(api)) {
+            return false;
+        }
+        try {
+            if (!AccountConstant.isAdminPermission(session) && PolicyUtils.isAdminOnlyAction(api)) {
+                return false;
+            }
+            List<PolicyStatement> statements = snapshot.stream().filter(p -> p.getStatements() != null)
+                    .flatMap(p -> p.getStatements().stream()).filter(s -> s.getActions() != null
+                            && isStatementApplicable(s, session)).collect(java.util.stream.Collectors.toList());
+            // A field deny still permits changes to other fields. Only a full API deny
+            // removes the permission from which this additional grant is inherited.
+            if (statements.stream().anyMatch(s -> s.getEffect() == PolicyStatementEffect.Deny
+                    && s.getActions().stream().anyMatch(a -> !a.contains(":") && evalStatement(a, api)))) {
+                return false;
+            }
+            return statements.stream().anyMatch(s -> s.getEffect() == PolicyStatementEffect.Allow
+                    && s.getActions().stream().anyMatch(a -> evalStatement(a, api))
+                    && hasRequiredActions(s, snapshot, session, evaluating));
+        } finally {
+            evaluating.remove(api);
+        }
+    }
+
+    private boolean isPrincipalMatched(List<String> principals, SessionInventory session) {
         // if not principals specified, means the statement applies for all accounts/users
         // if principals specified, check if they matches current account/user
         if (principals != null && !principals.isEmpty()) {
             for (String s : principals) {
                 String[] ss = s.split(":", 2);
+                if (ss.length != 2) {
+                    throw new CloudRuntimeException(String.format("invalid principal[%s]", s));
+                }
                 String principal = ss[0];
                 String uuidRegex = ss[1];
 
-                if (rbacEntity.getApiMessage().getSession().isAccountSession() && AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)) {
-                    if (checkAccountPrincipal(uuidRegex)) {
+                if (session.isAccountSession() && AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)) {
+                    if (policyMatcher.match(uuidRegex, session.getAccountUuid())) {
                         return true;
                     }
-                } else if (AccountConstant.isAdminPermission(rbacEntity.getApiMessage().getSession())) {
-                    if (checkAccountPrincipal(uuidRegex)) {
+                } else if (AccountConstant.isAdminPermission(session)) {
+                    if (policyMatcher.match(uuidRegex, session.getAccountUuid())) {
                         return true;
                     }
-                } else if (rbacEntity.getApiMessage().getSession().isUserSession() && AccountConstant.PRINCIPAL_USER.equals(principal)) {
-                    if (checkUserPrincipal(uuidRegex)) {
+                } else if (session.isUserSession() && AccountConstant.PRINCIPAL_USER.equals(principal)) {
+                    if (policyMatcher.match(uuidRegex, session.getUserUuid())) {
                         return true;
                     }
-                } else {
+                } else if (!AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)
+                        && !AccountConstant.PRINCIPAL_USER.equals(principal)) {
                     throw new CloudRuntimeException(String.format("unknown principal[%s]", principal));
                 }
             }
@@ -159,7 +222,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
         denyPolices.forEach((p, sts)-> sts.forEach(st-> {
-            if (!isPrincipalMatched(st.getPrincipals())) {
+            if (!isStatementApplicable(st, rbacEntity.getApiMessage().getSession())) {
                 return;
             }
 
@@ -225,6 +288,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         classes.forEach(clz -> {
             for (List<PolicyStatement> dss : denyStatements.values()) {
                 for (PolicyStatement ds : dss) {
+                    if (!isStatementApplicable(ds, session)) {
+                        continue;
+                    }
                     for (String as : ds.getActions()) {
                         if (evalStatement(as, clz.getName())) {
                             ret.put(clz.getName(), false);
@@ -236,6 +302,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
             for (List<PolicyStatement> ass : allowStatements.values()) {
                 for (PolicyStatement as : ass) {
+                    if (!isStatementApplicable(as, session) || !hasRequiredActions(as, policies, session)) {
+                        continue;
+                    }
                     for (String a : as.getActions()) {
                         if (evalStatement(a, clz.getName())) {
                             ret.put(clz.getName(), true);

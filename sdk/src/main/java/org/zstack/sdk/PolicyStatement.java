@@ -28,6 +28,14 @@ public class PolicyStatement  {
         return this.principals;
     }
 
+    public java.util.List requiredActions;
+    public void setRequiredActions(java.util.List requiredActions) {
+        this.requiredActions = requiredActions;
+    }
+    public java.util.List getRequiredActions() {
+        return this.requiredActions;
+    }
+
     public java.util.List actions;
     public void setActions(java.util.List actions) {
         this.actions = actions;
