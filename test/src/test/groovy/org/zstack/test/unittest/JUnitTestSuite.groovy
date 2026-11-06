@@ -6,6 +6,7 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.longjob.TestLongJobInventorySecurity
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.rest.TestDocTemplateLocationOverrideCase
@@ -16,6 +17,7 @@ import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
 import org.zstack.test.unittest.utils.SystemTagUtilsCase
+import org.zstack.test.unittest.vfs.VFSMetadataReadWriteTest
 
 import java.util.stream.Collectors
 
@@ -34,7 +36,9 @@ import java.util.stream.Collectors
         ZnsProxyKvmReconnectExtensionTest.class,
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
-        SystemTagUtilsCase.class
+        SystemTagUtilsCase.class,
+        VFSMetadataReadWriteTest.class,
+        TestLongJobInventorySecurity.class
     ])
 class JUnitTestSuite {
 
