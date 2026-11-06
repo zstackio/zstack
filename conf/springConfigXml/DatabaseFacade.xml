@@ -75,6 +75,7 @@
                 <!--<prop key="hibernate.search.default.directory_provider">filesystem</prop>-->
                 <prop key="hibernate.search.model_mapping">org.zstack.search.CustomSearchMappingFactory</prop>
                 <prop key="hibernate.search.autoregister_listeners">${Search.autoRegister:true}</prop>
+                <prop key="hibernate.search.error_handler">org.zstack.core.search.SearchErrorHandler</prop>
                 <prop key="hibernate.search.default.directory_provider">infinispan</prop>
                 <prop key="hibernate.search.infinispan.configuration_resourcename">searchConfig/default-infinispan.xml</prop>
                 <prop key="hibernate.search.default.exclusive_index_use">${Exclusive.indexUse:false}</prop>
