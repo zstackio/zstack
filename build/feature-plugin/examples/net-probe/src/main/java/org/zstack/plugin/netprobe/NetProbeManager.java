@@ -205,7 +205,7 @@ public class NetProbeManager extends AbstractService implements PluginUsageCheck
     private void probeOnHost(String hostUuid, List<NetProbeTaskVO> tasks) {
         HostStatus status = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, hostUuid).findValue();
         if (status != HostStatus.Connected) {
-            tasks.forEach(t -> record(t.getUuid(), HOST_UNAVAILABLE, false, null, null, null, "物理机不可用"));
+            tasks.forEach(t -> record(t.getUuid(), HOST_UNAVAILABLE, false, null, null, null, "the host is unavailable"));
             return;
         }
 
@@ -231,7 +231,7 @@ public class NetProbeManager extends AbstractService implements PluginUsageCheck
                 if (!r.isSuccess()) {
                     String error = String.valueOf(r.getError().getDetails() != null ? r.getError().getDetails() : r.getError().getDescription());
                     // a host that has not reconnected since the plugin was installed has no such path yet
-                    String reason = error.contains("404") ? "物理机上的网络拨测组件未就绪" : error;
+                    String reason = error.contains("404") ? "the net-probe part on the host is not ready" : error;
                     tasks.forEach(t -> record(t.getUuid(), FAILED, false, null, null, null, reason));
                     return;
                 }
@@ -290,7 +290,7 @@ public class NetProbeManager extends AbstractService implements PluginUsageCheck
     @Override
     public List<String> inUseReasons() {
         long count = Q.New(NetProbeTaskVO.class).count();
-        return count == 0 ? Collections.emptyList() : Collections.singletonList(String.format("还有 %d 个拨测任务", count));
+        return count == 0 ? Collections.emptyList() : Collections.singletonList(String.format("%d probe tasks exist", count));
     }
 
     @Override
