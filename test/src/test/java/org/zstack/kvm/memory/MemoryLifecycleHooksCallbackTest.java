@@ -646,4 +646,36 @@ public class MemoryLifecycleHooksCallbackTest {
         AtomicDone() { super(); }
         @Override public void done() { done = true; }
     }
+
+    @Test public void aLifecycleBindingWithoutAGenerationIsAFailureUnlessTheVmIsProvenAbsent() {
+        MemoryAgentResponse absent = response("host-a", null);
+        assertNull("a VM proven absent has nothing to revoke",
+                MemoryLifecycleHooks.lifecycleFailure("revoke", MemoryLifecycleHooks.vmIdentity(absent, "vm-1"), absent));
+        assertEquals("VM_INSTANCE_NOT_FOUND",
+                MemoryLifecycleHooks.lifecycleFailure("bind", MemoryLifecycleHooks.vmIdentity(absent, "vm-1"), absent));
+        // The complete inventory lists the VM but not its instance generation.
+        MemoryAgentResponse listed = response("host-a", null);
+        ((Map<String, Object>) listed.state.get("vms")).put("vm-1", new HashMap<>());
+        for (String action : Arrays.asList("revoke", "bind")) {
+            String failure = MemoryLifecycleHooks.lifecycleFailure(action, MemoryLifecycleHooks.vmIdentity(listed, "vm-1"), listed);
+            assertTrue("a present VM without a generation is unknown for " + action + ", got " + failure,
+                    failure.startsWith("VM_IDENTITY_UNKNOWN: "));
+        }
+        MemoryAgentResponse partial = response("host-a", null);
+        partial.state.put("inventoryComplete", false);
+        assertTrue(MemoryLifecycleHooks.lifecycleFailure("revoke", MemoryLifecycleHooks.vmIdentity(partial, "vm-1"), partial)
+                .startsWith("VM_IDENTITY_UNKNOWN: "));
+    }
+
+    @Test public void aFailedAgentReplyAlwaysNamesAReason() {
+        MemoryAgentResponse reply = new MemoryAgentResponse();
+        reply.setSuccess(false);
+        assertEquals("a failed reply without any reason is still a failure",
+                "INVALID_AGENT_RESPONSE", MemoryOptimizationManager.failure(reply));
+        reply.setError("connection reset");
+        assertEquals("the Agent error names the failure", "connection reset", MemoryOptimizationManager.failure(reply));
+        reply.reasonCode = "STALE_GENERATION";
+        assertEquals("STALE_GENERATION", MemoryOptimizationManager.failure(reply));
+        assertEquals("AGENT_UNREACHABLE", MemoryOptimizationManager.failure(null));
+    }
 }
