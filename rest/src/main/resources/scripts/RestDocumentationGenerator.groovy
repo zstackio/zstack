@@ -917,14 +917,20 @@ ${category(err)}
         private String _since
         private String _type
         private String _location
+        private Boolean _overrideLocation
         private String _enclosedIn
 
         def enclosedIn(String v) {
             _enclosedIn = v
         }
 
-        def location(String v) {
+        def location(String v, Boolean override) {
             _location = v
+            _overrideLocation = override
+        }
+
+        def location(String v) {
+            location(v, null)
         }
 
         def since(String v) {
@@ -1175,7 +1181,9 @@ ${category(err)}
                     }
 
                     ocol._enclosedIn = ncol._enclosedIn
-                    ocol._location = ncol._location
+                    if (ocol._overrideLocation != true) {
+                        ocol._location = ncol._location
+                    }
                     ocol._type = ncol._type
                     ocol._optional = ncol._optional
                 }
@@ -2391,7 +2399,7 @@ ${cols.join("\n")}
 \t\t\t\t\tname "${it._name}"
 \t\t\t\t\tenclosedIn "${it._enclosedIn}"
 \t\t\t\t\tdesc "${it._desc}"
-\t\t\t\t\tlocation "${it._location}"
+\t\t\t\t\tlocation "${it._location}"${it._overrideLocation != null ? ", ${it._overrideLocation}" : ""}
 \t\t\t\t\ttype "${it._type}"
 \t\t\t\t\toptional ${it._optional}
 \t\t\t\t\tsince "${it._since}"
@@ -2401,7 +2409,7 @@ ${cols.join("\n")}
 \t\t\t\t\tname "${it._name}"
 \t\t\t\t\tenclosedIn "${it._enclosedIn}"
 \t\t\t\t\tdesc "${it._desc}"
-\t\t\t\t\tlocation "${it._location}"
+\t\t\t\t\tlocation "${it._location}"${it._overrideLocation != null ? ", ${it._overrideLocation}" : ""}
 \t\t\t\t\ttype "${it._type}"
 \t\t\t\t\toptional ${it._optional}
 \t\t\t\t\tsince "${it._since}"
