@@ -2103,22 +2103,26 @@ public class VolumeSnapshotTreeBase {
         List<String> uuids = snapshots.stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
         SQL.New(VolumeSnapshotGroupRefVO.class).in(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid, uuids)
                 .set(VolumeSnapshotGroupRefVO_.snapshotDeleted, true).update();
-        if (currentRoot.getVolumeType().equals(VolumeType.Root.toString())) {
-            List<String> groupUuids = new ArrayList<>();
-            for (VolumeSnapshotInventory snapshot : snapshots) {
-                String groupUuid = snapshot.getGroupUuid();
-                if (groupUuid != null) {
-                    logger.debug(String.format("root volume snapshot[uuid:%s, name:%s] has been deleted, " +
-                            "ungroup snapshot group[uuid:%s]", snapshot.getUuid(), snapshot.getName(), groupUuid));
-                    groupUuids.add(groupUuid);
-                }
-
-            }
-
-            groupUuids.forEach(groupUuid -> vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid));
-            cleanVmHostBackupFilesForGroup(groupUuids);
-            dbf.removeByPrimaryKeys(groupUuids, VolumeSnapshotGroupVO.class);
+        List<String> groupUuids = snapshots.stream().map(VolumeSnapshotInventory::getGroupUuid)
+                .filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (groupUuids.isEmpty()) {
+            return;
         }
+
+        if (!currentRoot.getVolumeType().equals(VolumeType.Root.toString())) {
+            List<String> groupsWithSnapshots = Q.New(VolumeSnapshotGroupRefVO.class)
+                    .select(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid)
+                    .in(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, groupUuids)
+                    .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false).listValues();
+            groupUuids.removeAll(groupsWithSnapshots);
+        }
+        if (groupUuids.isEmpty()) {
+            return;
+        }
+
+        groupUuids.forEach(groupUuid -> vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid));
+        cleanVmHostBackupFilesForGroup(groupUuids);
+        dbf.removeByPrimaryKeys(groupUuids, VolumeSnapshotGroupVO.class);
     }
 
     private void cleanVmHostBackupFilesForGroup(List<String> groupUuids) {

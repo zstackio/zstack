@@ -165,6 +165,9 @@ class BootModeCase extends SubCase {
 
         // create bootMode tag for exiting vm instance
         def vm = env.inventoryByName("vm") as VmInstanceInventory
+        stopVmInstance {
+            uuid = vm.uuid
+        }
         _tag = createSystemTag {
             resourceUuid = vm.uuid
             resourceType = VmInstanceVO.getSimpleName()
@@ -201,6 +204,9 @@ class BootModeCase extends SubCase {
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
         updateSystemTag {
             uuid = tags.get(0).getUuid()
             tag = "bootMode::UEFI"
@@ -212,10 +218,6 @@ class BootModeCase extends SubCase {
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
-
-        stopVmInstance {
-            uuid = vm.uuid
-        }
 
         // commit vm instance to image
         img = createRootVolumeTemplateFromRootVolume {
