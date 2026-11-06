@@ -11961,6 +11961,22 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_PCIDEVICE_10078 = "ORG_ZSTACK_PCIDEVICE_10078";
 
+    public static final String ORG_ZSTACK_PCIDEVICE_10079 = "ORG_ZSTACK_PCIDEVICE_10079";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10080 = "ORG_ZSTACK_PCIDEVICE_10080";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10081 = "ORG_ZSTACK_PCIDEVICE_10081";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10082 = "ORG_ZSTACK_PCIDEVICE_10082";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10083 = "ORG_ZSTACK_PCIDEVICE_10083";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10084 = "ORG_ZSTACK_PCIDEVICE_10084";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10085 = "ORG_ZSTACK_PCIDEVICE_10085";
+
+    public static final String ORG_ZSTACK_PCIDEVICE_10086 = "ORG_ZSTACK_PCIDEVICE_10086";
+
     public static final String ORG_ZSTACK_CAS_DRIVER_DONGHAI_10000 = "ORG_ZSTACK_CAS_DRIVER_DONGHAI_10000";
 
     public static final String ORG_ZSTACK_CAS_DRIVER_DONGHAI_10001 = "ORG_ZSTACK_CAS_DRIVER_DONGHAI_10001";
