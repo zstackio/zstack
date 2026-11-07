@@ -465,10 +465,10 @@ public class MemoryRepository {
                 state.setFailures(0); state.setNextAttemptAt(null);
                 finishTasks(em, host, generation, SUCCEEDED, null);
             } else if (response != null && "STALE_GENERATION".equals(response.reasonCode)
-                    && response.appliedGeneration != null && response.appliedGeneration >= generation) {
-                // The Host applied a later generation before this record existed, e.g. it was re-added;
+                    && hostGeneration(response) != null && hostGeneration(response) >= generation) {
+                // The Host took a later generation before this record existed, e.g. it was re-added;
                 // continue numbering above it so the Host accepts the current configuration.
-                state.setDesiredRevision(response.appliedGeneration + 1);
+                state.setDesiredRevision(hostGeneration(response) + 1);
                 state.setStatus(CONVERGING); state.setReason(null); state.setFailures(0);
                 state.setNextAttemptAt(now);
             } else if (CONVERGING.equals(status) && response.isSuccess()) {
@@ -505,6 +505,13 @@ public class MemoryRepository {
             }
         }
         return events;
+    }
+
+    /** The latest generation the Host took, applied or only accepted, or null when it names none. */
+    static Long hostGeneration(MemoryAgentResponse response) {
+        Long applied = response.appliedGeneration, accepted = response.acceptedGeneration;
+        if (applied == null) { return accepted; }
+        return accepted == null ? applied : Math.max(applied, accepted);
     }
 
     /** Stores a read-only Agent observation; a newer generation on the Host triggers a resend. */

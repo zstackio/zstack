@@ -14,5 +14,7 @@ public class MemoryAgentResponse extends KVMAgentCommands.AgentResponse {
     public Long retryAfterSeconds;
     public Long generation;
     public Long appliedGeneration;
+    /** The latest generation the Host took, also one it has not applied yet. */
+    public Long acceptedGeneration;
     public Map<String, Object> state;
 }
