@@ -288,7 +288,7 @@ public class KvmTpmManager extends AbstractService {
                 .build())
             .then(Flow.of("create-tpm-db-records")
                 .handle(trigger -> {
-                    TpmVO tpm = vmTpmManager.persistTpmVO(context.tpmUuid, context.vmInstanceUuid);
+                    TpmVO tpm = vmTpmManager.persistTpmForStoppedVm(context.tpmUuid, context.vmInstanceUuid);
                     context.createdTpmUuid = tpm.getUuid();
                     context.tpmCreated = true;
                     trigger.next();
