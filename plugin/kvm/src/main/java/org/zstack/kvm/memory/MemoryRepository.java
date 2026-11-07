@@ -349,13 +349,14 @@ public class MemoryRepository {
         return transaction(em -> newTask(em, host, action, actor, generation, RUNNING));
     }
 
-    /** The Hosts' tasks of the action still running end Failed with the reason; nothing else finishes them. */
-    public void failRunningTasks(Collection<String> hosts, String action, String reason) {
+    /** The Hosts' tasks of the action still running, except the kept ones, end Failed with the reason. */
+    public void failRunningTasks(Collection<String> hosts, String action, Collection<String> kept, String reason) {
         if (hosts.isEmpty()) { return; }
         transaction(em -> {
-            SQL.New(MemoryTaskVO.class).in(MemoryTaskVO_.hostUuid, hosts).eq(MemoryTaskVO_.action, action)
-                    .eq(MemoryTaskVO_.status, RUNNING).set(MemoryTaskVO_.status, FAILED)
-                    .set(MemoryTaskVO_.reason, trim(reason)).update();
+            UpdateQuery update = SQL.New(MemoryTaskVO.class).in(MemoryTaskVO_.hostUuid, hosts)
+                    .eq(MemoryTaskVO_.action, action).eq(MemoryTaskVO_.status, RUNNING);
+            if (!kept.isEmpty()) { update.notIn(MemoryTaskVO_.uuid, kept); }
+            update.set(MemoryTaskVO_.status, FAILED).set(MemoryTaskVO_.reason, trim(reason)).update();
             return null;
         });
     }
