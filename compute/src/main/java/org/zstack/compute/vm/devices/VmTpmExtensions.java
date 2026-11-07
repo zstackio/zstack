@@ -51,16 +51,11 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
             return;
         }
 
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                final TpmVO tpm = vmTpmManager.persistTpmVO(null, vo.getUuid());
-                final String keyProviderUuid = spec.getTpm().getKeyProviderUuid();
-                if (keyProviderUuid != null) {
-                    resourceKeyBackend.attachKeyProviderToTpm(tpm.getUuid(), keyProviderUuid);
-                }
-            }
-        }.execute();
+        final TpmVO tpm = vmTpmManager.persistTpmVO(null, vo.getUuid());
+        final String keyProviderUuid = spec.getTpm().getKeyProviderUuid();
+        if (keyProviderUuid != null) {
+            resourceKeyBackend.attachKeyProviderToTpm(tpm.getUuid(), keyProviderUuid);
+        }
     }
 
     @Override

@@ -3,6 +3,10 @@ package org.zstack.core.config;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
@@ -27,6 +31,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+
+import javax.persistence.LockModeType;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -55,6 +62,7 @@ public class GlobalConfig {
     private transient List<GlobalConfigQueryExtensionPoint> queryExtensions = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> localBeforeUpdateExtensions = new ArrayList<>();
+    private transient BiConsumer<Object, Boolean> localUpdateExecutor;
     private GlobalConfigDef configDef;
 
     private static Map<String, String> propertiesMap = new HashMap<>();
@@ -145,6 +153,7 @@ public class GlobalConfig {
         validators.addAll(g.getValidators());
         queryExtensions.addAll(g.getQueryExtensions());
         configDef = g.getConfigDef();
+        localUpdateExecutor = g.localUpdateExecutor;
         return this;
     }
 
@@ -165,6 +174,10 @@ public class GlobalConfig {
 
     public void installLocalUpdateExtension(GlobalConfigUpdateExtensionPoint ext) {
         localUpdateExtensions.add(ext);
+    }
+
+    public void installLocalUpdateExecutor(BiConsumer<Object, Boolean> executor) {
+        localUpdateExecutor = executor;
     }
 
     public void installUpdateExtension(GlobalConfigUpdateExtensionPoint ext) {
@@ -356,6 +369,19 @@ public class GlobalConfig {
         GlobalConfigVO vo = q.find();
         final GlobalConfig origin = valueOf(vo);
 
+        notifyBeforeUpdate(origin, newValue, localUpdate);
+
+        value = newValue;
+
+        if (localUpdate) {
+            vo.setValue(newValue);
+            dbf.update(vo);
+        }
+
+        notifyUpdate(origin, newValue, localUpdate);
+    }
+
+    private void notifyBeforeUpdate(GlobalConfig origin, String newValue, boolean localUpdate) {
         for (GlobalConfigBeforeUpdateExtensionPoint ext : beforeUpdateExtensions) {
             try {
                 ext.beforeUpdateExtensionPoint(origin, newValue);
@@ -376,12 +402,10 @@ public class GlobalConfig {
             }
         }
 
-        value = newValue;
+    }
 
+    private void notifyUpdate(final GlobalConfig origin, String newValue, boolean localUpdate) {
         if (localUpdate) {
-            vo.setValue(newValue);
-            dbf.update(vo);
-
             final GlobalConfig self = this;
             CollectionUtils.safeForEach(localUpdateExtensions, new ForEachFunction<GlobalConfigUpdateExtensionPoint>() {
                 @Override
@@ -414,12 +438,49 @@ public class GlobalConfig {
     }
 
     public void updateValue(Object val) {
+        if (localUpdateExecutor != null) {
+            localUpdateExecutor.accept(val, false);
+            return;
+        }
+
         if (TypeUtils.nullSafeEquals(value, val)) {
             return;
         }
 
         String newValue = val == null ? null : val.toString();
         update(newValue, true);
+    }
+
+    public void updateValueFromApi(Object val) {
+        if (localUpdateExecutor == null) {
+            updateValue(val);
+        } else {
+            localUpdateExecutor.accept(val, true);
+        }
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void updateValueInCurrentTransaction(Object val) {
+        final String newValue = StringTemplate.substitute(val == null ? null : val.toString(), propertiesMap);
+        GlobalConfigVO vo = Q.New(GlobalConfigVO.class)
+                .eq(GlobalConfigVO_.category, category)
+                .eq(GlobalConfigVO_.name, name).find();
+        if (vo == null || dbf.getEntityManager().getLockMode(vo) != LockModeType.PESSIMISTIC_WRITE) {
+            throw new CloudRuntimeException("global config row must be locked before a transactional update");
+        }
+        final GlobalConfig origin = valueOf(vo);
+        validate(newValue);
+        notifyBeforeUpdate(origin, newValue, true);
+        vo.setValue(newValue);
+        dbf.getEntityManager().merge(vo);
+        dbf.getEntityManager().flush();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+                value = newValue;
+                notifyUpdate(origin, newValue, true);
+            }
+        });
     }
 
     public GlobalConfigOptions getOptions() {

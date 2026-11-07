@@ -7,6 +7,8 @@ import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -23,6 +25,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.sql.Timestamp;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -35,6 +38,8 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
 
     @Autowired
     private PluginRegistry pluginRegistry;
+    @Autowired
+    private DatabaseFacade dbf;
     @Autowired
     private DefaultAuthorizationBackend defaultAuthorizationBackend;
 
@@ -61,7 +66,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         apiByPassAuthorizationCheck = BeanUtils.reflections.getTypesAnnotatedWith(SuppressCredentialCheck.class);
     }
 
-    private SessionInventory evaluateSession(APIMessage msg) {
+    private String requireSessionUuid(APIMessage msg) {
         if (msg.getSession() == null) {
             throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10012, IdentityErrors.INVALID_SESSION,
                     "session of message[%s] is null", msg.getMessageName()));
@@ -71,6 +76,11 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10013, IdentityErrors.INVALID_SESSION,
                     "session uuid is null"));
         }
+        return msg.getSession().getUuid();
+    }
+
+    private SessionInventory evaluateSession(APIMessage msg) {
+        requireSessionUuid(msg);
 
         for (RenewSessionPreAuthExtensionPoint ext : renewSessionPreAuthExtensionPoints) {
             ErrorCode errorCode= ext.checkAuth(msg.getSession());
@@ -81,6 +91,28 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
 
         msg.setSession(Session.renewSession(msg.getSession().getUuid(), null));
         return msg.getSession();
+    }
+
+    public void reauthorize(APIMessage msg) {
+        try {
+            String sessionUuid = requireSessionUuid(msg);
+            SessionVO persisted = Q.New(SessionVO.class).eq(SessionVO_.uuid, sessionUuid).find();
+            Timestamp now = (Timestamp) dbf.getEntityManager().createNativeQuery("select current_timestamp()")
+                    .getSingleResult();
+            // A cached credential must not renew a session deleted or expired on another MN.
+            if (persisted == null || persisted.getExpiredDate() == null || now.after(persisted.getExpiredDate())) {
+                throw new OperationFailureException(err(ORG_ZSTACK_IDENTITY_10020,
+                        IdentityErrors.INVALID_SESSION, "Session expired"));
+            }
+            SessionInventory session = evaluateSession(msg);
+            if (session == null) {
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_IDENTITY_10012,
+                        IdentityErrors.INVALID_SESSION, "evaluated session is null for message[%s]", msg.getMessageName()));
+            }
+            findAuthorizationBackend(session).authorize(msg);
+        } catch (ApiMessageInterceptionException e) {
+            throw new OperationFailureException(e.getError());
+        }
     }
 
     private AuthorizationBackend findAuthorizationBackend(SessionInventory session) {
