@@ -315,6 +315,8 @@ public class SourceClassMap {
 			put("org.zstack.header.configuration.InstanceOfferingInventory", "org.zstack.sdk.InstanceOfferingInventory");
 			put("org.zstack.header.console.ConsoleInventory", "org.zstack.sdk.ConsoleInventory");
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
+			put("org.zstack.header.core.external.plugin.FeaturePluginInventory", "org.zstack.sdk.FeaturePluginInventory");
+			put("org.zstack.header.core.external.plugin.FeaturePluginPackageInventory", "org.zstack.sdk.FeaturePluginPackageInventory");
 			put("org.zstack.header.core.external.plugin.PluginDriverInventory", "org.zstack.sdk.PluginDriverInventory");
 			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.ExternalServiceCapabilities");
 			put("org.zstack.header.core.external.service.ExternalServiceConfigurationInventory", "org.zstack.sdk.ExternalServiceConfigurationInventory");
@@ -1212,6 +1214,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FcHbaDeviceInventory", "org.zstack.storage.device.hba.FcHbaDeviceInventory");
+			put("org.zstack.sdk.FeaturePluginInventory", "org.zstack.header.core.external.plugin.FeaturePluginInventory");
+			put("org.zstack.sdk.FeaturePluginPackageInventory", "org.zstack.header.core.external.plugin.FeaturePluginPackageInventory");
 			put("org.zstack.sdk.FiSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.FiSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
