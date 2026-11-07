@@ -349,14 +349,20 @@ public class MemoryRepository {
         return transaction(em -> newTask(em, host, action, actor, generation, RUNNING));
     }
 
-    /** The Hosts' tasks of the action still running, except the kept ones, end Failed with the reason. */
-    public void failRunningTasks(Collection<String> hosts, String action, Collection<String> kept, String reason) {
-        if (hosts.isEmpty()) { return; }
+    /** The Hosts' running tasks of the action: task UUID to Host UUID. */
+    public Map<String, String> runningTasks(Collection<String> hosts, String action) {
+        if (hosts.isEmpty()) { return Collections.emptyMap(); }
+        return transaction(em -> Q.New(MemoryTaskVO.class).in(MemoryTaskVO_.hostUuid, hosts).eq(MemoryTaskVO_.action, action)
+                .eq(MemoryTaskVO_.status, RUNNING).<MemoryTaskVO>list().stream()
+                .collect(Collectors.toMap(MemoryTaskVO::getUuid, MemoryTaskVO::getHostUuid)));
+    }
+
+    /** These tasks end Failed with the reason if they are still running; a task finished meanwhile keeps its result. */
+    public void failRunningTasks(Collection<String> tasks, String reason) {
+        if (tasks.isEmpty()) { return; }
         transaction(em -> {
-            UpdateQuery update = SQL.New(MemoryTaskVO.class).in(MemoryTaskVO_.hostUuid, hosts)
-                    .eq(MemoryTaskVO_.action, action).eq(MemoryTaskVO_.status, RUNNING);
-            if (!kept.isEmpty()) { update.notIn(MemoryTaskVO_.uuid, kept); }
-            update.set(MemoryTaskVO_.status, FAILED).set(MemoryTaskVO_.reason, trim(reason)).update();
+            SQL.New(MemoryTaskVO.class).in(MemoryTaskVO_.uuid, tasks).eq(MemoryTaskVO_.status, RUNNING)
+                    .set(MemoryTaskVO_.status, FAILED).set(MemoryTaskVO_.reason, trim(reason)).update();
             return null;
         });
     }

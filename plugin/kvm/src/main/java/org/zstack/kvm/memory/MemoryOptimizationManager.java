@@ -652,10 +652,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     @ExceptionSafe @Deferred
     void finishInterruptedPreparations() {
         Defer.guard(() -> logger.error("Unable to finish the interrupted backend preparations; the next observation tries again"));
-        List<String> hosts = repository.hostsWithState().stream().filter(destMaker::isManagedByUs)
-                .filter(host -> !preparing.contains(host)).collect(Collectors.toList());
-        repository.failRunningTasks(hosts, MemoryBackendPreparationRules.ACTION, new ArrayList<>(unrecordedPreparations.keySet()),
-                "MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED");
+        Map<String, String> running = repository.runningTasks(repository.hostsWithState().stream()
+                .filter(destMaker::isManagedByUs).collect(Collectors.toList()), MemoryBackendPreparationRules.ACTION);
+        // Checked after the tasks are read: a preparation that started before holds its Host by now, since it holds the
+        // Host before it creates its task, and one that starts later is not among the tasks read.
+        List<String> interrupted = running.entrySet().stream()
+                .filter(task -> !preparing.contains(task.getValue()) && !unrecordedPreparations.containsKey(task.getKey()))
+                .map(Map.Entry::getKey).collect(Collectors.toList());
+        repository.failRunningTasks(interrupted, "MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED");
     }
 
     /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
