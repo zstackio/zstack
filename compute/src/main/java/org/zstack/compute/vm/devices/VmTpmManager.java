@@ -7,24 +7,33 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.tpm.TpmConstants;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.ResetVmTpmMsg;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -33,9 +42,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
+import static org.zstack.core.Platform.err;
+import static org.zstack.header.tpm.TpmConstants.SUPPORT_VM_STATES_FOR_TPM_OPERATION;
+import static org.zstack.header.tpm.TpmErrors.TPM_ALREADY_EXISTS;
+import static org.zstack.header.tpm.TpmErrors.VM_STATE_ERROR;
 import static org.zstack.header.vm.additions.VmHostFileType.NvRam;
 import static org.zstack.header.vm.additions.VmHostFileType.TpmState;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10163;
 
 public class VmTpmManager {
     private static final CLogger logger = Utils.getLogger(VmTpmManager.class);
@@ -50,6 +64,56 @@ public class VmTpmManager {
     private CloudBus bus;
 
     public TpmVO persistTpmVO(String tpmUuid, String vmUuid) {
+        TpmVO tpm = newTpmVO(tpmUuid, vmUuid);
+        databaseFacade.persistAndRefresh(tpm);
+
+        logger.debug("Persisted TpmVO for VM " + vmUuid + " with uuid=" + tpm.getUuid());
+        return tpm;
+    }
+
+    public TpmVO persistTpmForStoppedVm(String tpmUuid, String vmUuid) {
+        String rootUuid = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid)
+                .select(VmInstanceVO_.rootVolumeUuid).findValue();
+        if (rootUuid == null) {
+            throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                    "VM[uuid:%s] has no root volume for adding TPM", vmUuid));
+        }
+
+        return new SQLBatchWithReturn<TpmVO>() {
+            @Override
+            protected TpmVO scripts() {
+                EntityManager em = databaseFacade.getEntityManager();
+                // Cold migration's status UPDATE competes for this same row. Keep the
+                // lock only until the TPM insert commits, before any asynchronous RPC.
+                VolumeVO root = em.find(VolumeVO.class, rootUuid, LockModeType.PESSIMISTIC_WRITE);
+                if (root != null) {
+                    em.refresh(root, LockModeType.PESSIMISTIC_WRITE);
+                }
+                VmInstanceVO vm = em.find(VmInstanceVO.class, vmUuid);
+                if (vm != null) {
+                    em.refresh(vm);
+                }
+                if (root == null || vm == null || !Objects.equals(rootUuid, vm.getRootVolumeUuid())
+                        || root.getStatus() != VolumeStatus.Ready
+                        || !SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
+                    throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                            "VM[uuid:%s] must be stopped with its root volume ready for adding TPM", vmUuid));
+                }
+                if (!em.createQuery("select t.uuid from TpmVO t where t.vmInstanceUuid = :vmUuid", String.class)
+                        .setParameter("vmUuid", vmUuid).getResultList().isEmpty()) {
+                    throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, TPM_ALREADY_EXISTS,
+                            "tpm device already exists"));
+                }
+
+                // persistAndRefresh starts REQUIRES_NEW; use this transaction's
+                // EntityManager so insertion and the root-volume lock commit together.
+                databaseFacade.entityForTranscationCallback(Operation.PERSIST, TpmVO.class);
+                return reload(persist(newTpmVO(tpmUuid, vmUuid)));
+            }
+        }.execute();
+    }
+
+    private TpmVO newTpmVO(String tpmUuid, String vmUuid) {
         if (tpmUuid == null) {
             tpmUuid = Platform.getUuid();
         }
@@ -58,9 +122,6 @@ public class VmTpmManager {
         tpm.setResourceName("TPM-for-VM-" + vmUuid);
         tpm.setVmInstanceUuid(vmUuid);
         tpm.setAccountUuid(accountManager.getOwnerAccountUuidOfResource(vmUuid));
-        databaseFacade.persistAndRefresh(tpm);
-
-        logger.debug("Persisted TpmVO for VM " + vmUuid + " with uuid=" + tpm.getUuid());
         return tpm;
     }
 
