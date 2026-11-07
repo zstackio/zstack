@@ -129,9 +129,17 @@ public class MemoryClusterOperationTest {
             finished.add(uuid + ":" + status);
         }
         boolean failingTaskEnds;
-        @Override public void failRunningTasks(Collection<String> hosts, String action, Collection<String> kept, String reason) {
+        /** Running preparation tasks by UUID, with their Host; the preparation the tests run is task "prepare" of host1. */
+        final Map<String, String> runningPreparations = new HashMap<>(Collections.singletonMap("earlier", "host2"));
+        @Override public Map<String, String> runningTasks(Collection<String> hosts, String action) {
+            Map<String, String> result = new HashMap<>(runningPreparations);
+            result.values().retainAll(hosts);
+            return result;
+        }
+        @Override public void failRunningTasks(Collection<String> tasks, String reason) {
             if (failingTaskEnds) { throw new RuntimeException("database unavailable"); }
-            failedRunning.add(new TreeSet<>(hosts) + ":" + action + ":" + new TreeSet<>(kept) + ":" + reason);
+            if (tasks.isEmpty()) { return; }
+            failedRunning.add(new TreeSet<>(tasks) + ":" + reason);
         }
         @Override public void recordPreparedBackend(String host, String resource, long capacity) {
             preparedBackend = resource; preparedCapacity = capacity;
@@ -448,10 +456,10 @@ public class MemoryClusterOperationTest {
         assertEquals("the prepared backend still reaches the Host", "apply",
                 manager.commands.get(manager.commands.size() - 1).get("path"));
 
+        repository.runningPreparations.put("prepare", "host1");
         manager.finishInterruptedPreparations();
         assertEquals("a result waiting to be written again is not taken for an interrupted preparation",
-                Collections.singletonList("[host1, host2]:prepareWritebackBackend:[prepare]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"),
-                repository.failedRunning);
+                Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
         manager.recordUnrecordedPreparations();
         assertTrue("a scan while the database still refuses keeps the result", repository.finished.isEmpty());
         repository.failingTaskWrites = false;
@@ -470,8 +478,7 @@ public class MemoryClusterOperationTest {
         repository.failingTaskEnds = false;
         manager.finishInterruptedPreparations();
         assertEquals("the next observation ends the interrupted preparations of the node's Hosts as unknown",
-                Collections.singletonList("[host1, host2]:prepareWritebackBackend:[]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"),
-                repository.failedRunning);
+                Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
     }
 
     @Test public void aPreparationInProgressIsNotTakenForAnInterruptedOne() throws Exception {
@@ -480,10 +487,23 @@ public class MemoryClusterOperationTest {
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
         assertEquals("the preparation waits for the Agent", 1, manager.held.size());
+        repository.runningPreparations.put("prepare", "host1");
         manager.finishInterruptedPreparations();
-        assertEquals("only Hosts without a preparation on this node are ended",
-                Collections.singletonList("[host2]:prepareWritebackBackend:[]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"),
-                repository.failedRunning);
+        assertEquals("a running preparation of this node is not ended, an earlier one of another Host is",
+                Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
+    }
+
+    @Test public void onlyTheTasksReadAsInterruptedAreEnded() throws Exception {
+        setup();
+        repository.runningPreparations.clear();
+        manager.finishInterruptedPreparations();
+        assertTrue("no running preparation, nothing to end", repository.failedRunning.isEmpty());
+        // A preparation that starts after the tasks were read is not among them, so it cannot be ended by this scan.
+        repository.runningPreparations.put("earlier", "host2");
+        repository.runningPreparations.put("elsewhere", "host9");
+        manager.finishInterruptedPreparations();
+        assertEquals("the scan ends the tasks it read, by UUID, of the Hosts this node manages",
+                Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
     }
 
     @Test public void aPreparationResumesADrainedHostThatWantsZram() throws Exception {
