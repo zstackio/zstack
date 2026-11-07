@@ -480,22 +480,35 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         final String host;
         final long deadline;
         final Consumer<String> done;
-        Waiter(String host, long deadline, Consumer<String> done) { this.host = host; this.deadline = deadline; this.done = done; }
+        /** The answer of a reply that failed, sent again by the next scan; null until a reply fails. */
+        final String unsent;
+        Waiter(String host, long deadline, Consumer<String> done) { this(host, deadline, done, null); }
+        private Waiter(String host, long deadline, Consumer<String> done, String unsent) {
+            this.host = host; this.deadline = deadline; this.done = done; this.unsent = unsent;
+        }
+        Waiter unsent(String answer) { return new Waiter(host, deadline, done, answer); }
     }
 
-    /** Finishes the operations whose task reached a final status. */
+    /** Operations whose reply failed in this scan, with the answer that failed. */
+    private final Map<String, String> failedReplies = new ConcurrentHashMap<>();
+
+    /** Finishes the operations whose task reached a final status, and sends again the replies that failed. */
     @ExceptionSafe @Deferred
     void completeWaiters() {
         if (waiters.isEmpty()) { return; }
         long now = System.currentTimeMillis();
+        Defer.defer(this::reportFailedReplies);
         // An operation past its deadline is still answered: its caller must not wait for the database.
         Defer.guard(() -> {
             logger.error("Unable to read memory operation status; operations past their deadline are answered as unknown");
             for (String uuid : new ArrayList<>(waiters.keySet())) {
                 Waiter waiting = waiters.get(uuid);
-                if (waiting != null && waiting.deadline <= now) { answer(uuid, "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNREADABLE"); }
+                if (waiting != null && waiting.unsent == null && waiting.deadline <= now) {
+                    answer(uuid, "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNREADABLE");
+                }
             }
         });
+        sendUnsentReplies(now);
         Map<String, MemoryTaskVO> tasks = repository.tasks(new ArrayList<>(waiters.keySet()));
         Set<String> connected = new HashSet<>(repository.connectedHosts());
         // A converging task has no reason until it finishes; the Host state records why it is still converging.
@@ -508,7 +521,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         for (String uuid : new ArrayList<>(waiters.keySet())) {
             MemoryTaskVO task = tasks.get(uuid);
             Waiter waiting = waiters.get(uuid);
-            if (waiting == null) { continue; }
+            if (waiting == null || waiting.unsent != null) { continue; }
             // A disconnected Host is sent its generation when it reconnects; do not hold the operation for it.
             String outcome = task == null ? "Failed: operation record not found"
                     : MemoryRepository.SUCCEEDED.equals(task.getStatus()) ? "success"
@@ -520,17 +533,39 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
+    /** A reply that failed is sent again as unknown by each scan until it goes out or its caller has timed out. */
+    private void sendUnsentReplies(long now) {
+        for (String uuid : new ArrayList<>(waiters.keySet())) {
+            Waiter waiting = waiters.get(uuid);
+            if (waiting == null || waiting.unsent == null) { continue; }
+            if (now > waiting.deadline + HOST_STEP_REPLY_MARGIN && waiters.remove(uuid, waiting)) {
+                logger.error(String.format("Memory operation[%s] of Host[%s] could not be replied before its caller timed out",
+                        uuid, waiting.host));
+                continue;
+            }
+            answer(uuid, waiting.unsent);
+        }
+    }
+
+    private void reportFailedReplies() {
+        if (failedReplies.isEmpty()) { return; }
+        Map<String, String> failed = new TreeMap<>(failedReplies);
+        failedReplies.keySet().removeAll(failed.keySet());
+        logger.error(String.format("Memory operation replies: %d failed and are sent again as unknown at the next scan: %s",
+                failed.size(), failed));
+    }
+
     /**
-     * Each operation is answered once; one that cannot be replied does not hold the others. A reply that fails is
-     * sent again as unknown, so the caller gets an answer instead of waiting out its timeout.
+     * Each operation is answered once; one that cannot be replied does not hold the others. A reply that fails keeps
+     * the operation, and the next scan answers it as unknown, so the caller gets an answer instead of its timeout.
      */
     @ExceptionSafe @Deferred
     void answer(String uuid, String outcome) {
         Waiter waiter = waiters.remove(uuid);
         if (waiter == null) { return; }
         Defer.guard(() -> {
-            logger.error(String.format("Unable to reply memory operation[%s] with %s; it is answered as unknown", uuid, outcome));
-            waiter.done.accept("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED");
+            failedReplies.put(uuid, outcome);
+            waiters.put(uuid, waiter.unsent("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED"));
         });
         waiter.done.accept(outcome);
     }
