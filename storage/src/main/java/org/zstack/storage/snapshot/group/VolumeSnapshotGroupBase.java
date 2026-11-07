@@ -15,6 +15,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.validation.VmTpmCreationValidator;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -22,6 +23,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -293,6 +295,14 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
 
     private void handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
         APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(msg.getId());
+        try {
+            validateTpmRestoration();
+        } catch (OperationFailureException e) {
+            event.setError(e.getErrorCode());
+            bus.publish(event);
+            completion.done();
+            return;
+        }
         VolumeSnapshotGroupOperationValidator.validate(self.getVmInstanceUuid(),
                 VolumeSnapshotGroupOperationValidator.Operation.REVERT);
 
@@ -380,6 +390,12 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         }).start();
     }
 
+    private void validateTpmRestoration() {
+        if (VolumeSnapshotGroupSystemTags.WITH_TPM.hasTag(self.getUuid())) {
+            VmTpmCreationValidator.validate(self.getVmInstanceUuid());
+        }
+    }
+
     private void handle(RevertVmFromSnapshotGroupInnerMsg msg) {
         RevertVmFromSnapshotGroupInnerReply reply = new RevertVmFromSnapshotGroupInnerReply();
         List<VolumeSnapshotVO> snapshots = getEffectiveSnapshots();
@@ -388,6 +404,14 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         VolumeSnapshotGroupAvailability availability = VolumeSnapshotGroupChecker.getAvailability(self);
         if (!availability.isAvailable()) {
             reply.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000, availability.getReason()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        try {
+            validateTpmRestoration();
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
             bus.reply(msg, reply);
             return;
         }
