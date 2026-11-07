@@ -165,7 +165,9 @@ public class MemoryClusterOperationTest {
         CloudBus hostBus;
         final List<Long> hostTimeouts = new ArrayList<>();
 
+        int failingReplies;
         @Override void replyHostOperation(MemoryHostOperationMsg msg, String outcome) {
+            if (failingReplies > 0) { failingReplies--; throw new IllegalStateException("reply not sent"); }
             outcomes.add(outcome);
             MemoryClusterOperationReply reply = new MemoryClusterOperationReply();
             reply.setResults(Collections.singletonMap(msg.getHostUuid(), outcome));
@@ -267,6 +269,22 @@ public class MemoryClusterOperationTest {
         Map<String, String> expected = new LinkedHashMap<>();
         expected.put("host1", "Skipped: the job timed out"); expected.put("host2", "Skipped: the job timed out");
         assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
+    }
+
+    @Test public void anOperationWhoseReplyFailsIsAnsweredAsUnknown() throws Exception {
+        setup();
+        manager.script("host1", "apply", reply("Succeeded", null, null));
+        manager.failingReplies = 1;
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("pause"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        msg.setTimeout(7200000L);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, msg);
+        assertEquals("the caller still gets an answer, not its timeout",
+                Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED"), manager.outcomes);
+        Method complete = MemoryOptimizationManager.class.getDeclaredMethod("completeWaiters");
+        complete.setAccessible(true); complete.invoke(manager);
+        assertEquals("the operation is answered once", 1, manager.outcomes.size());
     }
 
     @Test public void convergingHostIsSentTheSameGenerationAgainUntilApplied() throws Exception {
