@@ -6,7 +6,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
 /**
- * the management node restarts after the plugin is installed
+ * every management node loads the plugin without restarting; the install is undone if any of them cannot
  */
 @RestRequest(
         path = "/feature-plugins",

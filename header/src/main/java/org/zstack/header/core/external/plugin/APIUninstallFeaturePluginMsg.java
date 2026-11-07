@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 
 /**
  * a plugin in use, or a plugin declaring that it cannot be uninstalled once loaded, is refused;
- * the management nodes restart after the plugin is uninstalled if the plugin needs it
+ * every management node unloads the plugin without restarting
  */
 @RestRequest(
         path = "/feature-plugins/{pluginId}/actions",

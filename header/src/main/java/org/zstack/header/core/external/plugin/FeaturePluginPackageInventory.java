@@ -14,7 +14,6 @@ public class FeaturePluginPackageInventory {
     private String sha256;
     private Boolean desired;
     private String licenseAddon;
-    // false for a package that only carries drivers, which are loaded without restarting management nodes
     private String error;
 
     public String getPath() {
