@@ -120,15 +120,21 @@ public class MemoryClusterOperationTest {
             for (String uuid : uuids) { if (tasks.containsKey(uuid)) { result.put(uuid, tasks.get(uuid)); } }
             return result;
         }
-        @Override public String startTask(String host, String action, String actor, long generation) { return "prepare"; }
+        @Override public String startTask(String host, String action, String actor, long generation) {
+            runningPreparations.put("prepare", host);
+            return "prepare";
+        }
         boolean failingTaskWrites;
         final List<String> finished = new ArrayList<>();
         final List<String> failedRunning = new ArrayList<>();
         @Override public void finishTask(String uuid, String status, String reason) {
             if (failingTaskWrites) { throw new RuntimeException("database unavailable"); }
             finished.add(uuid + ":" + status);
+            runningPreparations.remove(uuid);
         }
         boolean failingTaskEnds;
+        /** What happens after the scan read the running tasks and before it ends the interrupted ones. */
+        Runnable beforeTaskEnds = () -> { };
         /** Running preparation tasks by UUID, with their Host; the preparation the tests run is task "prepare" of host1. */
         final Map<String, String> runningPreparations = new HashMap<>(Collections.singletonMap("earlier", "host2"));
         @Override public Map<String, String> runningTasks(Collection<String> hosts, String action) {
@@ -139,7 +145,9 @@ public class MemoryClusterOperationTest {
         @Override public void failRunningTasks(Collection<String> tasks, String reason) {
             if (failingTaskEnds) { throw new RuntimeException("database unavailable"); }
             if (tasks.isEmpty()) { return; }
+            beforeTaskEnds.run();
             failedRunning.add(new TreeSet<>(tasks) + ":" + reason);
+            runningPreparations.keySet().removeAll(tasks);
         }
         @Override public void recordPreparedBackend(String host, String resource, long capacity) {
             preparedBackend = resource; preparedCapacity = capacity;
@@ -456,7 +464,6 @@ public class MemoryClusterOperationTest {
         assertEquals("the prepared backend still reaches the Host", "apply",
                 manager.commands.get(manager.commands.size() - 1).get("path"));
 
-        repository.runningPreparations.put("prepare", "host1");
         manager.finishInterruptedPreparations();
         assertEquals("a result waiting to be written again is not taken for an interrupted preparation",
                 Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
@@ -466,6 +473,7 @@ public class MemoryClusterOperationTest {
         manager.recordUnrecordedPreparations();
         assertEquals("once the database takes it, the scan records the preparation's own result",
                 Collections.singletonList("prepare:Succeeded"), repository.finished);
+        assertFalse("the recorded preparation no longer runs", repository.runningPreparations.containsKey("prepare"));
         manager.recordUnrecordedPreparations();
         assertEquals("a recorded result is written once", 1, repository.finished.size());
     }
@@ -487,23 +495,45 @@ public class MemoryClusterOperationTest {
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
         assertEquals("the preparation waits for the Agent", 1, manager.held.size());
-        repository.runningPreparations.put("prepare", "host1");
         manager.finishInterruptedPreparations();
         assertEquals("a running preparation of this node is not ended, an earlier one of another Host is",
                 Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
     }
 
-    @Test public void onlyTheTasksReadAsInterruptedAreEnded() throws Exception {
+    @Test public void onlyTheRunningTasksOfTheNodesHostsAreEnded() throws Exception {
         setup();
         repository.runningPreparations.clear();
         manager.finishInterruptedPreparations();
         assertTrue("no running preparation, nothing to end", repository.failedRunning.isEmpty());
-        // A preparation that starts after the tasks were read is not among them, so it cannot be ended by this scan.
         repository.runningPreparations.put("earlier", "host2");
         repository.runningPreparations.put("elsewhere", "host9");
         manager.finishInterruptedPreparations();
         assertEquals("the scan ends the tasks it read, by UUID, of the Hosts this node manages",
                 Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
+        assertEquals("a task of a Host another node manages keeps running",
+                Collections.singletonMap("elsewhere", "host9"), repository.runningPreparations);
+    }
+
+    @Test public void aPreparationStartedBetweenTheReadAndTheEndKeepsRunning() throws Exception {
+        setup();
+        scriptPreparation();
+        manager.hostBus = bus(replies, manager);
+        repository.runningPreparations.clear();
+        repository.runningPreparations.put("earlier", "host1");
+        // The scan has read the interrupted task of host1 and found host1 free; a preparation of host1 starts now.
+        repository.beforeTaskEnds = () -> {
+            try {
+                invokeHostOperation(manager, preparation());
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        };
+        manager.finishInterruptedPreparations();
+        assertEquals("the preparation started during the scan waits for the Agent", 1, manager.held.size());
+        assertEquals("the scan ends the interrupted task it read",
+                Collections.singletonList("[earlier]:MEMORY_RESULT_UNKNOWN: PREPARATION_INTERRUPTED"), repository.failedRunning);
+        assertEquals("the task of the preparation started during the scan keeps running",
+                Collections.singletonMap("prepare", "host1"), repository.runningPreparations);
     }
 
     @Test public void aPreparationResumesADrainedHostThatWantsZram() throws Exception {
