@@ -107,6 +107,20 @@ public class MemoryRepositoryRulesTest {
         assertEquals(MemoryRepository.OBSERVATION_UNREADABLE, publicState.getReason());
     }
 
+    @Test public void anApplyReplyWithoutASampleKeepsTheLastSampleAndItsTime() {
+        repository.observe("host1", ksmSample(3, "active"));
+        String sample = stored.getState();
+        Long sampledAt = stored.getLastSampleTime();
+        MemoryAgentResponse reply = new MemoryAgentResponse();
+        reply.setSuccess(true); reply.status = MemoryRepository.CONVERGING; reply.reasonCode = "APPLYING";
+        // The Agent could not observe the Host after applying; its reply names only why.
+        reply.state = new LinkedHashMap<>(Collections.singletonMap("reason", "service status unavailable"));
+        repository.record("host1", 3, reply);
+        assertEquals("a reply without a sample keeps the last one", sample, stored.getState());
+        assertEquals("and the time it was taken", sampledAt, stored.getLastSampleTime());
+        assertEquals("the reply still counts for the configuration", MemoryRepository.CONVERGING, stored.getStatus());
+    }
+
     @Test public void anEventThatCannotBeFiredReachesTheCallerAndKeepsTheSample() {
         repository.observe("host1", ksmSample(3, "active"));
         failingFire = true;

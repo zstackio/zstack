@@ -536,11 +536,12 @@ public class MemoryRepository {
      */
     private static Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>> observe(
             MemoryStateVO state, MemoryAgentResponse response, long now) {
-        if (response == null || response.state == null || response.state.isEmpty()) { return Collections::emptyList; }
+        // Only a sample carries its time; a reply whose observation failed (only a reason) keeps the last sample.
+        Object sampled = response == null || response.state == null ? null : response.state.get("sampleTime");
+        if (!(sampled instanceof Number)) { return Collections::emptyList; }
         String previous = state.getState();
         state.setState(GSON.toJson(response.state));
-        Object sampled = response.state.get("sampleTime");
-        state.setLastSampleTime(sampled instanceof Number ? ((Number) sampled).longValue() : now);
+        state.setLastSampleTime(((Number) sampled).longValue());
         Object capabilities = response.state.get("capabilities");
         if (capabilities instanceof Map) { state.setCapabilities(GSON.toJson(capabilities)); }
         return () -> MemoryObservationRules.serviceEvents(state.getHostUuid(), response, state, previous, now);
