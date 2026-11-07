@@ -1,6 +1,8 @@
 package org.zstack.compute.vm.devices;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -9,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.TransactionalCallback.Operation;
+import org.zstack.core.validation.VmTpmCreationValidator;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBootMode;
@@ -17,7 +20,6 @@ import org.zstack.header.tpm.TpmConstants;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.ResetVmTpmMsg;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
@@ -64,40 +66,47 @@ public class VmTpmManager {
     private CloudBus bus;
 
     public TpmVO persistTpmVO(String tpmUuid, String vmUuid) {
-        TpmVO tpm = newTpmVO(tpmUuid, vmUuid);
-        databaseFacade.persistAndRefresh(tpm);
-
+        TpmVO tpm = persistTpm(tpmUuid, vmUuid, false);
         logger.debug("Persisted TpmVO for VM " + vmUuid + " with uuid=" + tpm.getUuid());
         return tpm;
     }
 
     public TpmVO persistTpmForStoppedVm(String tpmUuid, String vmUuid) {
-        String rootUuid = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid)
-                .select(VmInstanceVO_.rootVolumeUuid).findValue();
-        if (rootUuid == null) {
-            throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
-                    "VM[uuid:%s] has no root volume for adding TPM", vmUuid));
-        }
+        return persistTpm(tpmUuid, vmUuid, true);
+    }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private TpmVO persistTpm(String tpmUuid, String vmUuid, boolean requireStopped) {
         return new SQLBatchWithReturn<TpmVO>() {
             @Override
             protected TpmVO scripts() {
                 EntityManager em = databaseFacade.getEntityManager();
-                // Cold migration's status UPDATE competes for this same row. Keep the
-                // lock only until the TPM insert commits, before any asynchronous RPC.
-                VolumeVO root = em.find(VolumeVO.class, rootUuid, LockModeType.PESSIMISTIC_WRITE);
-                if (root != null) {
-                    em.refresh(root, LockModeType.PESSIMISTIC_WRITE);
-                }
-                VmInstanceVO vm = em.find(VmInstanceVO.class, vmUuid);
+                // CDP task persistence takes the same fence before reading TPM.
+                // A fresh transaction keeps earlier reads out of this decision.
+                VmInstanceVO vm = em.find(VmInstanceVO.class, vmUuid, LockModeType.PESSIMISTIC_WRITE);
                 if (vm != null) {
-                    em.refresh(vm);
+                    em.refresh(vm, LockModeType.PESSIMISTIC_WRITE);
                 }
-                if (root == null || vm == null || !Objects.equals(rootUuid, vm.getRootVolumeUuid())
-                        || root.getStatus() != VolumeStatus.Ready
-                        || !SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
+                if (vm == null) {
                     throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
-                            "VM[uuid:%s] must be stopped with its root volume ready for adding TPM", vmUuid));
+                            "VM[uuid:%s] no longer exists for adding TPM", vmUuid));
+                }
+                if (requireStopped) {
+                    String rootUuid = vm.getRootVolumeUuid();
+                    if (rootUuid == null) {
+                        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                                "VM[uuid:%s] has no root volume for adding TPM", vmUuid));
+                    }
+                    // Cold migration's status UPDATE competes for this root row.
+                    VolumeVO root = em.find(VolumeVO.class, rootUuid, LockModeType.PESSIMISTIC_WRITE);
+                    if (root != null) {
+                        em.refresh(root, LockModeType.PESSIMISTIC_WRITE);
+                    }
+                    if (root == null || root.getStatus() != VolumeStatus.Ready
+                            || !SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
+                        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                                "VM[uuid:%s] must be stopped with its root volume ready for adding TPM", vmUuid));
+                    }
                 }
                 if (!em.createQuery("select t.uuid from TpmVO t where t.vmInstanceUuid = :vmUuid", String.class)
                         .setParameter("vmUuid", vmUuid).getResultList().isEmpty()) {
@@ -105,8 +114,8 @@ public class VmTpmManager {
                             "tpm device already exists"));
                 }
 
-                // persistAndRefresh starts REQUIRES_NEW; use this transaction's
-                // EntityManager so insertion and the root-volume lock commit together.
+                VmTpmCreationValidator.validate(vmUuid);
+                // Insertion must commit with the VM/root locks, before any RPC.
                 databaseFacade.entityForTranscationCallback(Operation.PERSIST, TpmVO.class);
                 return reload(persist(newTpmVO(tpmUuid, vmUuid)));
             }
