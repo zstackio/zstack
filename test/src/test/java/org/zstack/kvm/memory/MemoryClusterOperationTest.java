@@ -271,20 +271,63 @@ public class MemoryClusterOperationTest {
         assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
     }
 
-    @Test public void anOperationWhoseReplyFailsIsAnsweredAsUnknown() throws Exception {
-        setup();
+    private MemoryHostOperationMsg pauseWhoseRepliesFail(int failures) throws Exception {
         manager.script("host1", "apply", reply("Succeeded", null, null));
-        manager.failingReplies = 1;
+        manager.failingReplies = failures;
         MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
         msg.setHostUuid("host1"); msg.setAction("pause"); msg.setAccountUuid("account"); msg.setUserUuid("user");
         msg.setTimeout(7200000L);
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, msg);
-        assertEquals("the caller still gets an answer, not its timeout",
-                Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED"), manager.outcomes);
+        return msg;
+    }
+
+    private void completeWaiters() throws Exception {
         Method complete = MemoryOptimizationManager.class.getDeclaredMethod("completeWaiters");
         complete.setAccessible(true); complete.invoke(manager);
+    }
+
+    @Test public void anOperationWhoseReplyFailsIsAnsweredAsUnknownByTheNextScan() throws Exception {
+        setup();
+        // The Agent's reply runs one scan and the operation another, so the next scan comes before it returns.
+        pauseWhoseRepliesFail(1);
+        assertEquals("the caller still gets an answer, not its timeout",
+                Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED"), manager.outcomes);
+        completeWaiters();
         assertEquals("the operation is answered once", 1, manager.outcomes.size());
+    }
+
+    @Test public void aReplyThatFailsAgainIsSentAgainByTheFollowingScans() throws Exception {
+        setup();
+        pauseWhoseRepliesFail(3);
+        assertTrue("the reply and the first unknown answer failed; the operation is kept", manager.outcomes.isEmpty());
+        completeWaiters();
+        assertTrue("the second unknown answer failed as well; the operation is still kept", manager.outcomes.isEmpty());
+        completeWaiters();
+        assertEquals(Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED"), manager.outcomes);
+        completeWaiters();
+        assertEquals("the operation is answered once", 1, manager.outcomes.size());
+    }
+
+    @Test public void aReplyThatKeepsFailingIsDroppedOnceItsCallerTimedOut() throws Exception {
+        setup();
+        pauseWhoseRepliesFail(Integer.MAX_VALUE);
+        Field field = MemoryOptimizationManager.class.getDeclaredField("waiters"); field.setAccessible(true);
+        @SuppressWarnings("unchecked") Map<String, Object> waiters = (Map<String, Object>) field.get(manager);
+        assertEquals("the failed reply is kept", 1, waiters.size());
+        String uuid = waiters.keySet().iterator().next();
+        Object kept = waiters.get(uuid);
+        Class<?> type = kept.getClass();
+        Field host = type.getDeclaredField("host"), done = type.getDeclaredField("done"), unsent = type.getDeclaredField("unsent");
+        host.setAccessible(true); done.setAccessible(true); unsent.setAccessible(true);
+        java.lang.reflect.Constructor<?> make = type.getDeclaredConstructor(String.class, long.class, Consumer.class, String.class);
+        make.setAccessible(true);
+        // Its caller timed out half a minute after the operation's deadline.
+        waiters.put(uuid, make.newInstance(host.get(kept), System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(31),
+                done.get(kept), unsent.get(kept)));
+        completeWaiters();
+        assertTrue("an operation whose caller timed out is no longer held", waiters.isEmpty());
+        assertTrue(manager.outcomes.isEmpty());
     }
 
     @Test public void convergingHostIsSentTheSameGenerationAgainUntilApplied() throws Exception {
