@@ -472,7 +472,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     @ExceptionSafe @Deferred
     void recordActiveJob(String host, String job, String previous) {
-        Defer.guard(() -> logger.warn(String.format("unable to record the memory LongJob of Host[%s]; it is display-only", host)));
+        Defer.guard(() -> logger.error(String.format("Unable to record the memory LongJob of Host[%s]; the job shown for it may be stale", host)));
         repository.setActiveJob(host, job, previous);
     }
 
@@ -520,12 +520,18 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    /** Each operation is answered once; one that cannot be replied does not hold the others. */
+    /**
+     * Each operation is answered once; one that cannot be replied does not hold the others. A reply that fails is
+     * sent again as unknown, so the caller gets an answer instead of waiting out its timeout.
+     */
     @ExceptionSafe @Deferred
     void answer(String uuid, String outcome) {
         Waiter waiter = waiters.remove(uuid);
         if (waiter == null) { return; }
-        Defer.guard(() -> logger.warn(String.format("Unable to reply memory operation[%s]", uuid)));
+        Defer.guard(() -> {
+            logger.error(String.format("Unable to reply memory operation[%s] with %s; it is answered as unknown", uuid, outcome));
+            waiter.done.accept("MEMORY_RESULT_UNKNOWN: OPERATION_REPLY_FAILED");
+        });
         waiter.done.accept(outcome);
     }
 
