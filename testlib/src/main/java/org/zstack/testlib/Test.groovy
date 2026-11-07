@@ -445,6 +445,7 @@ abstract class Test extends ApiHelper implements Retry {
         if (API_PORTAL) {
             spring {
                 include("ManagementNodeManager.xml")
+                include("plugin.xml")
                 include("ApiMediator.xml")
                 include("AccountManager.xml")
                 include("identity.xml")
