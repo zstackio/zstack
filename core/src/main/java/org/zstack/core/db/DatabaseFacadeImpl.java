@@ -393,6 +393,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
         @Transactional(propagation = Propagation.REQUIRES_NEW)
         void removeByPrimaryKey(Object id) {
+            removeByPrimaryKeyInCurrentTransaction(id);
+        }
+
+        void removeByPrimaryKeyInCurrentTransaction(Object id) {
             if (hasEO()) {
                 softDelete(list(id));
             } else {
@@ -585,6 +589,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @DeadlockAutoRestart
     public void removeByPrimaryKey(Object primaryKey, Class<?> entityClass) {
         getEntityInfo(entityClass).removeByPrimaryKey(primaryKey);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void removeByPrimaryKeyInCurrentTransaction(Object primaryKey, Class<?> entityClass) {
+        getEntityInfo(entityClass).removeByPrimaryKeyInCurrentTransaction(primaryKey);
     }
 
     @Override

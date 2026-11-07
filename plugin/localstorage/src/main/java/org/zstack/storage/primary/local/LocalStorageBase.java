@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
+import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -376,6 +377,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                // The volume's Migrating update has committed. AddTPM locks that
+                // same row and requires Ready, so no new TPM can pass this check.
+                if (VmTpmManager.findTpmUuidForVmOrNull(struct.getVmUuid()) != null) {
+                    trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10013,
+                            "VM[uuid:%s] with vTPM cannot cold migrate its root volume to host[uuid:%s]",
+                            struct.getVmUuid(), msg.getDestHostUuid()));
+                    return;
+                }
                 ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
                 cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrating.toString());
                 cmsg.setVmInstanceUuid(struct.getVmUuid());
