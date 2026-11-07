@@ -124,6 +124,14 @@ class TestCheck(CheckCase):
         self.assertEqual(['disallowed-reference: org.zstack.header.host.HostAO'],
                          self.run_check(refs=['org.zstack.header.host.HostAO']))
 
+    def test_hooks_the_platform_never_calls_on_a_plugin_are_refused(self):
+        # spec N1, C8 and S1: their consumers never reach a plugin's implementation
+        hooks = ['org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint',
+                 'org.zstack.header.vm.AfterReleaseVmNicExtensionPoint',
+                 'org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc',
+                 'org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc']
+        self.assertEqual(sorted('disallowed-reference: ' + h for h in hooks), sorted(self.run_check(refs=hooks)))
+
     def test_jdk_reference_is_not_checked(self):
         self.assertEqual([], self.run_check())
 

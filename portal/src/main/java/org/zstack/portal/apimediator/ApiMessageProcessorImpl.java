@@ -44,6 +44,13 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private Map<Class, ApiMessageDescriptor> descriptors = new java.util.concurrent.ConcurrentHashMap<Class, ApiMessageDescriptor>();
     private Map<Class, Set<GlobalApiMessageInterceptor>> globalInterceptors = new HashMap<Class, Set<GlobalApiMessageInterceptor>>();
     private Set<GlobalApiMessageInterceptor> globalInterceptorsForAllMsg = new HashSet<GlobalApiMessageInterceptor>();
+    // the registry's list, which feature plugins loaded at runtime change in place
+    private List<GlobalApiMessageInterceptor> registeredGlobalInterceptors;
+    // the global interceptors the descriptors were built with
+    private volatile List<GlobalApiMessageInterceptor> installedGlobalInterceptors = Collections.emptyList();
+    // the interceptors a message names in its service config
+    private Map<Class, List<ApiMessageInterceptor>> namedInterceptors =
+            new java.util.concurrent.ConcurrentHashMap<Class, List<ApiMessageInterceptor>>();
     private Comparator<ApiMessageInterceptor> msgInterceptorComparator = Comparator
             .comparingInt(ApiMessageProcessorImpl::interceptorPositionToOrder)
             .thenComparing(ApiMessageInterceptor::getPriority);
@@ -96,6 +103,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         this.configFolders = (List<String>) config.get("serviceConfigFolders");
         this.supportApis = new java.util.concurrent.CopyOnWriteArrayList<>();
 
+        registeredGlobalInterceptors = pluginRgty.getExtensionList(GlobalApiMessageInterceptor.class);
         populateGlobalInterceptors();
 
         try {
@@ -147,6 +155,11 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             }
         }
 
+        namedInterceptors.put(desc.getClazz(), interceptors);
+        installInterceptors(desc);
+    }
+
+    private void installInterceptors(ApiMessageDescriptor desc) {
         Set<GlobalApiMessageInterceptor> gis = new HashSet<GlobalApiMessageInterceptor>();
         for (Map.Entry<Class, Set<GlobalApiMessageInterceptor>> e : globalInterceptors.entrySet()) {
             Class baseMsgClz = e.getKey();
@@ -171,7 +184,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             globalInterceptors.add(gi);
         }
 
-        globalInterceptors.addAll(interceptors);
+        globalInterceptors.addAll(namedInterceptors.get(desc.getClazz()));
         globalInterceptors.sort(this.msgInterceptorComparator);
 
         desc.setInterceptors(globalInterceptors);
@@ -181,7 +194,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     /**
      * API messages a feature plugin loaded at runtime declares in its service config files.
      */
-    public void addServiceConfigs(List<File> files, ClassLoader cl, ApplicationContext beans) {
+    public synchronized void addServiceConfigs(List<File> files, ClassLoader cl, ApplicationContext beans) {
         try {
             JAXBContext context = JAXBContext.newInstance("org.zstack.portal.apimediator.schema");
             for (File cfg : files) {
@@ -193,8 +206,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         }
     }
 
-    public void removeMessages(Collection<Class<?>> classes) {
+    public synchronized void removeMessages(Collection<Class<?>> classes) {
         for (Class<?> clz : classes) {
+            namedInterceptors.remove(clz);
             if (descriptors.remove(clz) != null) {
                 supportApis.remove(clz.getSimpleName());
             }
@@ -283,6 +297,10 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
     @Override
     public APIMessage process(APIMessage msg) throws ApiMessageInterceptionException {
+        if (!registeredGlobalInterceptors.equals(installedGlobalInterceptors)) {
+            reinstallGlobalInterceptors();
+        }
+
         ApiMessageDescriptor desc = descriptors.get(msg.getClass());
         if (desc == null) {
             throw new CloudRuntimeException(String.format("Message[%s] has no ApiMessageDescriptor", msg.getClass().getName()));
@@ -305,20 +323,43 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         return supportApis;
     }
 
+    // a feature plugin loaded or unloaded at runtime changed the global interceptors
+    private synchronized void reinstallGlobalInterceptors() {
+        if (registeredGlobalInterceptors.equals(installedGlobalInterceptors)) {
+            return;
+        }
+
+        populateGlobalInterceptors();
+        for (ApiMessageDescriptor desc : descriptors.values()) {
+            installInterceptors(desc);
+        }
+        logger.info(String.format("global API interceptors changed, reinstalled the interceptors of %s APIs",
+                descriptors.size()));
+    }
+
     private void populateGlobalInterceptors() {
-        for (GlobalApiMessageInterceptor gi : pluginRgty.getExtensionList(GlobalApiMessageInterceptor.class)) {
+        List<GlobalApiMessageInterceptor> registered =
+                new ArrayList<GlobalApiMessageInterceptor>(registeredGlobalInterceptors);
+        Map<Class, Set<GlobalApiMessageInterceptor>> byMsg = new HashMap<Class, Set<GlobalApiMessageInterceptor>>();
+        Set<GlobalApiMessageInterceptor> forAllMsg = new HashSet<GlobalApiMessageInterceptor>();
+        for (GlobalApiMessageInterceptor gi : registered) {
             if (gi.getMessageClassToIntercept() == null) {
-                globalInterceptorsForAllMsg.add(gi);
+                forAllMsg.add(gi);
             } else {
                 for (Class msgClz : gi.getMessageClassToIntercept()) {
-                    Set<GlobalApiMessageInterceptor> gis = globalInterceptors.get(msgClz);
+                    Set<GlobalApiMessageInterceptor> gis = byMsg.get(msgClz);
                     if (gis == null) {
                         gis = new HashSet<GlobalApiMessageInterceptor>();
-                        globalInterceptors.put(msgClz, gis);
+                        byMsg.put(msgClz, gis);
                     }
                     gis.add(gi);
                 }
             }
         }
+
+        globalInterceptors = byMsg;
+        globalInterceptorsForAllMsg = forAllMsg;
+        // last: the descriptors are rebuilt before an API thread sees no change
+        installedGlobalInterceptors = registered;
     }
 }

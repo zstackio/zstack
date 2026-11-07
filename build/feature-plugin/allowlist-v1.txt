@@ -17,14 +17,12 @@ org.zstack.header.vm.VmInstanceStartNewCreatedVmExtensionPoint
 org.zstack.header.vm.VmInstanceStopExtensionPoint
 org.zstack.header.vm.VmInstanceDestroyExtensionPoint
 org.zstack.header.vm.VmInstanceMigrateExtensionPoint
-org.zstack.header.vm.AfterReleaseVmNicExtensionPoint
 org.zstack.header.vm.VmNicLifecycleExtensionPoint
 org.zstack.header.vm.VmNicLifecycleContext
 org.zstack.header.vm.VmAttachVolumeExtensionPoint
 org.zstack.header.vm.VmDetachVolumeExtensionPoint
 org.zstack.header.storage.snapshot.VolumeSnapshotAfterCreateExtensionPoint
 org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint
-org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint
 org.zstack.header.network.l2.L2NetworkCreateExtensionPoint
 org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint
 org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint
@@ -34,8 +32,6 @@ org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint
 org.zstack.header.network.l3.AfterDeleteIpRangeExtensionPoint
 org.zstack.network.securitygroup.SecurityGroupRuleFilterExtensionPoint
 org.zstack.network.securitygroup.SecurityGroupGetDefaultRuleExtensionPoint
-org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc
-org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc
 
 # data types: inventories, API messages, type registries, errors, callbacks
 org.zstack.header.*Inventory
