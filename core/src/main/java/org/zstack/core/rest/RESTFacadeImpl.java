@@ -26,6 +26,7 @@ import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.debug.DebugManager;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.telemetry.MessageTracingHelper;
@@ -472,6 +473,22 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public void asyncJsonPostWithSafeLogging(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            MessageCommandRecorder.record(body.getClass());
+        }
+        String wireBody = JSONObjectUtil.toJsonString(body);
+        String logBody;
+        try {
+            logBody = LogSafeGson.toJson(body);
+        } catch (RuntimeException error) {
+            logger.warn("Cannot render protected REST request body: " + error.getClass().getName());
+            logBody = "[protected request body omitted: safe serialization failed]";
+        }
+        asyncJson(url, wireBody, null, HttpMethod.POST, callback, unit, timeout, logBody, true);
+    }
+
+    @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
         asyncJsonPost(url, body, null, callback, unit, timeout);
     }
@@ -497,18 +514,23 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        asyncJson(url, body, headers, method, callback, unit, timeout, body, false);
+    }
+
+    private void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method,
+                           final AsyncRESTCallback callback, final TimeUnit unit, final long timeout, String logBody, boolean safeLogging) {
         if (!hasCallbackUrlHeader(headers) && !CoreGlobalProperty.UNIT_TEST_ON) {
             String host = extractRequestHost(url);
             if (host != null) {
                 if (NetworkUtils.isIpAddress(host)) {
-                    resolveEndpointAndDispatch(url, body, headers, method, callback, unit, timeout, host);
+                    resolveEndpointAndDispatch(url, body, headers, method, callback, unit, timeout, host, logBody, safeLogging);
                     return;
                 }
                 Map<String, String> requestHeaders = headers == null ? null : new HashMap<>(headers);
                 thdf.submit(new Task<Void>() {
                     @Override
                     public Void call() {
-                        resolveEndpointAndDispatch(url, body, requestHeaders, method, callback, unit, timeout, host);
+                        resolveEndpointAndDispatch(url, body, requestHeaders, method, callback, unit, timeout, host, logBody, safeLogging);
                         return null;
                     }
 
@@ -522,12 +544,12 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         dispatchAsyncJsonRequest(url, url, body, headers, method, callback, unit, timeout,
-                callbackUrl, null);
+                callbackUrl, null, logBody, safeLogging);
     }
 
     private void resolveEndpointAndDispatch(String url, String body, Map<String, String> headers,
                                             HttpMethod method, AsyncRESTCallback callback,
-                                            TimeUnit unit, long timeout, String host) {
+                                            TimeUnit unit, long timeout, String host, String logBody, boolean safeLogging) {
         String selectedCallbackUrl = callbackUrl;
         String targetUrl = url;
         String originalHostHeader = null;
@@ -544,13 +566,13 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         dispatchAsyncJsonRequest(url, targetUrl, body, headers, method, callback, unit, timeout,
-                selectedCallbackUrl, originalHostHeader);
+                selectedCallbackUrl, originalHostHeader, logBody, safeLogging);
     }
 
     private void dispatchAsyncJsonRequest(String url, String targetUrl, String body,
                                           Map<String, String> headers, HttpMethod method,
                                           AsyncRESTCallback callback, TimeUnit unit, long timeout,
-                                          String selectedCallbackUrl, String originalHostHeader) {
+                                          String selectedCallbackUrl, String originalHostHeader, String logBody, boolean safeLogging) {
         final String actualTargetUrl = targetUrl;
 
         synchronized (interceptors) {
@@ -654,7 +676,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 public void run() {
                     self.fail(touterr(
                     ORG_ZSTACK_CORE_REST_10001,         "[Async Http Timeout] url: %s, timeout after %s[%s], command: %s",
-                            url, timeout, unit.toString(), body
+                            url, timeout, unit.toString(), logBody
                     ));
                 }
             }, unit, timeout);
@@ -780,15 +802,26 @@ public class RESTFacadeImpl implements RESTFacade {
             wrappers.put(taskUuid, wrapper);
 
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("json %s [%s], %s", method.toString(), url, req));
+                logger.trace(String.format("json %s [%s], %s", method.toString(), url,
+                        new HttpEntity<String>(logBody, requestHeaders)));
             }
 
             ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(actualTargetUrl, method, req, String.class);
-            f.addCallback(rsp -> {}, e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
+            f.addCallback(rsp -> {}, e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR,
+                    safeLogging ? protectedRequestFailure(e) : e.getLocalizedMessage())));
         } catch (RestClientException e) {
-            logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, e.getMessage()));
-            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(ORG_ZSTACK_CORE_REST_10004, SysErrors.IO_ERROR, e.getMessage()) : inerr(ORG_ZSTACK_CORE_REST_10005, e.getMessage()));
+            String errorMessage = safeLogging ? protectedRequestFailure(e) : e.getMessage();
+            logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, errorMessage));
+            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(ORG_ZSTACK_CORE_REST_10004, SysErrors.IO_ERROR, errorMessage) : inerr(ORG_ZSTACK_CORE_REST_10005, errorMessage));
         }
+    }
+
+    private static String protectedRequestFailure(Throwable error) {
+        String message = "protected HTTP request failed: " + error.getClass().getName();
+        if (error instanceof RestClientResponseException) {
+            message += "; HTTP status=" + ((RestClientResponseException) error).getRawStatusCode();
+        }
+        return message;
     }
 
     @Override
