@@ -80,7 +80,7 @@ public class VmQuotaUtil {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
         if (excludeVmUuid != null) {
             sql += " and vm.uuid != (:excludeVmUuid)";
         }
@@ -91,7 +91,7 @@ public class VmQuotaUtil {
         q.setParameter("starting", VmInstanceState.Starting);
         q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                 VmInstanceState.Destroyed, VmInstanceState.Created));
-        q.setParameter("vmtype", "baremetal2");
+        q.setParameter("vmtypes", VmQuotaConstant.VM_TYPES_NOT_COUNTED);
 
         if (excludeVmUuid != null) {
             q.setParameter("excludeVmUuid", excludeVmUuid);
@@ -113,12 +113,12 @@ public class VmQuotaUtil {
                 // for vm without host and volume info, treat them as new creating vm
                 " and not (vm.hostUuid is null and vm.lastHostUuid is null and vm.rootVolumeUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
         q2.setParameter("auuid", accountUUid);
         q2.setParameter("rtype", VmInstanceVO.class.getSimpleName());
         q2.setParameter("states", list(VmInstanceState.Destroyed));
-        q2.setParameter("vmtype", "baremetal2");
+        q2.setParameter("vmtypes", VmQuotaConstant.VM_TYPES_NOT_COUNTED);
         Long totalVmNum = q2.getSingleResult();
         quota.totalVmNum = totalVmNum == null ? 0 : totalVmNum;
         return quota;

@@ -22,6 +22,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -181,7 +182,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errorCodeList.getCauses().size() == psCombos.size()) {
-                    trigger.fail(errorCodeList.getCauses().get(0));
+                    ErrorCode error = errorCodeList.getCauses().get(0);
+                    if (errorCodeList.getCauses().size() > 1) {
+                        String details = errorCodeList.getReadableDetails();
+                        error = errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, details, errorCodeList.getCauses());
+                        error.setGlobalErrorCode(ORG_ZSTACK_COMPUTE_VM_10346);
+                        error.setFormatArgs(new String[]{details});
+                    }
+                    trigger.fail(error);
                     return;
                 }
 
