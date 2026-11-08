@@ -6,6 +6,16 @@ import org.zstack.header.message.NeedReplyMessage;
  * Created by frank on 7/18/2015.
  */
 public class DetachNicFromVmMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String vmInstanceUuid;
     private String vmNicUuid;
     private boolean haPeer = false;

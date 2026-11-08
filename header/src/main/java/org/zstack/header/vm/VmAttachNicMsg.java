@@ -9,6 +9,16 @@ import java.util.Map;
 /**
  */
 public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String vmInstanceUuid;
     private String l3NetworkUuid;
     private Map<String, List<String>> staticIpMap = new HashMap<>();

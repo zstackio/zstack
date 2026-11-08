@@ -8,6 +8,16 @@ import java.util.List;
  * Created by LiangHanYu on 2022/6/22 17:12
  */
 public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String vmInstanceUuid;
     private String l3NetworkUuid;
     private String ip;

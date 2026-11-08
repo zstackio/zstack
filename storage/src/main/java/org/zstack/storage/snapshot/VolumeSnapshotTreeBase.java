@@ -2546,7 +2546,7 @@ public class VolumeSnapshotTreeBase {
                             q.select(VmInstanceVO_.state);
                             q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
                             VmInstanceState state = q.findValue();
-                            if (state != VmInstanceState.Stopped) {
+                            if (state != VmInstanceState.Stopped && !(msg instanceof RevertVolumeFromSnapshotGroupMsg && state == VmInstanceState.Rebooting)) {
                                 trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_10008, "unable to reset volume[uuid:%s] to snapshot[uuid:%s]," +
                                                 " the vm[uuid:%s] volume attached to is not in Stopped state," +
                                                 " current state is %s",

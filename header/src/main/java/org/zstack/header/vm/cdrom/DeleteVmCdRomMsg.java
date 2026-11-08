@@ -7,6 +7,16 @@ import org.zstack.header.vm.VmInstanceMessage;
  * Created by lining on 2018/12/28.
  */
 public class DeleteVmCdRomMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String cdRomUuid;
 
     private String vmInstanceUuid;

@@ -9,6 +9,16 @@ import java.util.Map;
  * Created by LiangHanYu on 2022/6/24 10:58
  */
 public class ChangeVmNicNetworkMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String vmNicUuid;
     private String destL3NetworkUuid;
     private String vmInstanceUuid;

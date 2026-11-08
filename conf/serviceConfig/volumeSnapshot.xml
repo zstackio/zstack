@@ -83,4 +83,8 @@
     <message>
         <name>org.zstack.header.storage.snapshot.group.APIUpdateVolumeSnapshotGroupMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APICheckMemorySnapshotGroupConflictMsg</name>
+    </message>
 </service>

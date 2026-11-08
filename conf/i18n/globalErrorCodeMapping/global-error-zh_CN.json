@@ -4792,5 +4792,6 @@
   "ORG_ZSTACK_NETWORK_ZNS_10045": "无法启用 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
   "ORG_ZSTACK_NETWORK_ZNS_10046": "网段[uuid:%s]上已存在 DHCP 服务，但 GET 返回为空",
   "ORG_ZSTACK_NETWORK_ZNS_10047": "无法更新 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
-  "ORG_ZSTACK_NETWORK_ZNS_10048": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败"
+  "ORG_ZSTACK_NETWORK_ZNS_10048": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败",
+  "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "无法检查内存快照冲突，请查看错误详情。"
 }

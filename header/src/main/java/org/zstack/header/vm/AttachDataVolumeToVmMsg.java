@@ -6,6 +6,16 @@ import org.zstack.header.volume.VolumeInventory;
 /**
  */
 public class AttachDataVolumeToVmMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private VolumeInventory volume;
     private String vmInstanceUuid;
 
