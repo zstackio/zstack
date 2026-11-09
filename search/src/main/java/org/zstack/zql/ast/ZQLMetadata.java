@@ -10,9 +10,11 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.search.TypeField;
 import org.zstack.utils.*;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,10 +50,12 @@ public class ZQLMetadata {
 
         private class FieldTypeMapping {
             Class inventoryFieldType;
+            Type inventoryFieldGenericType;
             Class voFieldType;
 
-            public FieldTypeMapping(Class inventoryFieldType, Class voFieldType) {
-                this.inventoryFieldType = inventoryFieldType;
+            public FieldTypeMapping(Field inventoryField, Class voFieldType) {
+                this.inventoryFieldType = inventoryField.getType();
+                this.inventoryFieldGenericType = inventoryField.getGenericType();
                 this.voFieldType = voFieldType;
             }
         }
@@ -70,7 +74,7 @@ public class ZQLMetadata {
                     }
                     Class inventoryFieldType = inventoryField.getType();
                     if (!inventoryFieldType.equals(voFieldType)) {
-                        typeMappingMap.put(it.getName(), new FieldTypeMapping(inventoryFieldType, voFieldType));
+                        typeMappingMap.put(it.getName(), new FieldTypeMapping(inventoryField, voFieldType));
                     }
                 } catch (Exception e) {
                     throw new CloudRuntimeException(e);
@@ -89,6 +93,15 @@ public class ZQLMetadata {
 
         public Object toInventoryFieldObject(String fieldName, Object value) {
             FieldTypeMapping mapping = typeMappingMap.get(fieldName);
+            if (mapping != null && mapping.voFieldType == String.class && value instanceof String) {
+                // A list or map the VO keeps as JSON, which the inventory's valueOf parses the same way.
+                if (List.class.isAssignableFrom(mapping.inventoryFieldType)) {
+                    return JSONObjectUtil.toList((String) value, mapping.inventoryFieldGenericType);
+                }
+                if (Collection.class.isAssignableFrom(mapping.inventoryFieldType) || Map.class.isAssignableFrom(mapping.inventoryFieldType)) {
+                    return JSONObjectUtil.toObject((String) value, mapping.inventoryFieldType);
+                }
+            }
             if (mapping == null || TypeUtils.isZstackBeanPrimitive(mapping.voFieldType)) {
                 return value;
             }
