@@ -1130,6 +1130,19 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     VmInstanceVO.class.getSimpleName(), false);
         }
 
+        List<String> requestedTags = cmsg == null ? msg.getSystemTags() : cmsg.getSystemTags();
+        if (!CollectionUtils.isEmpty(requestedTags)) {
+            String requestedBootMode = SystemTagUtils.findTagValue(requestedTags, VmSystemTags.BOOT_MODE);
+            if (requestedBootMode != null) {
+                // Image inheritance copies tags directly, without their create validators.
+                // Apply the request last so the VM has one effective boot mode.
+                SystemTagCreator bootModeCreator = VmSystemTags.BOOT_MODE.newSystemTagCreator(finalVo.getUuid());
+                bootModeCreator.recreate = true;
+                bootModeCreator.tag = requestedBootMode;
+                bootModeCreator.create();
+            }
+        }
+
         if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
             SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
             creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));

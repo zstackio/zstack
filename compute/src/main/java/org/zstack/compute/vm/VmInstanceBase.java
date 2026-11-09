@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
+import org.zstack.compute.vm.devices.TpmBootModeApiInterceptor;
 import org.zstack.compute.vm.devices.VmTpmManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
@@ -280,8 +281,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     public VmInstanceBase(VmInstanceVO vo) {
         this.self = vo;
-        this.syncThreadName = "Vm-" + vo.getUuid();
+        this.syncThreadName = makeSyncSignature(vo.getUuid());
         this.originalCopy = ObjectUtils.newAndCopy(vo, vo.getClass());
+    }
+
+    public static String makeSyncSignature(String vmUuid) {
+        return "Vm-" + vmUuid;
     }
 
     protected VmInstanceVO refreshVO() {
@@ -3943,6 +3948,39 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(APISetVmBootModeMsg msg) {
+        serializeBootModeOperation(msg, taskChain -> setVmBootMode(msg, new NoErrorCompletion(msg, taskChain) {
+            @Override
+            public void done() {
+                taskChain.next();
+            }
+        }));
+    }
+
+    private void serializeBootModeOperation(APIMessage msg, java.util.function.Consumer<SyncTaskChain> operation) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("%s-for-vm-%s", msg.getClass().getSimpleName(), self.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                try {
+                    operation.accept(chain);
+                } catch (Exception e) {
+                    bus.replyErrorByMessageType(msg, e);
+                    chain.next();
+                }
+            }
+        });
+    }
+
+    private void setVmBootMode(APISetVmBootModeMsg msg, NoErrorCompletion completion) {
         final boolean[] bootModeChanged = {false};
 
         FlowChain chain = new SimpleFlowChain();
@@ -3950,6 +3988,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             String __name__ = "set-vm-boot-mode";
 
             String originLevel;
+            boolean tagChangeStarted;
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -3958,12 +3997,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 VmSystemTags.BOOT_MODE_TOKEN);
 
                 originLevel = bootMode;
+                try {
+                    TpmBootModeApiInterceptor.checkBootModeChangeAllowed(self.getUuid(), msg.getBootMode());
+                } catch (ApiMessageInterceptionException e) {
+                    trigger.fail(e.getError());
+                    return;
+                }
 
                 if (bootMode != null && bootMode.equals(msg.getBootMode())) {
                     trigger.next();
                     return;
                 }
 
+                tagChangeStarted = true;
                 if (msg.getBootMode() == null) {
                     VmSystemTags.BOOT_MODE.delete(self.getUuid());
                 } else {
@@ -3975,12 +4021,18 @@ public class VmInstanceBase extends AbstractVmInstance {
                     creator.create();
                 }
 
-                bootModeChanged[0] = true;
+                bootModeChanged[0] = !Objects.equals(
+                        bootMode == null ? ImageBootMode.Legacy.toString() : bootMode,
+                        msg.getBootMode() == null ? ImageBootMode.Legacy.toString() : msg.getBootMode());
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
+                if (!tagChangeStarted) {
+                    trigger.rollback();
+                    return;
+                }
                 if (originLevel == null) {
                     VmSystemTags.BOOT_MODE.delete(self.getUuid());
                 } else {
@@ -4006,22 +4058,37 @@ public class VmInstanceBase extends AbstractVmInstance {
                 APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
                 evt.setError(errCode);
                 bus.publish(evt);
+                completion.done();
             }
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
                 APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
-                bus.publish(evt);
-
                 if (bootModeChanged[0]) {
                     vidm.deleteAllDeviceAddressesByVm(self.getUuid());
                 }
+                bus.publish(evt);
+                completion.done();
             }
         }).start();
     }
 
     private void handle(APIDeleteVmBootModeMsg msg) {
+        serializeBootModeOperation(msg, chain -> {
+            deleteVmBootMode(msg);
+            chain.next();
+        });
+    }
+
+    private void deleteVmBootMode(APIDeleteVmBootModeMsg msg) {
         APIDeleteVmBootModeEvent evt = new APIDeleteVmBootModeEvent(msg.getId());
+        try {
+            TpmBootModeApiInterceptor.checkBootModeChangeAllowed(self.getUuid(), null);
+        } catch (ApiMessageInterceptionException e) {
+            evt.setError(e.getError());
+            bus.publish(evt);
+            return;
+        }
         VmSystemTags.BOOT_MODE.delete(self.getUuid());
         bus.publish(evt);
     }
@@ -7262,13 +7329,29 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
-        ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
+        final VolumeInventory volume = msg.getVolume();
+        final boolean attachBeforeFirstStart = msg.isAttachBeforeFirstStart()
+                && self.getState() == VmInstanceState.Created
+                && VolumeType.Data.toString().equals(volume.getType())
+                && VolumeStatus.Ready.toString().equals(volume.getStatus())
+                && !volume.isShareable();
+        ErrorCode err = attachBeforeFirstStart ? null : validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
         if (err != null) {
             throw new OperationFailureException(err);
         }
 
-        final VolumeInventory volume = msg.getVolume();
         final VmInstanceInventory vmInv = VmInstanceInventory.valueOf(self);
+
+        if (attachBeforeFirstStart) {
+            VolumeVO stored = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
+            if (stored == null || stored.getStatus() != VolumeStatus.Ready || stored.getType() != VolumeType.Data
+                    || stored.isShareable() || stored.getVmInstanceUuid() != null
+                    || volume.getDeviceId() == null || volume.getDeviceId() <= 0
+                    || vmInv.getAllVolumes().stream().anyMatch(v -> Objects.equals(v.getDeviceId(), volume.getDeviceId()))) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10286,
+                        "cannot associate volume[uuid:%s] before VM first start", volume.getUuid()));
+            }
+        }
 
         new VmAttachVolumeValidator().validate(vmInv, volume.getUuid());
 
@@ -7281,7 +7364,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (volume.getStatus().equals(VolumeStatus.Ready.toString())) {
             chain = FlowChainBuilder.newSimpleFlowChain();
             chain.then(new VmAssignDeviceIdToAttachingVolumeFlow());
-            chain.then(new VmAttachVolumeOnHypervisorFlow());
+            if (!attachBeforeFirstStart) {
+                chain.then(new VmAttachVolumeOnHypervisorFlow());
+            }
         } else {
             chain = getAttachUninstantiatedVolumeWorkFlowChain(spec.getVmInventory());
         }
@@ -7723,6 +7808,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setStrategy(struct.getStrategy());
 
         spec.setVmInventory(getSelfInventory());
+        spec.setDestDataVolumes(getAllDataVolumes(spec.getVmInventory()).stream()
+                .filter(volume -> VolumeStatus.Ready.toString().equals(volume.getStatus()))
+                .collect(Collectors.toList()));
+        spec.setPreserveExistingDataVolumes(!spec.getDestDataVolumes().isEmpty());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
             SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
             nwquery.add(L3NetworkVO_.uuid, Op.IN, VmNicSpec.getL3UuidsOfSpec(struct.getL3NetworkUuids()));
@@ -7904,6 +7993,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void instantiateVmFromNewCreate(InstantiateVmFromNewCreatedStruct struct, Completion completion) {
+        final VmInstanceInventory originalInventory = getSelfInventory();
         VmInstanceSpec spec = buildVmInstanceSpecFromStruct(struct);
 
         changeVmStateInDb(VmInstanceStateEvent.starting);
@@ -7982,7 +8072,25 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 final String tpmUuidForEncryptedKeyRef = VmTpmManager.findTpmUuidForVmOrNull(self.getUuid());
-                extEmitter.failedToStartNewCreatedVm(VmInstanceInventory.valueOf(self), errCode);
+                if (spec.isPreserveExistingDataVolumes()) {
+                    self = dbf.reload(self);
+                }
+                VmInstanceInventory failedInventory = VmInstanceInventory.valueOf(self);
+                if (spec.isPreserveExistingDataVolumes()) {
+                    self.setState(VmInstanceState.Created);
+                    self.setHostUuid(originalInventory.getHostUuid());
+                    self.setLastHostUuid(originalInventory.getLastHostUuid());
+                    self.setClusterUuid(originalInventory.getClusterUuid());
+                    self.setZoneUuid(originalInventory.getZoneUuid());
+                    self.setHypervisorType(originalInventory.getHypervisorType());
+                    self = dbf.updateAndRefresh(self);
+                    failedInventory.setState(VmInstanceState.Created.toString());
+                }
+                extEmitter.failedToStartNewCreatedVm(failedInventory, errCode);
+                if (spec.isPreserveExistingDataVolumes()) {
+                    completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10289, errCode, errCode.getDetails()));
+                    return;
+                }
                 dbf.remove(self);
                 // clean up EO, otherwise API-retry may cause conflict if
                 // the resource uuid is set

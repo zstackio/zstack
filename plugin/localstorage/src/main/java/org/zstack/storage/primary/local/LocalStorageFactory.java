@@ -663,6 +663,16 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void preAttachVolume(VmInstanceInventory vm, final VolumeInventory volume) {
+        if (VmInstanceState.Created.toString().equals(vm.getState())) {
+            List<String> volumeUuids = vm.getAllVolumes().stream().map(VolumeInventory::getUuid).collect(Collectors.toList());
+            volumeUuids.add(volume.getUuid());
+            List<String> hostUuids = Q.New(LocalStorageResourceRefVO.class).select(LocalStorageResourceRefVO_.hostUuid)
+                    .in(LocalStorageResourceRefVO_.resourceUuid, volumeUuids).listValues();
+            if (hostUuids.stream().distinct().count() > 1) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10047,
+                        "cannot associate local data volumes on different hosts before VM first start"));
+            }
+        }
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, list(vm.getRootVolumeUuid(), volume.getUuid()));
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);
@@ -680,6 +690,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
 
             String vmClusterUuid = vm.getClusterUuid();
+            if (vmClusterUuid == null && VmInstanceState.Created.toString().equals(vm.getState())) {
+                return;
+            }
             String volumeHostUuid = Q.New(LocalStorageResourceRefVO.class)
                     .select(LocalStorageResourceRefVO_.hostUuid)
                     .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).findValue();

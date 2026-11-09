@@ -291,6 +291,7 @@
     <bean id="TpmBootModeApiInterceptor" class="org.zstack.compute.vm.devices.TpmBootModeApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.tag.SystemTagApiMessageExtensionPoint" />
         </zstack:plugin>
     </bean>
 
