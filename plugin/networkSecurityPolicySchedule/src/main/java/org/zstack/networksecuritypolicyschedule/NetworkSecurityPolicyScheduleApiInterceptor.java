@@ -9,6 +9,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
+import org.zstack.network.securitygroup.SecurityGroupPermissionChecker;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ import java.util.Set;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleConstant.SECURITY_GROUP_RESOURCE_TYPE;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_IDENTITY_RBAC_10007;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10000;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10001;
@@ -48,6 +50,8 @@ public class NetworkSecurityPolicyScheduleApiInterceptor implements ApiMessageIn
     private NetworkSecurityPolicyScheduleFacade scheduleFacade;
     @Autowired
     private AccountManager accountManager;
+    @Autowired
+    private SecurityGroupPermissionChecker securityGroupPermissionChecker;
     @Autowired
     private NetworkSecurityPolicyScheduleResourceBackendRegistry backendRegistry;
 
@@ -97,7 +101,7 @@ public class NetworkSecurityPolicyScheduleApiInterceptor implements ApiMessageIn
             throw scheduleNotFound(msg.getUuid());
         }
         validateResource(schedule.getResourceType(), schedule.getResourceUuid());
-        validateAccountAccess(msg, schedule.getResourceUuid());
+        validateScheduleManage(msg, schedule);
         NetworkSecurityPolicyScheduleTime time = validateTime(
                 msg.getTimeType(), msg.getRepeatType(), msg.getStartDate(), msg.getEndDate(),
                 msg.getStartTime(), msg.getEndTime(), msg.getWeekDays());
@@ -111,13 +115,21 @@ public class NetworkSecurityPolicyScheduleApiInterceptor implements ApiMessageIn
             throw scheduleNotFound(msg.getUuid());
         }
         validateResource(schedule.getResourceType(), schedule.getResourceUuid());
-        validateAccountAccess(msg, schedule.getResourceUuid());
+        validateScheduleManage(msg, schedule);
         return schedule;
     }
 
     private void validate(APIGetNetworkSecurityPolicyScheduleMsg msg) {
         validateGetResource(msg.getResourceUuid());
         validateAccountAccess(msg, msg.getResourceUuid());
+    }
+
+    private void validateScheduleManage(APIMessage msg, NetworkSecurityPolicyScheduleVO schedule) {
+        if (SECURITY_GROUP_RESOURCE_TYPE.equals(schedule.getResourceType())) {
+            securityGroupPermissionChecker.checkManage(msg.getSession(), schedule.getResourceUuid());
+        } else {
+            validateAccountAccess(msg, schedule.getResourceUuid());
+        }
     }
 
     private void validateAccountAccess(APIMessage msg, String resourceUuid) {

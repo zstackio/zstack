@@ -115,7 +115,7 @@ public class SecurityGroupPermissionChecker {
     /**
      * Requires the caller to be admin or the owner of the group.
      */
-    void checkManage(SessionInventory session, String securityGroupUuid) {
+    public void checkManage(SessionInventory session, String securityGroupUuid) {
         if (!AccountConstant.isAdminPermission(session) && !session.getAccountUuid().equals(acntMgr.getOwnerAccountUuidOfResource(securityGroupUuid))) {
             throw new OperationFailureException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10134, IdentityErrors.PERMISSION_DENIED,
                     "account[uuid:%s] has no permission to modify security group[uuid:%s]", session.getAccountUuid(), securityGroupUuid));
