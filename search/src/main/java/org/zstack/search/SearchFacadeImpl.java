@@ -8,19 +8,31 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.Q;
+import org.zstack.core.jsonlabel.JsonLabelVO;
+import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.search.SearchErrorHandler;
 import org.zstack.core.search.SearchGlobalProperty;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.search.SearchConstant;
+import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.utils.Utils;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_ZQL_10000;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
 
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @ Author : yh.w
  * @ Date   : Created in 17:20 2020/11/20
  */
-public class SearchFacadeImpl extends AbstractService implements SearchFacade {
+public class SearchFacadeImpl extends AbstractService implements SearchFacade, ManagementNodeChangeListener {
     private static CLogger logger = Utils.getLogger(SearchFacadeImpl.class);
 
     @Autowired
@@ -37,6 +49,9 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
+
+    private static final String SEARCH_DISABLED = "search.startupDisabled.";
+    private static final String REBUILD_REQUIRED = "search.rebuildRequired.";
 
     private Future<Void> recoveryTask;
     private boolean indexesBuiltOnVip;
@@ -97,7 +112,7 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
                 return false;
             }
 
-            if (!SearchGlobalProperty.SearchAutoRegister) {
+            if (isSearchDisabled()) {
                 logger.info("search module has been disabled, skip refresh search indexes");
                 return false;
             }
@@ -163,12 +178,17 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
 
             @Override
             public Void call() throws Exception {
-                if (!Platform.isVIPNode()) {
+                if (!Platform.isVIPNode() || isSearchDisabled()) {
                     indexesBuiltOnVip = false;
                     return null;
                 }
-                if (SearchGlobalProperty.SearchAutoRegister && (!onlyOnVipChange || !indexesBuiltOnVip)) {
+                List<Long> pending = pendingRebuilds();
+                if (!onlyOnVipChange || !indexesBuiltOnVip || !pending.isEmpty()) {
                     indexesBuiltOnVip = createSearchIndexes();
+                    if (indexesBuiltOnVip && !pending.isEmpty() && Platform.isVIPNode() && !isSearchDisabled()) {
+                        // A new failure during this rebuild must retain its own pending label.
+                        SQL.New(JsonLabelVO.class).in(JsonLabelVO_.id, pending).hardDelete();
+                    }
                 }
                 return null;
             }
@@ -225,8 +245,55 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
         return true;
     }
 
+    private boolean isSearchDisabled() {
+        // A degraded node cannot add its writes to the shared index.
+        return !SearchGlobalProperty.SearchAutoRegister || SQL.New(
+                "select m.uuid from JsonLabelVO l, ManagementNodeVO m where l.labelValue = m.uuid "
+                        + "and l.labelKey like :key", String.class)
+                .param("key", SEARCH_DISABLED + "%").limit(1).find() != null;
+    }
+
+    private List<Long> pendingRebuilds() {
+        return Q.New(JsonLabelVO.class).like(JsonLabelVO_.labelKey, REBUILD_REQUIRED + "%")
+                .select(JsonLabelVO_.id).listValues();
+    }
+
+    @Override
+    public void checkSearchAvailability() {
+        if (isSearchDisabled() || !pendingRebuilds().isEmpty()) {
+            throw new OperationFailureException(err(ORG_ZSTACK_ZQL_10000, SearchErrors.SEARCH_MODULE_DISABLED,
+                    "global search is unavailable while a management node is degraded or indexes are being rebuilt"));
+        }
+    }
+
     @Override
     public FullTextEntityManager getFullTextEntityManager() {
         return Search.getFullTextEntityManager(dbf.getEntityManager());
+    }
+
+    @Override
+    public void iJoin(ManagementNodeInventory inv) {
+        if (!SearchGlobalProperty.SearchAutoRegister) {
+            new JsonLabel().createIfAbsent(SEARCH_DISABLED + inv.getUuid(), inv.getUuid());
+            new JsonLabel().create(REBUILD_REQUIRED + Platform.getUuid(), inv.getUuid());
+        } else {
+            new JsonLabel().delete(SEARCH_DISABLED + inv.getUuid());
+        }
+        refreshSearchIndexes(true);
+    }
+
+    @Override
+    public void nodeJoin(ManagementNodeInventory inv) {
+        refreshSearchIndexes(true);
+    }
+
+    @Override
+    public void nodeLeft(ManagementNodeInventory inv) {
+        new JsonLabel().delete(SEARCH_DISABLED + inv.getUuid());
+        refreshSearchIndexes(true);
+    }
+
+    @Override
+    public void iAmDead(ManagementNodeInventory inv) {
     }
 }
