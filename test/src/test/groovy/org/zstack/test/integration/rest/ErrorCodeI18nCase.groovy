@@ -33,6 +33,7 @@ class ErrorCodeI18nCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testMissingElaborationParametersUseLocalizedMessages()
             testServiceLocalizesZhCN()
             testServiceLocalizesEnUS()
             testServiceFallbackToEnUS()
@@ -49,6 +50,51 @@ class ErrorCodeI18nCase extends SubCase {
             testAsyncWebhookWithoutAcceptLanguageKeepsRawDetails()
             testSyncApiWithoutAcceptLanguageKeepsRawDetails()
         }
+    }
+
+    void testMissingElaborationParametersUseLocalizedMessages() {
+        Map<String, String> expectedMessages = [
+                "ja-JP": "入力パラメーター 'regex' または 'category' を指定する必要があります。",
+                "ko-KR": "입력 인수 'regex' 또는 'category'를 지정해야 합니다.",
+                "de-DE": "Einer der Eingabeparameter 'regex' oder 'category' muss angegeben werden.",
+                "fr-FR": "Le paramètre d'entrée 'regex' ou 'category' doit être renseigné.",
+                "ru-RU": "Необходимо указать входной параметр 'regex' или 'category'.",
+                "th-TH": "ต้องระบุพารามิเตอร์ 'regex' หรือ 'category'",
+                "id-ID": "Parameter masukan 'regex' atau 'category' harus diisi.",
+                "zh-CN": "输入参数 'regex' 或 'category' 必须设置",
+                "en-US": "Input arguments 'regex' or 'category' must be specified for cloud resource filtering.",
+                "zh-TW": "輸入參數 'regex' 或 'category' 必須設置"
+        ]
+        String sessionId = adminSession()
+        List<String> failures = []
+        expectedMessages.each { String locale, String expected ->
+            ["", "?regex=certificate+has+expired+or+is+not+yet+valid", "?category=BS"].each { String query ->
+                String url = "http://127.0.0.1:${WebBeanConstructor.port}/v1/errorcode/elaborations${query}"
+                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection()
+                try {
+                    conn.setRequestMethod("GET")
+                    conn.setRequestProperty("Authorization", "OAuth ${sessionId}")
+                    conn.setRequestProperty("Accept-Language", locale)
+                    int status = conn.getResponseCode()
+                    String body = (status >= 400 ? conn.getErrorStream() : conn.getInputStream()).getText("UTF-8")
+                    Map response = JSONObjectUtil.toObject(body, LinkedHashMap.class)
+                    if (query.isEmpty()) {
+                        Map error = response.error as Map
+                        assert status >= 400 && error?.globalErrorCode == "ORG_ZSTACK_CORE_ERRORCODE_10007" :
+                                "missing elaboration parameters must return error 10007: locale=${locale} status=${status} response=${response}"
+                        if (error.message != expected || error.message.contains("%s")) {
+                            failures.add("locale=${locale} expected=${expected} actual=${error.message}".toString())
+                        }
+                    } else {
+                        assert status == 200 && response.contents instanceof List && !response.error :
+                                "elaboration query with regex or category must succeed: locale=${locale} query=${query} status=${status} response=${response}"
+                    }
+                } finally {
+                    conn.disconnect()
+                }
+            }
+        }
+        assert failures.isEmpty() : "missing-parameter translations must name regex/category without placeholders: ${failures.join('; ')}"
     }
 
     void testServiceLocalizesZhCN() {

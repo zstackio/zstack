@@ -4538,7 +4538,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. Проверьте, что хранилище резервных копий находится в подключенном состоянии; при необходимости попробуйте переподключить его.",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "только методы могут быть определены внутри Function, но найдено %s",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMap не может найти ресурсы [%s] в карте Resources!",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Ссылка [%s] не найдена!",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Необходимо указать входной параметр 'regex' или 'category'.",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "неподдерживаемые функции [%s] не поддерживаются в шаблоне ресурсов ZStack!",
   "ORG_ZSTACK_IMAGE_10026": "Для фильтрации облачных ресурсов необходимо указать входные аргументы 'regex' или 'category'.",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "код разработки должен быть числовым значением!",

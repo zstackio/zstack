@@ -4538,7 +4538,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. ตรวจสอบว่าพื้นที่จัดเก็บสำรองอยู่ในสถานะเชื่อมต่อ; พยายามเชื่อมมต่อใหม่หากจำเป็น",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "เฉพาะ methods เท่านั้นที่สามารถกำหนดภายใน Function ได้, แต่พบ %s",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMap ไม่สามารถค้นหาทรัพยากร [%s] ภายใน Resources map!",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "ไม่พบ Reference [%s]!",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "ต้องระบุพารามิเตอร์ 'regex' หรือ 'category'",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "functions ที่ไม่รองรับ [%s] ไม่ได้รับการรองรับใน ZStack resource template!",
   "ORG_ZSTACK_IMAGE_10026": "ต้องระบุอาร์กิวเมนต์อินพุต 'regex' หรือ 'category' สำหรับการกรอง cloud resource",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "elaboration code ต้องเป็นค่าตัวเลข!",

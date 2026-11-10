@@ -4508,7 +4508,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. バックアップストレージが接続状態であることを確認してください。必要に応じて再接続を試みてください。",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "Function内で定義できるのはメソッドのみですが、%sが見つかりました",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMapがResourcesマップ内でリソース [%s] を見つけることができません！",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "リファレンス [%s] が見つかりません！",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "入力パラメーター 'regex' または 'category' を指定する必要があります。",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "サポートされていない機能 [%s] はZStackリソーステンプレートでサポートされていません！",
   "ORG_ZSTACK_IMAGE_10026": "クラウドリソースフィルタリングには'regex'または'category'の入力引数を指定する必要があります。",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "詳細化コードは数値である必要があります！",

@@ -4538,7 +4538,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. Verifikasi bahwa penyimpanan cadangan dalam keadaan terhubung; coba hubungkan kembali jika perlu.",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "hanya method yang dapat didefinisikan dalam Function, tetapi menemukan %s",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMap tidak dapat menemukan resources [%s] dalam Resources map!",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Tidak ditemukan Reference [%s]!",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Parameter masukan 'regex' atau 'category' harus diisi.",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "fungsi yang tidak didukung [%s] tidak didukung dalam template sumber daya ZStack!",
   "ORG_ZSTACK_IMAGE_10026": "Argumen input 'regex' atau 'category' harus ditentukan untuk pemfilteran sumber daya cloud.",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "elaboration code harus berupa nilai numerik!",
