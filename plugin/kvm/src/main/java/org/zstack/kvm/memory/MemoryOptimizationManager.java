@@ -234,22 +234,22 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
         else if (message instanceof APIPrepareHostMemoryWritebackBackendMsg) {
             APIPrepareHostMemoryWritebackBackendEvent event = new APIPrepareHostMemoryWritebackBackendEvent(message.getId());
-            submitLongJob((APICreateMessage) message, event, event::setInventory);
+            submitLongJob((APICreateMessage) message, ((APIPrepareHostMemoryWritebackBackendMsg) message).getUuid(), event, event::setInventory);
         } else if (message instanceof APIRecoverVmMemoryMigrationHoldMsg) {
             APIRecoverVmMemoryMigrationHoldEvent event = new APIRecoverVmMemoryMigrationHoldEvent(message.getId());
-            submitLongJob((APICreateMessage) message, event, event::setInventory);
+            submitLongJob((APICreateMessage) message, ((APIRecoverVmMemoryMigrationHoldMsg) message).getUuid(), event, event::setInventory);
         } else if (message instanceof MemoryVmMigrationHoldRecoveryMsg) {
             recoverMigrationHold((MemoryVmMigrationHoldRecoveryMsg) message);
         }
         else if (message instanceof APIPauseMemoryOptimizationMsg) {
             APIPauseMemoryOptimizationEvent event = new APIPauseMemoryOptimizationEvent(message.getId());
-            submitLongJob((APICreateMessage) message, event, event::setInventory);
+            submitLongJob((APICreateMessage) message, operationTarget((APIMemoryClusterOperationMsg) message), event, event::setInventory);
         } else if (message instanceof APIResumeMemoryOptimizationMsg) {
             APIResumeMemoryOptimizationEvent event = new APIResumeMemoryOptimizationEvent(message.getId());
-            submitLongJob((APICreateMessage) message, event, event::setInventory);
+            submitLongJob((APICreateMessage) message, operationTarget((APIMemoryClusterOperationMsg) message), event, event::setInventory);
         } else if (message instanceof APIDrainMemoryOptimizationMsg) {
             APIDrainMemoryOptimizationEvent event = new APIDrainMemoryOptimizationEvent(message.getId());
-            submitLongJob((APICreateMessage) message, event, event::setInventory);
+            submitLongJob((APICreateMessage) message, operationTarget((APIMemoryClusterOperationMsg) message), event, event::setInventory);
         }
         else { bus.dealWithUnknownMessage(message); }
     }
@@ -317,12 +317,13 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    /** The API path submits the same LongJob that SubmitLongJob creates from this request. */
-    private void submitLongJob(APICreateMessage msg, APIEvent event, Consumer<LongJobInventory> inventory) {
+    /** The API path submits the same LongJob that SubmitLongJob creates from this request, owned by its target resource. */
+    private void submitLongJob(APICreateMessage msg, String target, APIEvent event, Consumer<LongJobInventory> inventory) {
         SubmitLongJobMsg submit = new SubmitLongJobMsg();
         submit.setJobName(msg.getClass().getSimpleName());
         submit.setJobData(JSONObjectUtil.toJsonString(msg));
         submit.setResourceUuid(msg.getResourceUuid());
+        submit.setTargetResourceUuid(target);
         submit.setSystemTags(msg.getSystemTags());
         submit.setUserTags(msg.getUserTags());
         submit.setAccountUuid(msg.getSession().getAccountUuid());
@@ -337,6 +338,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 bus.publish(event);
             }
         });
+    }
+
+    /** A Cluster operation limited to one Host belongs to that Host. */
+    private static String operationTarget(APIMemoryClusterOperationMsg msg) {
+        return msg.getHostUuid() != null ? msg.getHostUuid() : msg.getUuid();
     }
 
     /** Hosts run one at a time, each on the management node that owns it. */
