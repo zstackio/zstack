@@ -146,7 +146,7 @@ public class ElaborationManagerImpl extends AbstractService {
                                     List<ErrorCodeElaboration> errs = JSONObjectUtil.toCollection(content, ArrayList.class, ErrorCodeElaboration.class);
                                     contents.put(file, errs);
                                 } catch (IOException e) {
-                                    trigger.fail(Platform.operr(ORG_ZSTACK_CORE_ERRORCODE_10004, String.format("read error elaboration template files [%s] failed, due to: %s", templateFile, e.getMessage())));
+                                    trigger.fail(Platform.operr(ORG_ZSTACK_CORE_ERRORCODE_10004, "read error elaboration template files [%s] failed, due to: %s", templateFile, e.getMessage()));
                                     return;
                                 } catch (JsonSyntaxException e) {
                                     results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.InValidJsonSchema.toString()));
