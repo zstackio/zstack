@@ -125,7 +125,9 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
             List<VolumeSnapshotInventory> sinvs = struct.getSnapshotInventories();
 
             for (VolumeSnapshotInventory sinv : sinvs) {
-                msgs.add(handleSnapshotDeletion(sinv, struct.getDirection(), struct.getScope()));
+                VolumeSnapshotDeletionMsg msg = handleSnapshotDeletion(sinv, struct.getDirection(), struct.getScope());
+                msg.setSnapshotGroupUuid(struct.getSnapshotGroupUuid());
+                msgs.add(msg);
             }
         }
 

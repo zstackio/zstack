@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO_;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupMsg;
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotMsg;
@@ -19,6 +22,7 @@ import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.vm.devices.VmDevicesSpec;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.kvm.KVMSystemTags;
+import org.zstack.kvm.efi.SecureBootRecordHelper;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -67,20 +71,6 @@ public class SnapshotGroupRevertTpmHelper {
                 .eq(VmHostBackupFileVO_.resourceUuid, snapshotGroupUuid)
                 .list();
 
-        if (requireTpmBackup && backupFiles.stream().noneMatch(f -> f.getType() == VmHostFileType.TpmState)) {
-            throw new OperationFailureException(operr(
-                    ORG_ZSTACK_KVM_10163,
-                    "volume snapshot group[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
-                    snapshotGroupUuid));
-        }
-
-        if (backupFiles.isEmpty()) {
-            logger.debug(String.format(
-                    "no VmHostBackupFileVO found for volume snapshot group[uuid:%s], skip restoring TPM/NvRam",
-                    snapshotGroupUuid));
-            return;
-        }
-
         VmHostBackupFileVO tpmBackupFile = null;
         VmHostBackupFileVO nvRamBackupFile = null;
         for (VmHostBackupFileVO f : backupFiles) {
@@ -89,6 +79,26 @@ public class SnapshotGroupRevertTpmHelper {
             } else if (f.getType() == VmHostFileType.NvRam) {
                 nvRamBackupFile = f;
             }
+        }
+
+        // The snapshot-point marker survives missing backup records. Missing material
+        // must not turn a TPM/SecureBoot point into an ordinary VM, even when resetting TPM.
+        boolean snapshotGroupHasTpm = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, snapshotGroupUuid)
+                .eq(SystemTagVO_.tag, VolumeSnapshotConstant.SNAPSHOT_GROUP_WITH_TPM_TAG)
+                .isExists();
+        if ((requireTpmBackup || snapshotGroupHasTpm) && tpmBackupFile == null) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_KVM_10163,
+                    "volume snapshot group[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
+                    snapshotGroupUuid));
+        }
+        if ((snapshotGroupHasTpm || SecureBootRecordHelper.secureBootOfSnapshotGroup(snapshotGroupUuid))
+                && nvRamBackupFile == null) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_KVM_10163,
+                    "volume snapshot group[uuid:%s] has no saved NVRAM state, cannot restore its firmware state",
+                    snapshotGroupUuid));
         }
 
         if (tpmBackupFile == null && nvRamBackupFile == null) {
