@@ -4448,7 +4448,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. 백업 스토리지가 연결 상태인지 확인하고, 필요시 재연결을 시도하십시오.",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "Function 내에서 메서드만 정의할 수 있습니다.그러나 %s을(를) 찾았습니다",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMap에서 Resources 맵 내에서 리소스 [%s]을(를) 찾을 수 없습니다!",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "참조 [%s]을(를) 찾을 수 없습니다!",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "입력 인수 'regex' 또는 'category'를 지정해야 합니다.",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "지원되지 않는 함수 [%s]는 ZStack 리소스 템플릿에서 지원되지 않습니다!",
   "ORG_ZSTACK_IMAGE_10026": "클라우드 리소스 필터링을 위해 'regex' 또는 'category' 입력 인수를 지정해야 합니다.",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "상세 코드必须是 숫자 값이어야 합니다!",

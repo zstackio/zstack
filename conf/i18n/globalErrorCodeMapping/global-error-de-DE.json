@@ -4448,7 +4448,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. Überprüfen Sie, ob sich der Backup-Speicher im Verbindungsstatus befindet; Versuchen Sie gegebenenfalls, ihn erneut zu verbinden.",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "Nur Methoden können innerhalb einer Function definiert werden, aber %s gefunden",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMap kann Ressourcen [%s] nicht in der Resources-Map finden!",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Keine Referenz [%s] gefunden!",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Einer der Eingabeparameter 'regex' oder 'category' muss angegeben werden.",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "Nicht unterstützte Funktionen [%s] werden im ZStack-Ressourcen-Template nicht unterstützt!",
   "ORG_ZSTACK_IMAGE_10026": "Eingabeargumente 'regex' oder 'category' müssen für die Cloud-Ressourcenfilterung angegeben werden.",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "Elaborationscode muss ein numerischer Wert sein!",

@@ -4538,7 +4538,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10032": "2. Vérifiez que le stockage de sauvegarde est dans un état connecté ; essayez de le reconnecter si nécessaire.",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10036": "seules les méthodes peuvent être définies dans une Function, mais a trouvé %s",
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10035": "Fn::FindInMap ne peut pas localiser les ressources [%s] dans le mappage Resources !",
-  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Aucune référence [%s] trouvée !",
+  "ORG_ZSTACK_CORE_ERRORCODE_10007": "Le paramètre d'entrée 'regex' ou 'category' doit être renseigné.",
   "ORG_ZSTACK_CORE_ERRORCODE_10005": "les fonctions non prises en charge [%s] ne sont pas prises en charge dans le modèle de ressource ZStack !",
   "ORG_ZSTACK_IMAGE_10026": "Les arguments d'entrée 'regex' ou 'category' doivent être spécifiés pour le filtrage des ressources cloud.",
   "ORG_ZSTACK_CORE_ERRORCODE_10006": "le code d'élaboration doit être une valeur numérique !",
