@@ -49,6 +49,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.tag.TagManager;
@@ -635,6 +636,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
+                new QuotaUtil().lockAndCheckQuota(finalVo.getAccountUuid(), VolumeConstant.VOLUME_SIZE_QUOTA, finalVo.getSize());
                 dbf.getEntityManager().persist(finalVo);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(finalVo);
@@ -1072,6 +1074,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
+                new QuotaUtil().lockAndCheckQuota(finalVo1.getAccountUuid(), VolumeConstant.VOLUME_SIZE_QUOTA, finalVo1.getSize());
                 dbf.getEntityManager().persist(finalVo1);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(finalVo1);
