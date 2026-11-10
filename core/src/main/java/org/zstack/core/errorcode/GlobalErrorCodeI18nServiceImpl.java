@@ -97,17 +97,14 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
         Map<String, String> messages = localeMessages.get(locale);
         if (messages != null) {
             String template = messages.get(globalErrorCode);
-            if (template != null) {
+            if (isNotBlank(template)) {
                 return template;
             }
         }
 
         // fallback to en_US
         if (!"en_US".equals(locale)) {
-            Map<String, String> enMessages = localeMessages.get("en_US");
-            if (enMessages != null) {
-                return enMessages.get(globalErrorCode);
-            }
+            return getTemplate(globalErrorCode, "en_US");
         }
 
         return null;

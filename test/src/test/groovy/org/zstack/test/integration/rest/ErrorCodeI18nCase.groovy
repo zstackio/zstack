@@ -1,6 +1,8 @@
 package org.zstack.test.integration.rest
 
+import org.apache.commons.codec.digest.DigestUtils
 import org.zstack.core.errorcode.GlobalErrorCodeI18nService
+import org.zstack.core.errorcode.GlobalErrorCodeI18nServiceImpl
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.header.errorcode.SysErrors
@@ -48,6 +50,8 @@ class ErrorCodeI18nCase extends SubCase {
             testRestServerAsyncApiWithAcceptLanguage()
             testAsyncWebhookWithoutAcceptLanguageKeepsRawDetails()
             testSyncApiWithoutAcceptLanguageKeepsRawDetails()
+            testWrongOldPasswordUsesReadableLocalizedErrors()
+            testBlankTemplatesFallBackWithoutErasingDetails()
         }
     }
 
@@ -496,6 +500,163 @@ class ErrorCodeI18nCase extends SubCase {
             assert result.error.details == "raw webhook details"
         } finally {
             env.cleanMessageHandlers()
+        }
+    }
+
+    void testWrongOldPasswordUsesReadableLocalizedErrors() {
+        String fixtureAccountName = "i18n-password-account"
+        String fixtureUserName = "i18n-password-user"
+        String originalPassword = DigestUtils.sha512Hex("original-password-90916")
+        String proposedPassword = DigestUtils.sha512Hex("proposed-password-90916")
+        String wrongOldPassword = DigestUtils.sha512Hex("wrong-old-password-90916")
+        def account = createAccount {
+            name = fixtureAccountName
+            password = originalPassword
+            type = "Normal"
+        }
+        List<String> sessionUuids = []
+        List<String> failures = []
+        try {
+            def accountSession = logInByAccount {
+                accountName = account.name
+                password = originalPassword
+            }
+            sessionUuids.add(accountSession.uuid)
+            def user = createUser {
+                name = fixtureUserName
+                password = originalPassword
+                sessionId = accountSession.uuid
+            }
+            def userSession = logInByUser {
+                accountName = account.name
+                userName = user.name
+                password = originalPassword
+            }
+            sessionUuids.add(userSession.uuid)
+            assert account.type == "Normal"
+            assert userSession.accountUuid == account.uuid
+            assert userSession.userUuid == user.uuid
+
+            ["th-TH": "Old password does not match", "en-US": "Old password does not match", "zh-CN": "旧密码"].each { language, expected ->
+                String baseUrl = "http://127.0.0.1:${WebBeanConstructor.port}"
+                HttpURLConnection update = (HttpURLConnection) new URL("${baseUrl}/v1/accounts/users/actions").openConnection()
+                Map error
+                try {
+                    update.setRequestMethod("PUT")
+                    update.setDoOutput(true)
+                    update.setRequestProperty("Authorization", "OAuth ${userSession.uuid}")
+                    update.setRequestProperty("Accept-Language", language)
+                    update.setRequestProperty("Content-Type", "application/json")
+                    String body = JSONObjectUtil.toJsonString([updateUser: [uuid: user.uuid,
+                            password: proposedPassword, oldPassword: wrongOldPassword]])
+                    update.getOutputStream().withCloseable { it.write(body.getBytes("UTF-8")) }
+                    assert update.getResponseCode() == 202
+                    Map response = JSONObjectUtil.toObject(update.getInputStream().text, LinkedHashMap.class)
+                    String location = response.get("location") as String
+                    assert location != null
+                    String jobUrl = location.startsWith("http") ? location : "${baseUrl}${location}"
+                    retryInSecs(5) {
+                        HttpURLConnection job = (HttpURLConnection) new URL(jobUrl).openConnection()
+                        try {
+                            job.setRequestProperty("Authorization", "OAuth ${userSession.uuid}")
+                            job.setRequestProperty("Accept-Language", language)
+                            assert job.getResponseCode() == 503
+                            Map jobResponse = JSONObjectUtil.toObject(job.getErrorStream().text, LinkedHashMap.class)
+                            error = jobResponse.get("error") as Map
+                            assert error != null
+                            assert error.get("globalErrorCode") == "ORG_ZSTACK_IDENTITY_10011"
+                        } finally {
+                            job.disconnect()
+                        }
+                    }
+                } finally {
+                    update.disconnect()
+                }
+                println("wrong oldPassword ${language}: ${JSONObjectUtil.toJsonString(error)}")
+                if (!(error.message?.contains(expected) && error.message?.contains(user.uuid) && error.details == error.message)) {
+                    failures.add("${language} must return a readable old-password error with the user UUID; got ${error}")
+                }
+            }
+
+            def unchangedSession = logInByUser {
+                accountName = account.name
+                userName = user.name
+                password = originalPassword
+            }
+            sessionUuids.add(unchangedSession.uuid)
+            def rejectedLogin = new org.zstack.sdk.LogInByUserAction()
+            rejectedLogin.accountName = account.name
+            rejectedLogin.userName = user.name
+            rejectedLogin.password = proposedPassword
+            def rejected = rejectedLogin.call()
+            if (rejected.value?.inventory != null) {
+                sessionUuids.add(rejected.value.inventory.uuid)
+            }
+            assert rejected.error != null : "Rejected password updates must leave the proposed password unusable"
+            assert rejected.value?.inventory == null
+            println("wrong oldPassword: original password still accepted and proposed password rejected")
+        } finally {
+            try {
+                sessionUuids.each { sid -> logOut { sessionUuid = sid } }
+            } finally {
+                deleteAccount { uuid = account.uuid }
+            }
+        }
+        assert failures.isEmpty() : failures.join("\n")
+    }
+
+    void testBlankTemplatesFallBackWithoutErasingDetails() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+        def field = GlobalErrorCodeI18nServiceImpl.class.getDeclaredField("localeMessages")
+        field.setAccessible(true)
+        Map<String, Map<String, String>> catalog = field.get(i18nService) as Map
+        String code = "ORG_ZSTACK_IDENTITY_10011"
+        Map<String, String> originalThai = catalog.get("th-TH")
+        Map<String, String> originalEnglish = catalog.get("en_US")
+        String userUuid = "fallback-user-90916"
+        String expectedEnglish = String.format(originalEnglish.get(code), userUuid)
+        String rawDetails = "original old-password rejection for ${userUuid}"
+        try {
+            ["", " \t\n", null].each { template ->
+                Map<String, String> thai = new HashMap<>(originalThai)
+                if (template == null) {
+                    thai.remove(code)
+                } else {
+                    thai.put(code, template)
+                }
+                catalog.put("th-TH", thai)
+                catalog.put("en_US", originalEnglish)
+                ErrorCode error = new ErrorCode()
+                error.setCode(SysErrors.INVALID_ARGUMENT_ERROR.toString())
+                error.setGlobalErrorCode(code)
+                error.setFormatArgs([userUuid] as String[])
+                error.setDetails(rawDetails)
+                assert i18nService.getLocalizedMessage(code, "th-TH", [userUuid] as String[]) == expectedEnglish
+                ErrorCode localized = i18nService.localizeErrorCodeDetails(error, "th-TH")
+                assert localized.getMessage() == expectedEnglish : "Blank or missing Thai templates must use English"
+                assert localized.getDetails() == expectedEnglish
+                assert error.getDetails() == rawDetails
+
+                ["", " \t\n", null].each { englishTemplate ->
+                    Map<String, String> english = new HashMap<>(originalEnglish)
+                    if (englishTemplate == null) {
+                        english.remove(code)
+                    } else {
+                        english.put(code, englishTemplate)
+                    }
+                    catalog.put("en_US", english)
+                    ["th-TH", "en_US"].each { locale ->
+                        assert i18nService.getLocalizedMessage(code, locale, [userUuid] as String[]) == null
+                        ErrorCode untranslated = i18nService.localizeErrorCodeDetails(error, locale)
+                        assert untranslated.getMessage() == rawDetails : "No valid fallback must preserve the original reason"
+                        assert untranslated.getDetails() == rawDetails
+                        assert error.getDetails() == rawDetails
+                    }
+                }
+            }
+        } finally {
+            catalog.put("th-TH", originalThai)
+            catalog.put("en_US", originalEnglish)
         }
     }
 }
