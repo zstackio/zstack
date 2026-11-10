@@ -2400,7 +2400,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
                 .addCheckCondition((msg) -> Q.New(VmInstanceVO.class)
                         .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
-                        .notEq(VmInstanceVO_.type, "baremetal2")
+                        .notIn(VmInstanceVO_.type, VmQuotaConstant.VM_TYPES_NOT_COUNTED)
                         .isExists())
                 .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM)
                 .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> {

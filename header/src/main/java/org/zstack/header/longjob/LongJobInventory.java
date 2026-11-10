@@ -107,7 +107,7 @@ public class LongJobInventory implements Serializable {
     }
 
     public void setJobData(String jobData) {
-        this.jobData = jobData;
+        this.jobData = LongJobDataSanitizer.sanitize(jobData);
     }
 
     public String getJobResult() {

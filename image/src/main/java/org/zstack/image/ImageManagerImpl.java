@@ -2761,11 +2761,18 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         String finalArchitecture = architecture;
-        return candidates.stream().filter(it -> it.getArchitecture().equals(finalArchitecture)).collect(Collectors.toList());
+        List<HostVO> matched = candidates.stream().filter(it -> it.getArchitecture().equals(finalArchitecture)).collect(Collectors.toList());
+        if (matched.isEmpty() && !candidates.isEmpty()) {
+            Set<String> hostArchitectures = candidates.stream().map(HostVO::getArchitecture).collect(Collectors.toCollection(TreeSet::new));
+            throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10048,
+                    "the image or vm requires cpu architecture[%s], but the candidate hosts are %s, please choose an image and a cluster with the same architecture",
+                    finalArchitecture, hostArchitectures));
+        }
+        return matched;
     }
 
     @Override
     public String filterErrorReason() {
-        return null;
+        return i18n("no candidate host has the cpu architecture required by the image or vm");
     }
 }

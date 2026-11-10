@@ -14,7 +14,9 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatUserdataBackend
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.ApiException
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.ErrorCode
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetCandidateZonesClustersHostsForCreatingVmResult
 import org.zstack.sdk.ImageInventory
@@ -180,6 +182,7 @@ class CreateVmWithHybridClusterCase extends SubCase {
         env.create {
 
             testCreateVm()
+            testArchitectureMismatchReportsArchitectures()
         }
     }
 
@@ -215,5 +218,39 @@ class CreateVmWithHybridClusterCase extends SubCase {
             imageUuid = image_x86.uuid
         }
         assert Q.New(VmInstanceVO.class).notNull(VmInstanceVO_.uuid).count() == 1L
+    }
+
+    static String flatten(ErrorCode error) {
+        if (error == null) {
+            return ""
+        }
+        return [error.code, error.globalErrorCode, error.description, error.details, error.message, flatten(error.cause)].join(" | ")
+    }
+
+    void testArchitectureMismatchReportsArchitectures() {
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        ImageInventory image_arm64 = env.inventoryByName("image_arm64")
+        ClusterInventory cluster_x86 = env.inventoryByName("cluster_x86")
+        long vmCount = Q.New(VmInstanceVO.class).count()
+
+        CreateVmInstanceAction action = new CreateVmInstanceAction(
+                name: "arm-on-x86",
+                instanceOfferingUuid: instanceOffering.uuid,
+                l3NetworkUuids: [l3.uuid],
+                imageUuid: image_arm64.uuid,
+                clusterUuid: cluster_x86.uuid,
+                sessionId: adminSession()
+        )
+        CreateVmInstanceAction.Result result = action.call()
+
+        // users must learn the image/cluster architecture mismatch instead of a bare "no host" with reason null
+        assert result.error != null
+        String message = flatten(result.error)
+        assert message.contains("aarch64")
+        assert message.contains("x86_64")
+        assert !message.contains("indicating: null")
+        assert !message.contains("表示：null")
+        assert Q.New(VmInstanceVO.class).count() == vmCount
     }
 }
