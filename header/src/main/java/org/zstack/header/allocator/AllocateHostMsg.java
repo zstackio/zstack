@@ -4,6 +4,7 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmMigrationMode;
 
 import java.util.*;
 
@@ -17,6 +18,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
     private String vmOperation;
+    private VmMigrationMode migrationMode = VmMigrationMode.Live;
     private boolean isDryRun;
     private List<DiskOfferingInventory> diskOfferings;
     private boolean allowNoL3Networks;
@@ -39,6 +41,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
      */
     private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
     private LinkedHashMap opaque;
+
+    public VmMigrationMode getMigrationMode() {
+        return migrationMode == null ? VmMigrationMode.Live : migrationMode;
+    }
+
+    public void setMigrationMode(VmMigrationMode migrationMode) {
+        this.migrationMode = migrationMode;
+    }
 
     public List<Set<String>> getOptionalPrimaryStorageUuids() {
         return optionalPrimaryStorageUuids;

@@ -1,5 +1,8 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.vm.devices.VmDevice;
+import org.zstack.header.vm.devices.VmDeviceMigrationCapability;
+
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
@@ -32,7 +35,7 @@ import java.util.List;
         }
 )
 @AutoDeleteTag
-public class VolumeVO extends VolumeAO implements OwnedByAccount, ToInventory {
+public class VolumeVO extends VolumeAO implements OwnedByAccount, ToInventory, VmDevice {
     @Transient
     private String accountUuid;
 
@@ -58,5 +61,14 @@ public class VolumeVO extends VolumeAO implements OwnedByAccount, ToInventory {
 
     public List<String> getAttachedVmUuids() {
         return VolumeInventory.valueOf(this).getAttachedVmUuids();
+    }
+    @Override
+    public VmDeviceMigrationCapability getMigrationCapability() {
+        return VmDeviceMigrationCapability.Live;
+    }
+
+    @Override
+    public String getMigrationErrorCode() {
+        return null;
     }
 }

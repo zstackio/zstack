@@ -1,5 +1,8 @@
 package org.zstack.header.vm.cdrom;
 
+import org.zstack.header.vm.devices.VmDevice;
+import org.zstack.header.vm.devices.VmDeviceMigrationCapability;
+
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageEO;
 import org.zstack.header.vm.VmInstanceEO;
@@ -23,7 +26,7 @@ import java.sql.Timestamp;
                 @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid")
         }
 )
-public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
+public class VmCdRomVO extends ResourceVO implements OwnedByAccount, VmDevice {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String vmInstanceUuid;
@@ -145,5 +148,14 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+    @Override
+    public VmDeviceMigrationCapability getMigrationCapability() {
+        return VmDeviceMigrationCapability.Live;
+    }
+
+    @Override
+    public String getMigrationErrorCode() {
+        return null;
     }
 }

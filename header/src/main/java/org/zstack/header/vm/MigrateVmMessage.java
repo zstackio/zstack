@@ -9,6 +9,10 @@ public interface MigrateVmMessage {
     boolean isMigrateFromDestination();
     boolean isAllowUnknown();
 
+    default VmMigrationMode getMigrationMode() {
+        return VmMigrationMode.Live;
+    }
+
     default AllocationScene getAllocationScene() {
         return null;
     }

@@ -3,6 +3,7 @@ package org.zstack.header.allocator;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmMigrationMode;
 
 import java.util.*;
 
@@ -19,6 +20,7 @@ public class HostAllocatorSpec {
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
     private String vmOperation;
+    private VmMigrationMode migrationMode = VmMigrationMode.Live;
     private List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
     private Map<Object, Object> extraData = new HashMap<>();
     private boolean allowNoL3Networks;
@@ -48,6 +50,14 @@ public class HostAllocatorSpec {
      */
     private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
     private LinkedHashMap opaque;
+
+    public VmMigrationMode getMigrationMode() {
+        return migrationMode == null ? VmMigrationMode.Live : migrationMode;
+    }
+
+    public void setMigrationMode(VmMigrationMode migrationMode) {
+        this.migrationMode = migrationMode;
+    }
 
     public LinkedHashMap getOpaque() {
         return opaque;
@@ -282,6 +292,7 @@ public class HostAllocatorSpec {
         spec.setL3NetworkUuids(msg.getL3NetworkUuids());
         spec.setImage(msg.getImage());
         spec.setVmOperation(msg.getVmOperation());
+        spec.setMigrationMode(msg.getMigrationMode());
         spec.setDiskOfferings(msg.getDiskOfferings());
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());

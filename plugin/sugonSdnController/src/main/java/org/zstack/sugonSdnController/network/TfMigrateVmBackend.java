@@ -88,6 +88,11 @@ public class TfMigrateVmBackend implements VmInstanceMigrateExtensionPoint, VmPr
 
 
     @Override
+    public boolean supportsPreMigrationMode(VmMigrationMode mode) {
+        return mode == VmMigrationMode.Live;
+    }
+
+    @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
         try {
             notifySugonSdn(vm, dstHostUuid, "add");

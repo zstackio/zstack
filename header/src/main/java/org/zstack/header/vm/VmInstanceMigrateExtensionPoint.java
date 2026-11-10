@@ -5,6 +5,10 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 
 public interface VmInstanceMigrateExtensionPoint {
+    default boolean supportsMigrationMode(VmMigrationMode mode) {
+        return true;
+    }
+
     default void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {};
 
     default void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {

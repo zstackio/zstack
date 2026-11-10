@@ -18,6 +18,7 @@ import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
@@ -35,6 +36,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
@@ -81,6 +83,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private VmNicManager nicManager;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private VmInstanceDeviceManager deviceManager;
 
     /**
      * Common validation logic for IPv4 and IPv6 static IPs.
@@ -483,6 +487,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIMigrateVmMsg msg) {
+        ErrorCode error = deviceManager.checkMigration(msg.getVmInstanceUuid(), msg.getMigrationMode());
+        if (error != null) {
+            throw new ApiMessageInterceptionException(error);
+        }
         new SQLBatch() {
             @Override
             protected void scripts() {

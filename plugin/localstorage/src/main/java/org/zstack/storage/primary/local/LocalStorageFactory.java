@@ -1015,6 +1015,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
+    public boolean supportsPreMigrationMode(VmMigrationMode mode) {
+        return mode == VmMigrationMode.Live;
+    }
+
+    @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType vmMigrationType, String dstHostUuid, Completion completion) {
         if (!VmMigrationType.HostMigration.equals(vmMigrationType)) {
             completion.success();

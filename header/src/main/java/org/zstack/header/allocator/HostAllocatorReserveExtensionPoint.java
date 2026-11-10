@@ -12,4 +12,8 @@ import java.util.List;
  */
 public interface HostAllocatorReserveExtensionPoint extends Flow {
     public HostAllocatorReserveExtensionPoint getExtension();
+
+    default void releaseReservation(HostAllocatorSpec spec, HostInventory host, Completion completion) {
+        completion.success();
+    }
 }

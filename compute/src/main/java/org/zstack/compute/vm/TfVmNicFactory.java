@@ -13,13 +13,14 @@ import org.zstack.utils.logging.CLogger;
 
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.header.vm.devices.VmDeviceMigrationCapability.Live;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 public class TfVmNicFactory extends VmNicFactory {
     private static final CLogger logger = Utils.getLogger(TfVmNicFactory.class);
     private static final VSwitchType vSwitchType = new VSwitchType(VmInstanceConstant.L2_TF_VSWITCH_TYPE);
-    private static final VmNicType type = new VmNicType(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
+    private static final VmNicType type = new VmNicType(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE, Live);
 
     @Autowired
     private CloudBus bus;

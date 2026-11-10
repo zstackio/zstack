@@ -1,0 +1,14 @@
+<error>
+    <prefix>CRYPTO_DEVICE</prefix>
+    <code><id>1000</id><description>Invalid crypto device or topology</description></code>
+    <code><id>1001</id><description>Crypto device health is unknown</description></code>
+    <code><id>1002</id><description>Crypto device has a confirmed fault</description></code>
+    <code><id>1003</id><description>Crypto device is unavailable</description></code>
+    <code><id>1004</id><description>Crypto device is in use</description></code>
+    <code><id>1005</id><description>VM owner cannot access the crypto device</description></code>
+    <code><id>1006</id><description>Crypto device operation is not supported</description></code>
+    <code><id>1007</id><description>Crypto device license is required</description></code>
+    <code><id>1008</id><description>Crypto device operation is in progress or its result is unknown</description></code>
+    <code><id>1009</id><description>Crypto device driver operation failed</description></code>
+    <code><id>1010</id><description>Crypto VF count or virtualization state is invalid</description></code>
+</error>

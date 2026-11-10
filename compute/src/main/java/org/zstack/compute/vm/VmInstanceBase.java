@@ -7376,6 +7376,15 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void migrateVm(final MigrateVmMessage msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState((Message) msg, self.getState(), VmErrors.MIGRATE_ERROR);
+        if (allowed == null) {
+            allowed = vidm.checkMigration(self.getUuid(), msg.getMigrationMode());
+        }
+        if (allowed == null && msg.getMigrationMode() == VmMigrationMode.StopAndStart) {
+            allowed = extEmitter.preStopVm(VmInstanceInventory.valueOf(self));
+            if (allowed == null) {
+                allowed = extEmitter.preStartVm(VmInstanceInventory.valueOf(self));
+            }
+        }
         if (allowed != null) {
             completion.fail(allowed);
             return;
@@ -7390,8 +7399,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             String __name__ = "call-pre-vm-migration-extension";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                new While<>(pluginRgty.getExtensionList(VmPreMigrationExtensionPoint.class))
-                    .each((extension, whileCompletion) -> extension.preVmMigration(inv, VmMigrationType.HostMigration, msg.getHostUuid(), new Completion(whileCompletion) {
+                new While<>(pluginRgty.getExtensionList(VmPreMigrationExtensionPoint.class).stream()
+                        .filter(ext -> ext.supportsPreMigrationMode(msg.getMigrationMode()))
+                        .collect(Collectors.toList()))
+                    .each((extension, whileCompletion) -> extension.preVmMigration(
+                            inv, VmMigrationType.HostMigration, msg.getHostUuid(),
+                            new Completion(whileCompletion) {
                         @Override
                         public void success() {
                             whileCompletion.done();
@@ -7450,14 +7463,16 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void doMigrateVm(final MigrateVmMessage msg, final Completion completion) {
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
+        final boolean stopAndStart = msg.getMigrationMode() == VmMigrationMode.StopAndStart;
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, stopAndStart ? VmOperation.Start : VmOperation.Migrate);
 
         final VmInstanceState originState = self.getState();
+        spec.setCreatePaused(stopAndStart && originState == VmInstanceState.Paused);
+        FlowChain chain = stopAndStart ? vmMgr.getStopAndStartMigrateVmWorkFlowChain(inv)
+                : getMigrateVmWorkFlowChain(inv);
         changeVmStateInDb(VmInstanceStateEvent.migrating);
         spec.setMessage((Message) msg);
         spec.setAllocationScene(msg.getAllocationScene());
-        FlowChain chain = getMigrateVmWorkFlowChain(inv);
-
         setFlowMarshaller(chain);
 
         String lastHostUuid = self.getHostUuid();
@@ -7491,16 +7506,24 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
-                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid(), new NoErrorCompletion(completion) {
+                if (stopAndStart) {
+                    syncVmDevicesAddressInfo(self.getUuid());
+                }
+                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid(), msg.getMigrationMode(),
+                        new NoErrorCompletion(completion) {
                     @Override
                     public void done() {
-                        extEmitter.finalizeMigrateVm(vm, lastHostUuid, completion);
+                        extEmitter.finalizeMigrateVm(vm, lastHostUuid, msg.getMigrationMode(), completion);
                     }
                 });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                if (stopAndStart) {
+                    failedStopAndStartMigration(spec, data, errCode, completion);
+                    return;
+                }
                 String destHostUuid = spec.getDestHost().getUuid().equals(lastHostUuid) ? null : spec.getDestHost().getUuid();
                 extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode, new NoErrorCompletion(completion) {
                     @Override
@@ -7521,6 +7544,46 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
             }
         }).start();
+    }
+
+    private void failedStopAndStartMigration(VmInstanceSpec spec, Map data, ErrorCode error, Completion completion) {
+        String sourceHostUuid = originalCopy.getHostUuid();
+        String destHostUuid = spec.getDestHost().getUuid();
+        String targetHostUuid = sourceHostUuid.equals(destHostUuid) ? null : destHostUuid;
+        NoErrorCompletion failed = new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                VmInstanceInventory source = VmInstanceInventory.valueOf(self);
+                source.setHostUuid(sourceHostUuid);
+                extEmitter.failedToMigrateVm(source, targetHostUuid, error,
+                        VmMigrationMode.StopAndStart, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        completion.fail(error);
+                    }
+                });
+            }
+        };
+        if (!data.containsKey(VmStopOnHypervisorFlow.class.getName())) {
+            checkState(sourceHostUuid, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    if (self.getState() == VmInstanceState.Stopped) {
+                        returnHostCpacity(sourceHostUuid);
+                    }
+                    failed.done();
+                }
+            });
+            return;
+        }
+        changeVmStateInDb(VmInstanceStateEvent.stopped, () -> {
+            self.setHostUuid(null);
+            self.setLastHostUuid(sourceHostUuid);
+        });
+        if (!data.containsKey(VmStartOnHypervisorFlow.class.getName())) {
+            returnHostCpacity(sourceHostUuid);
+        }
+        failed.done();
     }
 
     protected void handle(CancelMigrateVmMsg msg) {

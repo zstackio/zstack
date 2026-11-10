@@ -84,6 +84,16 @@
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
             </list>
         </property>
+        <property name="stopAndStartMigrateVmWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.VmMigrationCheckL2NetworkOnHostFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateHostForMigrateVmFlow</value>
+                <value>org.zstack.compute.vm.VmMigrateCallExtensionFlow</value>
+                <value>org.zstack.compute.vm.VmStopOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmReturnHostFlow</value>
+            </list>
+        </property>
         <property name="destroyVmWorkFlowElements">
             <list>
                 <value>org.zstack.compute.vm.VmDestroyOnHypervisorFlow</value>
@@ -203,7 +213,12 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="VmInstanceDeviceManager" class="org.zstack.compute.vm.devices.VmInstanceDeviceManagerImpl"/>
+    <bean id="VmInstanceDeviceManager" class="org.zstack.compute.vm.devices.VmInstanceDeviceManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.vm.VmCapabilitiesExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
 
     <util:list id="SupportNicDriverTypes">
         <value>virtio</value>

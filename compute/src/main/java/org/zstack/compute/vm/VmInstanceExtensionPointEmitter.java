@@ -22,6 +22,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -342,8 +343,18 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    private List<VmInstanceMigrateExtensionPoint> getMigrationExtensions(VmMigrationMode mode) {
+        return migrateVmExtensions.stream().filter(ext -> ext.supportsMigrationMode(mode)).collect(Collectors.toList());
+    }
+
     public void preMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, Completion completion) {
-        new While<>(migrateVmExtensions).each((ext, comp) -> ext.preMigrateVm(inv, dstHostUuid, new Completion(comp) {
+        preMigrateVm(inv, dstHostUuid, VmMigrationMode.Live, completion);
+    }
+
+    public void preMigrateVm(final VmInstanceInventory inv, final String dstHostUuid,
+            VmMigrationMode mode, Completion completion) {
+        new While<>(getMigrationExtensions(mode))
+                .each((ext, comp) -> ext.preMigrateVm(inv, dstHostUuid, new Completion(comp) {
             @Override
             public void success() {
                 comp.done();
@@ -367,11 +378,21 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void beforeMigrateVm(final VmInstanceInventory inv, final String dstHostUuid) {
-        CollectionUtils.safeForEach(migrateVmExtensions, arg -> arg.beforeMigrateVm(inv, dstHostUuid));
+        beforeMigrateVm(inv, dstHostUuid, VmMigrationMode.Live);
+    }
+
+    public void beforeMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, VmMigrationMode mode) {
+        CollectionUtils.safeForEach(getMigrationExtensions(mode), arg -> arg.beforeMigrateVm(inv, dstHostUuid));
     }
 
     public void postMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, Completion completion) {
-        new While<>(migrateVmExtensions).each((ext, comp) -> ext.postMigrateVm(inv, dstHostUuid, new Completion(comp) {
+        postMigrateVm(inv, dstHostUuid, VmMigrationMode.Live, completion);
+    }
+
+    public void postMigrateVm(final VmInstanceInventory inv, final String dstHostUuid,
+            VmMigrationMode mode, Completion completion) {
+        new While<>(getMigrationExtensions(mode))
+                .each((ext, comp) -> ext.postMigrateVm(inv, dstHostUuid, new Completion(comp) {
             @Override
             public void success() {
                 comp.done();
@@ -395,7 +416,13 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid, NoErrorCompletion completion) {
-        new While<>(migrateVmExtensions).each((ext, comp) -> ext.afterMigrateVm(inv, srcHostUuid, new NoErrorCompletion(comp) {
+        afterMigrateVm(inv, srcHostUuid, VmMigrationMode.Live, completion);
+    }
+
+    public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid,
+            VmMigrationMode mode, NoErrorCompletion completion) {
+        new While<>(getMigrationExtensions(mode))
+                .each((ext, comp) -> ext.afterMigrateVm(inv, srcHostUuid, new NoErrorCompletion(comp) {
             @Override
             public void done() {
                 comp.done();
@@ -409,7 +436,12 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void finalizeMigrateVm(VmInstanceInventory inv, String srcHostUuid, Completion completion) {
-        new While<>(migrateVmExtensions).each((ext, next) -> {
+        finalizeMigrateVm(inv, srcHostUuid, VmMigrationMode.Live, completion);
+    }
+
+    public void finalizeMigrateVm(VmInstanceInventory inv, String srcHostUuid,
+            VmMigrationMode mode, Completion completion) {
+        new While<>(getMigrationExtensions(mode)).each((ext, next) -> {
                 AtomicBoolean completed = new AtomicBoolean();
                 Completion callback = new Completion(next) {
                     @Override
@@ -446,7 +478,13 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void failedToMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, final ErrorCode reason, NoErrorCompletion completion) {
-        new While<>(migrateVmExtensions).each((ext, comp) -> ext.failedToMigrateVm(inv, dstHostUuid, reason, new NoErrorCompletion(comp) {
+        failedToMigrateVm(inv, dstHostUuid, reason, VmMigrationMode.Live, completion);
+    }
+
+    public void failedToMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, final ErrorCode reason,
+            VmMigrationMode mode, NoErrorCompletion completion) {
+        new While<>(getMigrationExtensions(mode))
+                .each((ext, comp) -> ext.failedToMigrateVm(inv, dstHostUuid, reason, new NoErrorCompletion(comp) {
             @Override
             public void done() {
                 comp.done();

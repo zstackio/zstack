@@ -89,7 +89,7 @@ public class ZQLMetadata {
 
         public Object toInventoryFieldObject(String fieldName, Object value) {
             FieldTypeMapping mapping = typeMappingMap.get(fieldName);
-            if (mapping == null || TypeUtils.isZstackBeanPrimitive(mapping.voFieldType)) {
+            if (value == null || mapping == null || TypeUtils.isZstackBeanPrimitive(mapping.voFieldType)) {
                 return value;
             }
 

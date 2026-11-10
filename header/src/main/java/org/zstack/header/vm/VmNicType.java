@@ -1,5 +1,7 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.vm.devices.VmDeviceMigrationCapability;
+
 import java.util.*;
 
 public class VmNicType {
@@ -11,12 +13,18 @@ public class VmNicType {
     private static Map<String, VmNicType> types = Collections.synchronizedMap(new HashMap<>());
 
     private final String typeName;
+    private final VmDeviceMigrationCapability migrationCapability;
     private boolean hasAddon = false;
     private boolean useSRIOV = false;
 
-    public VmNicType(String typeName) {
+    public VmNicType(String typeName, VmDeviceMigrationCapability migrationCapability) {
         this.typeName = typeName;
+        this.migrationCapability = Objects.requireNonNull(migrationCapability, "NIC migration capability is required");
         types.put(typeName, this);
+    }
+
+    public VmDeviceMigrationCapability getMigrationCapability() {
+        return migrationCapability;
     }
 
     public static VmNicType valueOf(String typeName) {

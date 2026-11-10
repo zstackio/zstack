@@ -17,6 +17,16 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     private boolean migrateFromDestination;
     private boolean allowUnknown;
     private Integer downTime;
+    private VmMigrationMode migrationMode = VmMigrationMode.Live;
+
+    @Override
+    public VmMigrationMode getMigrationMode() {
+        return migrationMode == null ? VmMigrationMode.Live : migrationMode;
+    }
+
+    public void setMigrationMode(VmMigrationMode migrationMode) {
+        this.migrationMode = migrationMode;
+    }
 
     @Override
     public Integer getDownTime() {
