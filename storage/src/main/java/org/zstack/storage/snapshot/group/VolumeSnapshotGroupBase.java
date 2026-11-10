@@ -51,6 +51,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
 import org.zstack.storage.snapshot.VolumeSnapshotGroupSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -237,6 +238,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                 new While<>(snapshots).step((snapshot, compl) -> {
                     DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
                     rmsg.setSnapshotUuid(snapshot.getUuid());
+                    rmsg.setSnapshotGroupUuid(self.getUuid());
                     rmsg.setVolumeUuid(snapshot.getVolumeUuid());
                     rmsg.setTreeUuid(snapshot.getTreeUuid());
                     rmsg.setDeletionMode(msg.getDeletionMode());
@@ -257,7 +259,14 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     }
                 }))
             .then("delete-vm-host-backup-files", trigger -> {
-                vmHostFileManager.cleanVmHostBackupFile(self.getUuid());
+                // A successful callback may still retain referenced snapshots,
+                // or individual members may have failed to delete.
+                if (getSnapshots().isEmpty()) {
+                    vmHostFileManager.cleanVmHostBackupFile(self.getUuid());
+                } else {
+                    logger.debug(String.format("retain security files for snapshot group[uuid:%s] with remaining snapshots",
+                            self.getUuid()));
+                }
                 trigger.next();
             })
             .propagateExceptionTo(msg)
@@ -443,6 +452,35 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     dbf.persist(context.newGroup);
                     trigger.next();
                 })
+                .rollback(trigger -> {
+                    if (context.newGroup != null && !Q.New(VolumeSnapshotGroupRefVO.class)
+                            .eq(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, context.newGroup.getUuid()).isExists()) {
+                        vmHostFileManager.cleanVmHostBackupFile(context.newGroup.getUuid());
+                        dbf.removeByPrimaryKey(context.newGroup.getUuid(), VolumeSnapshotGroupVO.class);
+                    }
+                    trigger.rollback();
+                })
+                .build())
+            .then(Flow.of("save-current-vm-host-files-before-revert")
+                .runIf(data -> context.newGroup != null)
+                .handle(trigger -> vmHostFileManager.backupVmHostFiles(vmUuid, context.newGroup.getUuid(),
+                        new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                if (context.tpmUuid != null) {
+                                    SystemTagCreator creator = VolumeSnapshotGroupSystemTags.WITH_TPM
+                                            .newSystemTagCreator(context.newGroup.getUuid());
+                                    creator.inherent = true;
+                                    creator.create();
+                                }
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        }))
                 .build())
             .then(Flow.of("create-tpm-if-needed")
                 .runIf(data -> context.snapshotGroupHasTpm && context.tpmUuid == null)

@@ -14,6 +14,15 @@ public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements DeleteV
     private String deletionMode;
     private String direction;
     private String scope;
+    private String snapshotGroupUuid;
+
+    public String getSnapshotGroupUuid() {
+        return snapshotGroupUuid;
+    }
+
+    public void setSnapshotGroupUuid(String snapshotGroupUuid) {
+        this.snapshotGroupUuid = snapshotGroupUuid;
+    }
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;

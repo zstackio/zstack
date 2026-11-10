@@ -1198,6 +1198,35 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
     }
 
     @Override
+    public void backupVmHostFiles(String vmUuid, String resourceUuid, Completion completion) {
+        Set<VmHostFileType> requiredTypes = vmHostFileFactory.vmHostFileTypeNeedRegisterForVm(vmUuid);
+        CloneVmHostFileMsg msg = new CloneVmHostFileMsg();
+        msg.setSrcVmUuid(vmUuid);
+        msg.setDstVmUuidList(list(resourceUuid));
+        msg.setResetTpm(false);
+        bus.makeLocalServiceId(msg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+                List<VmHostFileType> savedTypes = Q.New(VmHostBackupFileVO.class)
+                        .eq(VmHostBackupFileVO_.resourceUuid, resourceUuid)
+                        .select(VmHostBackupFileVO_.type).listValues();
+                if (!savedTypes.containsAll(requiredTypes)) {
+                    completion.fail(operr(ORG_ZSTACK_KVM_10163,
+                            "cannot save all host state for VM[uuid:%s] to resource[uuid:%s], required:%s, saved:%s",
+                            vmUuid, resourceUuid, requiredTypes, savedTypes));
+                    return;
+                }
+                completion.success();
+            }
+        });
+    }
+
+    @Override
     public void cleanVmHostBackupFile(String resourceUuid) {
         List<VmHostBackupFileVO> backups = Q.New(VmHostBackupFileVO.class)
                 .eq(VmHostBackupFileVO_.resourceUuid, resourceUuid)

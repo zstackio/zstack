@@ -6,11 +6,20 @@ public class VolumeSnapshotDeletionStructs {
     private List<VolumeSnapshotInventory> snapshotInventories;
     private String direction;
     private String scope;
+    private String snapshotGroupUuid;
 
     public VolumeSnapshotDeletionStructs(List<VolumeSnapshotInventory> snapshotInventories, String direction, String scope) {
         this.snapshotInventories = snapshotInventories;
         this.direction = direction;
         this.scope = scope;
+    }
+
+    public String getSnapshotGroupUuid() {
+        return snapshotGroupUuid;
+    }
+
+    public void setSnapshotGroupUuid(String snapshotGroupUuid) {
+        this.snapshotGroupUuid = snapshotGroupUuid;
     }
 
     public List<VolumeSnapshotInventory> getSnapshotInventories() {

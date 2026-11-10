@@ -30,6 +30,9 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vm.*;
@@ -1318,6 +1321,23 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10335,
                     "volume snapshot group[uuid:%s] contains a memory snapshot, cannot create a vm from it",
                     msg.getVolumeSnapshotGroupUuid()));
+        }
+
+        if (group != null) {
+            Set<VolumeSnapshotGroupRefVO> refs = group.getVolumeSnapshotRefs();
+            Set<String> existingSnapshots = refs.isEmpty() ? Collections.emptySet() : new HashSet<>(
+                    Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
+                            .in(VolumeSnapshotVO_.uuid, refs.stream()
+                                    .map(VolumeSnapshotGroupRefVO::getVolumeSnapshotUuid).collect(Collectors.toList()))
+                            .listValues());
+            List<String> missingSnapshots = refs.stream()
+                    .filter(ref -> ref.isSnapshotDeleted() || !existingSnapshots.contains(ref.getVolumeSnapshotUuid()))
+                    .map(VolumeSnapshotGroupRefVO::getVolumeSnapshotUuid).collect(Collectors.toList());
+            if (refs.isEmpty() || !missingSnapshots.isEmpty()) {
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000,
+                        "volume snapshot group[uuid:%s] is incomplete, missing snapshot(s)[uuids:%s]; cannot create a vm from it",
+                        group.getUuid(), missingSnapshots));
+            }
         }
 
         validate((NewVmInstanceMessage2) msg);

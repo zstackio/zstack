@@ -1008,6 +1008,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return null;
         }
 
+        boolean liveMigration = VmInstanceState.Running.toString().equals(vm.getState())
+                || VmInstanceState.Paused.toString().equals(vm.getState());
+        if (liveMigration && !LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
+            return operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10086,
+                    "unable to live migrate vm[uuid:%s] with local storage because global config[%s] is false",
+                    vm.getUuid(), LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.getCanonicalName());
+        }
+
         // forbid live migration with data volumes for local storage
         if (vm.getAllDiskVolumes().size() > 1) {
             return operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10050, "unable to live migrate vm[uuid:%s] with data volumes on local storage." +
