@@ -80,6 +80,7 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
     @Override
     @Transactional(readOnly = true)
     public SearchResult visit(ASTNode.Search node) {
+        sf.checkSearchAvailability();
         String keyword = node.getKeyword().getValue()
                 .replaceAll("^'|'$", "")
                 .replaceAll("''", "'");

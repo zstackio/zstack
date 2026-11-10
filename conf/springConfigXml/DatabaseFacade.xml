@@ -56,7 +56,7 @@
     </bean>
 
     <bean id="entityManagerFactory"
-          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+          class="org.zstack.core.db.SearchAwareEntityManagerFactoryBean">
         <property name="persistenceXmlLocation" value="persistence.xml"/>
         <property name="jpaDialect">
             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
