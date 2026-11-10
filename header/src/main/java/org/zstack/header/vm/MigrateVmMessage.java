@@ -9,6 +9,10 @@ public interface MigrateVmMessage {
     boolean isMigrateFromDestination();
     boolean isAllowUnknown();
 
+    default long getBandwidth() {
+        return 0;
+    }
+
     default AllocationScene getAllocationScene() {
         return null;
     }
