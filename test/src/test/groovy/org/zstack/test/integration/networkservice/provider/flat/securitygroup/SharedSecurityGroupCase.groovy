@@ -33,6 +33,8 @@ import org.zstack.testlib.SubCase
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -76,6 +78,7 @@ class SharedSecurityGroupCase extends SubCase {
         testSpecifiedShareAndBind()
         testLegacyRevokePreservesSharingAndBindings()
         testSharedGroupStaysReadOnly()
+        testSharedScheduleStaysReadOnly()
         testReadSharedGroupAndResources()
         testBatchRemoteReferencesRequireAllPermissions()
         testReplaceSpecifiedSharing()
@@ -336,6 +339,87 @@ class SharedSecurityGroupCase extends SubCase {
 
         assert after.name == before.name && after.state == before.state : "rejected management must preserve group attributes"
         assert ruleSnapshot(after.rules) == ruleSnapshot(before.rules) : "rejected management must preserve every rule"
+    }
+
+    void testSharedScheduleStaysReadOnly() {
+        SecurityGroupInventory group = createSecurityGroup { name = "shared-schedule-group" }
+        String scheduleDate = LocalDate.now(ZoneOffset.UTC).plusDays(1).toString()
+        NetworkSecurityPolicyScheduleInventory schedule = createNetworkSecurityPolicySchedule {
+            name = "admin-office-hours"
+            resourceType = "SecurityGroup"
+            resourceUuid = group.uuid
+            timeType = "UTC"
+            repeatType = "Once"
+            startDate = scheduleDate
+            endDate = scheduleDate
+            startTime = "09:00"
+            endTime = "18:00"
+        }
+        setNetworkSecurityPolicySchedule {
+            resourceType = "SecurityGroup"
+            resourceUuid = group.uuid
+            scheduleUuid = schedule.uuid
+        }
+        ["Specified", "Public"].each { String mode ->
+            setSecurityGroupSharing {
+                securityGroupUuid = group.uuid
+                delegate.mode = mode
+                accountUuids = mode == "Specified" ? [accounts.A.uuid] : []
+            }
+
+            List<NetworkSecurityPolicyScheduleInventory> visible = getNetworkSecurityPolicySchedule {
+                resourceUuid = group.uuid
+                sessionId = sessions.A.uuid
+            }
+
+            assert visible*.uuid == [schedule.uuid]
+
+            def updateResult = new UpdateNetworkSecurityPolicyScheduleAction(
+                    uuid: schedule.uuid, name: "receiver-modified-hours", timeType: schedule.timeType,
+                    repeatType: schedule.repeatType, startDate: schedule.startDate, endDate: schedule.endDate,
+                    startTime: "10:00", endTime: "19:00", sessionId: sessions.A.uuid).call()
+
+            assert updateResult.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10134"
+
+            List<NetworkSecurityPolicyScheduleInventory> afterUpdate = getNetworkSecurityPolicySchedule {
+                resourceUuid = group.uuid
+            }
+            List<SecurityGroupInventory> groupsAfterUpdate = querySecurityGroup {
+                conditions = ["uuid=${group.uuid}"]
+            }
+
+            assert afterUpdate.collect { [it.name, it.startTime, it.endTime] } == [[schedule.name, schedule.startTime, schedule.endTime]]
+            assert groupsAfterUpdate*.scheduleUuid == [schedule.uuid]
+
+            def deleteResult = new DeleteNetworkSecurityPolicyScheduleAction(
+                    uuid: schedule.uuid, sessionId: sessions.A.uuid).call()
+
+            assert deleteResult.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10134"
+
+            List<NetworkSecurityPolicyScheduleInventory> afterDelete = getNetworkSecurityPolicySchedule {
+                resourceUuid = group.uuid
+            }
+            List<SecurityGroupInventory> groupsAfterDelete = querySecurityGroup {
+                conditions = ["uuid=${group.uuid}"]
+            }
+
+            assert afterDelete.collect { [it.name, it.startTime, it.endTime] } == [[schedule.name, schedule.startTime, schedule.endTime]]
+            assert groupsAfterDelete*.scheduleUuid == [schedule.uuid]
+        }
+
+        updateNetworkSecurityPolicySchedule {
+            uuid = schedule.uuid
+            name = "admin-updated-hours"
+            timeType = schedule.timeType
+            repeatType = schedule.repeatType
+            startDate = schedule.startDate
+            endDate = schedule.endDate
+            startTime = "10:00"
+            endTime = "19:00"
+        }
+
+        deleteNetworkSecurityPolicySchedule { uuid = schedule.uuid }
+        deleteSecurityGroup { uuid = group.uuid }
     }
 
     void testReadSharedGroupAndResources() {
