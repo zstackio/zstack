@@ -246,6 +246,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
     private void copyVmSecurityLevelIfNeeded(String volumeUuid, String imageUuid) {
         String vmInstanceUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.vmInstanceUuid).findValue();
+        if (vmInstanceUuid == null) {
+            return;
+        }
         VmInstanceVO vmInstanceVO = dbf.findByUuid(vmInstanceUuid, VmInstanceVO.class);
         if (vmInstanceVO != null && Q.New(SecurityLevelResourceRefVO.class).eq(SecurityLevelResourceRefVO_.resourceUuid, vmInstanceVO.getUuid()).isExists()) {
             String currentImageSecurityLevel = Q.New(SecurityLevelResourceRefVO.class)
