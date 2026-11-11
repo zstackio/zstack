@@ -1,9 +1,11 @@
 package org.zstack.kvm;
 
 import org.zstack.core.Platform;
+import org.zstack.core.db.Q;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
@@ -59,11 +61,11 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
 
         /**
          * used for condition check because some property
-         * check could be control by global config in order
+         * check could be controlled by cluster or global config in order
          * to not break the default usage
          * @return need check this property return true else false
          */
-        default boolean needCheck() {
+        default boolean needCheck(String hostUuid) {
             return true;
         }
     }
@@ -104,7 +106,14 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         }
 
         @Override
-        public boolean needCheck() {
+        public boolean needCheck(String hostUuid) {
+            String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                    .eq(HostVO_.uuid, hostUuid).findValue();
+            if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.hasTag(clusterUuid)) {
+                return Boolean.parseBoolean(KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.getTokenByResourceUuid(
+                        clusterUuid, KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN));
+            }
+
             return KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class);
         }
     }
@@ -133,12 +142,19 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
     public static Map<KVMPropertyName, String> getPropertyMapOfHost(String hostUuid) {
         Map<KVMPropertyName, String> hostPropertyMap = new HashMap<>();
         propertyCheckerMap.forEach((key, checker) -> {
-            if (!checker.needCheck()) {
+            if (!checker.needCheck(hostUuid)) {
                 return;
             }
 
             hostPropertyMap.put(key, checker.getKVMHostProperty(hostUuid));
         });
+        return hostPropertyMap;
+    }
+
+    // Compare the same properties on both hosts, using the source host's check policy.
+    public static Map<KVMPropertyName, String> getPropertyMapOfHost(String hostUuid, Set<KVMPropertyName> propertyNames) {
+        Map<KVMPropertyName, String> hostPropertyMap = new HashMap<>();
+        propertyNames.forEach(name -> hostPropertyMap.put(name, propertyCheckerMap.get(name).getKVMHostProperty(hostUuid)));
         return hostPropertyMap;
     }
 
@@ -189,7 +205,7 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         // nothing to check
         Map<KVMPropertyName, String> srcHostPropertyMap = getPropertyMapOfHost(srcHostUuid);
         for (HostVO host : candidates) {
-            Map<KVMPropertyName, String> candidateHostPropertyMap = getPropertyMapOfHost(host.getUuid());
+            Map<KVMPropertyName, String> candidateHostPropertyMap = getPropertyMapOfHost(host.getUuid(), srcHostPropertyMap.keySet());
             if (allPropertiesMatched(srcHostPropertyMap, candidateHostPropertyMap)) {
                 result.add(host);
             } else {

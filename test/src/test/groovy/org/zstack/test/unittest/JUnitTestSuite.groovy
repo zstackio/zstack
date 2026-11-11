@@ -13,6 +13,7 @@ import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.kvm.KvmAgentRestartGlobalConfigCase
 import org.zstack.test.unittest.kvm.KVMHostSshCredentialTimeoutCase
+import org.zstack.test.unittest.kvm.KVMHostCpuModelCheckCase
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyAnsibleDeployerTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyInstallerGroovyTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyKvmReconnectExtensionTest
@@ -37,6 +38,7 @@ import java.util.stream.Collectors
         SshExecutionDeadlineCase.class,
         MessageTimeoutContextCase.class,
         KVMHostSshCredentialTimeoutCase.class,
+        KVMHostCpuModelCheckCase.class,
         ShellTimeoutCase.class,
         MigrateVmFinalizeCompletionCase.class,
         CephUploadCancelRecoveryCase.class,
