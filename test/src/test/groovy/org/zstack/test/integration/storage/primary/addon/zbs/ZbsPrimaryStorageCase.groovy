@@ -34,6 +34,7 @@ import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.ExternalPrimaryStorageSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -183,6 +184,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testPrepareHostsWhenAttachPrimaryStorageToCluster()
             testAttachPrimaryStorageFailsWhenPreparingUsableHostFails()
             testAttachPrimaryStorageFailsWhenActivatingHeartbeatVolumeFails()
+            testMdsConnectFailed()
             testLifecycle()
             testAllocationUsesCollectedCapacity()
             testAllocationPreservesPendingConnectionState()
@@ -320,6 +322,60 @@ class ZbsPrimaryStorageCase extends SubCase {
                 .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                 .findValue()
         assert addonInfo.contains("127.0.1.3")
+
+    }
+
+    void testMdsConnectFailed() {
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+            if (!cmd.addr.equals("127.0.1.1")) {
+                rsp.setError("on purpose")
+            }
+            return rsp
+        }
+
+        env.afterSimulator(ZbsStorageController.GET_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetCapacityCmd)
+            if (!cmd.addr.equals("127.0.1.1")) {
+                rsp.setError("on purpose")
+            }
+            return rsp
+        }
+
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
+            if (!cmd.addr.equals("127.0.1.1")) {
+                rsp.agentVersion = null
+            }
+
+            return rsp
+        }
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        AddonInfo addonInfo = JSONObjectUtil.toObject(
+                 Q.New(ExternalPrimaryStorageVO.class)
+                        .select(ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                        .findValue().toString(),
+                AddonInfo.class)
+        assert addonInfo.mdsInfos.findAll { it.status.toString() == "Disconnected" }.size() == 2
+
+        env.cleanAfterSimulatorHandlers()
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        addonInfo = JSONObjectUtil.toObject(
+                Q.New(ExternalPrimaryStorageVO.class)
+                        .select(ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                        .findValue().toString(),
+                AddonInfo.class)
+        assert addonInfo.mdsInfos.findAll { it.status.toString() == "Connected" }.size() == 3
     }
 
     void testDefaultConfig() {
@@ -1023,6 +1079,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         env.simulator(ZbsPrimaryStorageMdsBase.PING_PATH) { HttpEntity<String> e, EnvSpec spec ->
             ZbsPrimaryStorageMdsBase.PingCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.PingCmd.class)
             ZbsPrimaryStorageMdsBase.PingRsp rsp = new ZbsPrimaryStorageMdsBase.PingRsp()
+            rsp.agentVersion = ExternalPrimaryStorageSpec.mdsAddrVersionHashMap.get(cmd.addr)
             if (cmd.getAddr().equals("127.0.1.1") && !reconnectTriggered) {
                 rsp.success = false
                 rsp.error = "Mds ping failed on purpose"
@@ -1037,6 +1094,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             ZbsPrimaryStorageMdsBase.SyncMetadataCmd cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
             ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp = new ZbsPrimaryStorageMdsBase.SyncMetadataRsp()
             rsp.setExternalAddr(cmd.getAddr())
+            ExternalPrimaryStorageSpec.mdsAddrVersionHashMap.put(cmd.addr, cmd.agentVersion)
             if (cmd.getAddr().equals("127.0.1.1") && pingFailureCount.intValue().equals(MDS_PING_RETRY_PER_CYCLE * MDS_PING_FAIL_CYCLE_THRESHOLD)) {
                 reconnectTriggered = true
             }
