@@ -6,6 +6,14 @@ import org.zstack.sdk.IbCollectionStatus;
 
 public class IbDeviceInventory extends org.zstack.sdk.PciDeviceInventory {
 
+    public java.lang.String displayName;
+    public void setDisplayName(java.lang.String displayName) {
+        this.displayName = displayName;
+    }
+    public java.lang.String getDisplayName() {
+        return this.displayName;
+    }
+
     public IbAllocateStatus allocateStatus;
     public void setAllocateStatus(IbAllocateStatus allocateStatus) {
         this.allocateStatus = allocateStatus;
