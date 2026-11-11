@@ -1,6 +1,7 @@
 package org.zstack.storage.snapshot;
 
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.SystemTag;
 
@@ -11,5 +12,5 @@ public class VolumeSnapshotGroupSystemTags {
 
     // inherent system tag
     public static SystemTag WITH_TPM =
-            new SystemTag("snapshotGroupWithTpm", VolumeSnapshotGroupVO.class);
+            new SystemTag(VolumeSnapshotConstant.SNAPSHOT_GROUP_WITH_TPM_TAG, VolumeSnapshotGroupVO.class);
 }

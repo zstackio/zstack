@@ -95,7 +95,7 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         }
         boolean hasSecurityAttachment = Q.New(VmHostBackupFileVO.class)
                 .eq(VmHostBackupFileVO_.resourceUuid, msg.getUuid())
-                .isExists();
+                .isExists() || VolumeSnapshotGroupSystemTags.WITH_TPM.hasTag(msg.getUuid());
         if (hasSecurityAttachment) {
             throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001,
                     "volume snapshot group[uuid:%s] holds TPM or NVRAM backup files, cannot be ungrouped",

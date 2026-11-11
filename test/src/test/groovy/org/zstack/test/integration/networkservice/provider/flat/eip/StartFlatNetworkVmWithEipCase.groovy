@@ -14,6 +14,7 @@ import org.zstack.network.service.vip.StopVipReply
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.storage.primary.local.LocalStoragePrimaryStorageGlobalConfig
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
@@ -149,6 +150,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
     @Override
     void test() {
         env.create {
+            LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(true)
             testStartVmWithEip()
             testRecoverVmWithEip()
             testRecoverVmWithEipWithError()
