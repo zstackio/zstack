@@ -63,6 +63,11 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     private String publicKey;
     private String privateKey;
 
+    private static String prioritizeAnsibleOutput(String message) {
+        int outputStart = message.indexOf("\nstderr: ");
+        return outputStart < 0 ? message : message.substring(outputStart) + message.substring(0, outputStart);
+    }
+
     private void placePip703() {
         File pip = PathUtil.findFileOnClassPath("tools/pip-7.0.3.tar.gz");
         if (pip == null) {
@@ -280,7 +285,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     }
 
                 } catch (ShellException se) {
-                    String errMsg = hidePassword(se.getMessage());
+                    String errMsg = prioritizeAnsibleOutput(hidePassword(se.getMessage()));
                     logger.warn(errMsg, se);
                     throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10007, errMsg));
                 }
