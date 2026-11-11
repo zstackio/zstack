@@ -67,6 +67,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
         }
 
         vidm.deleteVmDeviceAddress(nic.getUuid(), spec.getVmInventory().getUuid());
+        vidm.deleteVmDeviceAddress(VmNicHelper.getVfSecondaryDeviceUuid(nic.getUuid()), spec.getVmInventory().getUuid());
 
         boolean releaseNic = (boolean) data.get(VmInstanceConstant.Params.ReleaseNicAfterDetachNic.toString());
         if (!releaseNic) {

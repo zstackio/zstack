@@ -10,6 +10,11 @@
     <artifactId>kvm</artifactId>
     <dependencies>
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>compute</artifactId>
             <version>${project.version}</version>

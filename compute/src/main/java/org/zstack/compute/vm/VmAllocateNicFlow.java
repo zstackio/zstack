@@ -60,6 +60,8 @@ public class VmAllocateNicFlow implements Flow {
     protected VmInstanceManager vmMgr;
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    protected org.zstack.header.vm.devices.VmInstanceDeviceManager vidm;
 
     @Autowired
     protected ResourceConfigFacade rcf;
@@ -137,6 +139,10 @@ public class VmAllocateNicFlow implements Flow {
                         return vnicFactory.createVmNic(nic, spec);
                     }
                 }.execute();
+            } catch (org.zstack.header.core.workflow.FlowException e) {
+                errs.add(e.getErrorCode());
+                wcomp.allDone();
+                return;
             } catch (OperationFailureException e) {
                 errs.add(e.getErrorCode());
                 wcomp.allDone();
@@ -190,6 +196,8 @@ public class VmAllocateNicFlow implements Flow {
             public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() > 0) {
                     trigger.fail(errs.get(0));
+                } else if (errorCodeList != null && !errorCodeList.getCauses().isEmpty()) {
+                    trigger.fail(errorCodeList.getCauses().get(0));
                 } else {
                     trigger.next();
                 }
@@ -385,6 +393,8 @@ public class VmAllocateNicFlow implements Flow {
             VmNicType type = VmNicType.valueOf(vmNic.getType());
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
             vnicFactory.releaseVmNic(vmNic);
+            vidm.deleteVmDeviceAddress(vmNic.getUuid());
+            vidm.deleteVmDeviceAddress(VmNicHelper.getVfSecondaryDeviceUuid(vmNic.getUuid()));
         }
         dbf.removeByPrimaryKeys(destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()), VmNicVO.class);
 

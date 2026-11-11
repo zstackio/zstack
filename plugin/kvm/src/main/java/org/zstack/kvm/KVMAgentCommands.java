@@ -221,6 +221,11 @@ public class KVMAgentCommands {
     }
 
     public static class AttachNicResponse extends AgentResponse {
+        private boolean vfBondCleanupRequired;
+
+        public boolean isVfBondCleanupRequired() { return vfBondCleanupRequired; }
+        public void setVfBondCleanupRequired(boolean value) { vfBondCleanupRequired = value; }
+
         @GrayVersion(value = "5.0.0")
         List<VirtualDeviceInfo> virtualDeviceInfoList;
 
@@ -1333,6 +1338,15 @@ public class KVMAgentCommands {
         private String vlanId;
         private String pciDeviceAddress;
         private List<String> extraPciDeviceAddresses;
+        private DeviceAddress secondaryPci;
+
+        public DeviceAddress getSecondaryPci() {
+            return secondaryPci;
+        }
+
+        public void setSecondaryPci(DeviceAddress secondaryPci) {
+            this.secondaryPci = secondaryPci;
+        }
         // only for tf nic
         private String ipForTf;
         private String l2NetworkUuid;
@@ -3161,6 +3175,15 @@ public class KVMAgentCommands {
     }
 
     public static class VmNicInfo {
+        private String alias;
+
+        public String getAlias() {
+            return alias;
+        }
+
+        public void setAlias(String alias) {
+            this.alias = alias;
+        }
         private String macAddress;
         private DeviceAddress deviceAddress;
 

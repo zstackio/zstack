@@ -2,6 +2,8 @@ package org.zstack.header.vm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import org.zstack.header.network.l3.UsedIpInventory;
@@ -11,6 +13,11 @@ import org.zstack.utils.logging.CLogger;
 
 public class VmNicHelper {
     private static final CLogger logger = Utils.getLogger(VmNicHelper.class);
+
+    public static String getVfSecondaryDeviceUuid(String nicUuid) {
+        return UUID.nameUUIDFromBytes((nicUuid + ":vf-secondary").getBytes(StandardCharsets.UTF_8))
+                .toString().replace("-", "");
+    }
 
     /* for some vm, it nic has l3 network, but there is no ip address */
     public static List<String> getL3Uuids(VmNicInventory nic) {

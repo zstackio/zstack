@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
@@ -66,7 +67,9 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
                 return;
             }
 
-            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getDeviceAddress()), vmUuid);
+            String resourceUuid = info.getAlias() != null && info.getAlias().endsWith("-slave1")
+                    ? VmNicHelper.getVfSecondaryDeviceUuid(nic.getUuid()) : nic.getUuid();
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(resourceUuid, info.getDeviceAddress()), vmUuid);
         });
 
         if (!StringUtils.isEmpty(rsp.getMemBalloonInfo().getDeviceAddress().toString())) {

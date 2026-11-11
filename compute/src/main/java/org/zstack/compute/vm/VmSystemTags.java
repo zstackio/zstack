@@ -21,6 +21,13 @@ import java.util.regex.Pattern;
  */
 @TagDefinition
 public class VmSystemTags {
+    @AdminOnlyTag
+    public static SystemTag VF_BOND_CLEANUP_REQUIRED = new SystemTag("vfBondCleanupRequired", VmNicVO.class);
+
+    // Persistent dual-VF NIC identity, independent of guest configuration ownership.
+    @AdminOnlyTag
+    public static SystemTag USER_VM_VF_BOND = new SystemTag("userVmVfBond", VmNicVO.class);
+
     public static String HOSTNAME_TOKEN = "hostname";
     public static PatternedSystemTag HOSTNAME = new PatternedSystemTag(String.format("hostname::{%s}", HOSTNAME_TOKEN), VmInstanceVO.class);
 

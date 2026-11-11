@@ -1,6 +1,5 @@
 package org.zstack.test.integration.storage.primary.local
 
-import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
@@ -124,20 +123,20 @@ class LocalStorageMigrateVolumeCase extends SubCase{
 
         boolean calledCopyToRemote = false
         env.afterSimulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { rsp ->
-            assert pingTask.vmsToSkip[Platform.getManagementServerId()].contains(vmSpec.inventory.uuid)
+            assert pingTask.isVmDoNotNeedToTrace(vmSpec.inventory.uuid)
 
             calledCopyToRemote = true
             return rsp
         }
 
-        assert !pingTask.vmsToSkip[Platform.getManagementServerId()].contains(vmSpec.inventory.uuid)
+        assert !pingTask.isVmDoNotNeedToTrace(vmSpec.inventory.uuid)
 
         localStorageMigrateVolume {
             volumeUuid = vmSpec.inventory.rootVolumeUuid
             destHostUuid = hostSpec1.inventory.uuid
         }
 
-        assert !pingTask.vmsToSkip[Platform.getManagementServerId()].contains(vmSpec.inventory.uuid)
+        assert !pingTask.isVmDoNotNeedToTrace(vmSpec.inventory.uuid)
         assert calledCheckMD5 && calledCopyToRemote
     }
     

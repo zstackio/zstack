@@ -1259,7 +1259,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof APIKvmRunShellMsg) {
+        if (msg instanceof GetVmSkipTraceSnapshotMsg) {
+            pingTask.handle((GetVmSkipTraceSnapshotMsg) msg);
+        } else if (msg instanceof APIKvmRunShellMsg) {
             handle((APIKvmRunShellMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);

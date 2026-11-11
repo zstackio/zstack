@@ -33,6 +33,11 @@ public class VmAttachNicOnHypervisorFlow extends NoRollbackFlow {
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        if (spec.getDestNics() == null || spec.getDestNics().isEmpty()) {
+            trigger.fail(org.zstack.core.Platform.operr(org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10068, "no NIC was allocated for VM[%s]",
+                    spec.getVmInventory().getUuid()));
+            return;
+        }
         VmNicInventory nic = spec.getDestNics().get(0);
         final String hostUuid = spec.getVmInventory().getHostUuid() == null ?
                 spec.getVmInventory().getLastHostUuid() :

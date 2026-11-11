@@ -206,6 +206,7 @@ public class SourceClassMap {
 			put("org.zstack.guesttools.GuestVmScriptInventory", "org.zstack.sdk.GuestVmScriptInventory");
 			put("org.zstack.guesttools.InvocationRecord", "org.zstack.sdk.InvocationRecord");
 			put("org.zstack.guesttools.InvocationRecordDetail", "org.zstack.sdk.InvocationRecordDetail");
+			put("org.zstack.guesttools.VmGuestBondVO", "org.zstack.sdk.VmGuestBondVO");
 			put("org.zstack.ha.HaNetworkGroupInventory", "org.zstack.sdk.HaNetworkGroupInventory");
 			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
@@ -1662,6 +1663,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmCapabilities", "org.zstack.header.vm.VmCapabilities");
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
 			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
+			put("org.zstack.sdk.VmGuestBondVO", "org.zstack.guesttools.VmGuestBondVO");
 			put("org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.sdk.VmInstanceDeviceAddressGroupInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
