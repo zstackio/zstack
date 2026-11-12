@@ -9,6 +9,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10012;
 
-public class NetworkSecurityPolicyScheduleScanTask implements Component {
+public class NetworkSecurityPolicyScheduleScanTask implements Component, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(NetworkSecurityPolicyScheduleScanTask.class);
     private static final int REFRESH_CONCURRENCY = 10;
 
@@ -60,9 +61,14 @@ public class NetworkSecurityPolicyScheduleScanTask implements Component {
     private volatile Instant lastScanMinute;
 
     @Override
-    public synchronized boolean start() {
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public synchronized void managementNodeReady() {
         if (periodicTask != null) {
-            return true;
+            return;
         }
 
         long epochMilli = scheduleFacade.currentInstant().toEpochMilli();
@@ -100,7 +106,6 @@ public class NetworkSecurityPolicyScheduleScanTask implements Component {
             periodicTask = null;
             throw e;
         }
-        return true;
     }
 
     @Override

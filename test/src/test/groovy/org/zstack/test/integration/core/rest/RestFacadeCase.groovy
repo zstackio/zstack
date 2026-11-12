@@ -13,6 +13,8 @@ import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.rest.AsyncRESTCallback
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.SyncHttpResponse
+import org.zstack.header.rest.RESTFacade
+import org.zstack.portal.managementnode.ManagementNodeManagerImpl
 import org.zstack.test.core.rest.RESTBeanForTest
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
@@ -21,6 +23,9 @@ import org.zstack.testlib.WebBeanConstructor
 import org.zstack.utils.URLBuilder
 
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeoutException
 
 class RestFacadeCase extends SubCase {
     EnvSpec env
@@ -49,6 +54,34 @@ class RestFacadeCase extends SubCase {
             testRestFacadeFailureWillBeRecorded()
             testSyncHandlerWritesResponseBody()
             testSyncHandlerPreservesStatusAndBody()
+            testManagementNodeWaitsForCallback()
+        }
+    }
+
+    void testManagementNodeWaitsForCallback() {
+        def node = new ManagementNodeManagerImpl()
+        def callbacks = new ArrayBlockingQueue<AsyncRESTCallback>(1)
+        RESTFacade restf = [
+                getCallbackUrl: { "http://127.0.0.1/callback" },
+                asyncJsonPost: { String url, String body, Map headers, AsyncRESTCallback callback, TimeUnit unit, long timeout ->
+                    callbacks.add(callback)
+                }
+        ] as RESTFacade
+        def executor = Executors.newSingleThreadExecutor()
+        try {
+            def startup = executor.submit({ node.waitForHttpCallback(restf, 10000L) } as Runnable)
+            def callback = callbacks.poll(5, TimeUnit.SECONDS)
+            assert callback != null: "MN startup must probe the callback endpoint"
+            try {
+                startup.get(100, TimeUnit.MILLISECONDS)
+                assert false: "MN startup must wait until the callback succeeds"
+            } catch (TimeoutException ignored) {
+            }
+            callback.success(new HttpEntity<String>("{}"))
+            startup.get(5, TimeUnit.SECONDS)
+        } finally {
+            node.isRunning = false
+            executor.shutdownNow()
         }
     }
 

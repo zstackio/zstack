@@ -16,13 +16,15 @@ import org.zstack.sdk.ZSConfig
 import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty
 import org.zstack.testlib.util.TestConfigUtils
 import org.zstack.utils.Utils
+import org.zstack.sdk.IsReadyToGoAction
+import org.zstack.testlib.util.Retry
 
 import java.util.concurrent.TimeUnit
 
 /**
  * Created by xing5 on 2017/2/12.
  */
-class WebBeanConstructor extends BeanConstructor {
+class WebBeanConstructor extends BeanConstructor implements Retry {
     private Server jetty
     private static final String BASE_DIR = "target/test-classes/tomcat"
     private static final String APP_NAME = "zstack"
@@ -104,5 +106,9 @@ class WebBeanConstructor extends BeanConstructor {
     private void startWebServer() {
         prepareJetty()
         jetty.start()
+        retryInSecs(300) {
+            def result = new IsReadyToGoAction().call()
+            assert result.error == null: "Management node is not ready after HTTP startup: ${result.error}"
+        }
     }
 }

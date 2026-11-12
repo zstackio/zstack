@@ -2,6 +2,8 @@ package org.zstack.portal.managementnode;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -58,6 +60,9 @@ import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.rest.AsyncRESTCallback;
+import org.zstack.header.rest.RESTConstant;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.portal.apimediator.ApiMediator;
@@ -74,11 +79,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -97,6 +104,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private ManagementNodeVO node;
     private volatile boolean isRunning = true;
     private volatile int isNodeRunning = NODE_STARTING;
+    private volatile boolean nodePrepared;
     private static final String INVENTORY_LOCK = "ManagementNodeManager.inventory_lock";
     private final int INVENTORY_LOCK_TIMEOUT = 600; /* 10 mins */
     private static boolean started = false;
@@ -165,6 +173,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private ResourceDestinationMaker destinationMaker;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private RESTFacade restf;
 
     private boolean sigUsr2 = false;
 
@@ -511,6 +521,18 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 public void rollback(FlowRollback trigger, Map data) {
                     stopComponents();
                     trigger.rollback();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "wait-for-http-callback";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    if (Platform.getComponentLoader().getSpringIoc() instanceof WebApplicationContext) {
+                        nodePrepared = true;
+                        waitForHttpCallback(restf, TimeUnit.SECONDS.toMillis(
+                                CoreGlobalProperty.MANAGEMENT_NODE_HTTP_CALLBACK_READY_TIMEOUT_SECONDS));
+                    }
+                    trigger.next();
                 }
             }).then(new Flow() {
                 String __name__ = "create-DB-record";
@@ -1188,7 +1210,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     @Override
     public void startNode() {
         startInThread();
-        while (isNodeRunning == NODE_STARTING) {
+        while (isNodeRunning == NODE_STARTING && !nodePrepared) {
             logger.debug("management node is still initializing ...");
             try {
                 TimeUnit.SECONDS.sleep(1);
@@ -1203,6 +1225,46 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             stop();
             throw new CloudRuntimeException("failed to start management node");
         }
+    }
+
+    private void waitForHttpCallback(RESTFacade restf, long timeoutMillis) {
+        String url = restf.getCallbackUrl();
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        try {
+            while (isRunning && Platform.IS_RUNNING) {
+                long remaining = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+                if (remaining <= 0) {
+                    throw new CloudRuntimeException("Timed out waiting for management node HTTP callback: " + url);
+                }
+                CountDownLatch callback = new CountDownLatch(1);
+                AtomicBoolean received = new AtomicBoolean();
+                long attemptTimeout = Math.min(remaining, TimeUnit.SECONDS.toMillis(5));
+                restf.asyncJsonPost(url, "{}", Collections.singletonMap(RESTConstant.CALLBACK_URL, url),
+                        new AsyncRESTCallback(null) {
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                callback.countDown();
+                            }
+
+                            @Override
+                            public void success(HttpEntity<String> response) {
+                                received.set(true);
+                                callback.countDown();
+                            }
+                        }, TimeUnit.MILLISECONDS, attemptTimeout);
+                if (callback.await(attemptTimeout, TimeUnit.MILLISECONDS) && received.get() && isRunning && Platform.IS_RUNNING) {
+                    return;
+                }
+                remaining = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+                if (isRunning && Platform.IS_RUNNING && remaining > 0) {
+                    Thread.sleep(Math.min(remaining, 1000));
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException(e);
+        }
+        throw new CloudRuntimeException("Management node stopped while waiting for HTTP callback: " + url);
     }
 
     @Override

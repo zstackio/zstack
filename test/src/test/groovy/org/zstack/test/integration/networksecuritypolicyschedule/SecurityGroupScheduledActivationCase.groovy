@@ -177,7 +177,7 @@ class SecurityGroupScheduledActivationCase extends SubCase {
             env.delete()
         } finally {
             scheduleFacade?.resetClock()
-            scanTask?.start()
+            scanTask?.managementNodeReady()
         }
     }
 

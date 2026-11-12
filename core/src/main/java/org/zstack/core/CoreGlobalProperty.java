@@ -26,6 +26,8 @@ public class CoreGlobalProperty {
     public static boolean PROFILER_HTTP_CALL;
     @GlobalProperty(name = "exitJVMOnBootFailure", defaultValue = "true")
     public static boolean EXIT_JVM_ON_BOOT_FAILURE;
+    @GlobalProperty(name = "managementNode.httpCallbackReadyTimeoutSeconds", defaultValue = "300")
+    public static int MANAGEMENT_NODE_HTTP_CALLBACK_READY_TIMEOUT_SECONDS;
     @GlobalProperty(name = "checkBoxTypeInInventory", defaultValue = "false")
     public static boolean CHECK_BOX_TYPE_IN_INVENTORY;
     @GlobalProperty(name = "pidFilePath", defaultValue = "{user.home}/management-server.pid")

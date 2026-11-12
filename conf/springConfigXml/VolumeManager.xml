@@ -84,6 +84,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.volume.VolumeSizeTracker"/>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
