@@ -1,6 +1,7 @@
 package org.zstack.header.console;
 
 import org.zstack.header.identity.rbac.RBACDescription;
+import org.zstack.header.vm.VmInstanceVO;
 
 public class RBACInfo implements RBACDescription {
     @Override
@@ -9,6 +10,7 @@ public class RBACInfo implements RBACDescription {
                 .name("console")
                 .adminOnlyAPIs("org.zstack.header.console.**")
                 .normalAPIs(APIRequestConsoleAccessMsg.class)
+                .targetResources(VmInstanceVO.class)
                 .build();
     }
 

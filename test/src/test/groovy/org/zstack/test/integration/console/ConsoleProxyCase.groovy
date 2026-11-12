@@ -19,12 +19,16 @@ import org.zstack.header.console.ConsoleProxyVO_
 import org.zstack.header.console.ConsoleUrl
 import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.host.HypervisorType
+import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.RESTFacade
 import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg
 import org.zstack.sdk.ConsoleInventory
 import org.zstack.sdk.ConsoleProxyAgentInventory
 import org.zstack.sdk.GarbageCollectorInventory
+import org.zstack.sdk.PolicyStatement
+import org.zstack.sdk.PolicyStatementEffect
+import org.zstack.sdk.RequestConsoleAccessAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.ZStackTest
@@ -137,12 +141,141 @@ class ConsoleProxyCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testConsoleAccessChecksVmOwnership()
             testSelectConsoleProxyByClientIpVersion()
             testExpiredConsoleProxyUsesLegacyRenewal()
             testExpiredConsoleProxyUsesExclusiveRenewal()
             testConsoleProxyCleanupOnGuestShutdown()
             testUpdateConsoleProxyAgent()
             testConsoleProxyGC()
+        }
+    }
+
+    void testConsoleAccessChecksVmOwnership() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        List accounts = []
+        List sessions = []
+        SharedResourceVO shared
+        int establishCount = 0
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            establishCount++
+            return rsp
+        }
+        def request = { String sessionUuid ->
+            new RequestConsoleAccessAction(vmInstanceUuid: vm.uuid, sessionId: sessionUuid).call()
+        }
+        def proxyState = {
+            Q.New(ConsoleProxyVO.class).eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid).list().collect {
+                [it.uuid, it.token, it.targetHostname, it.targetPort, it.expiredDate, it.lastOpDate]
+            }
+        }
+        def assertDenied = { String sessionUuid ->
+            def before = proxyState()
+            int callsBefore = establishCount
+            def result = request(sessionUuid)
+            assert result.error?.globalErrorCode == "ORG_ZSTACK_IDENTITY_RBAC_10007"
+            assert result.value?.inventory == null
+            assert proxyState() == before
+            assert establishCount == callsBefore
+        }
+        try {
+            ["console-owner", "console-outsider"].each { accountLabel ->
+                def account = createAccount {
+                    name = accountLabel
+                    password = "password"
+                    sessionId = adminSession()
+                }
+                accounts.add(account)
+                SessionInventory session = logInByAccount {
+                    accountName = account.name
+                    password = "password"
+                }
+                sessions.add(session)
+            }
+            assert sessions[0].accountUuid == accounts[0].uuid
+            assert sessions[1].accountUuid == accounts[1].uuid
+            assert sessions[0].uuid != sessions[1].uuid
+            changeResourceOwner {
+                resourceUuid = vm.uuid
+                accountUuid = accounts[0].uuid
+                sessionId = adminSession()
+            }
+            assert proxyState().isEmpty()
+            assertDenied(sessions[1].uuid)
+
+            def ownerResult = request(sessions[0].uuid)
+            assert ownerResult.error == null
+            assert ownerResult.value.inventory.token
+            assertDenied(sessions[1].uuid)
+            def ownerAgain = request(sessions[0].uuid)
+            assert ownerAgain.error == null
+            assert ownerAgain.value.inventory.token == ownerResult.value.inventory.token
+            assert request(adminSession()).error == null
+
+            // The sharing API only grants read access; this fixture tests write-sharing semantics.
+            shared = new SharedResourceVO()
+            shared.ownerAccountUuid = accounts[0].uuid
+            shared.receiverAccountUuid = accounts[1].uuid
+            shared.resourceUuid = vm.uuid
+            shared.resourceType = "VmInstanceVO"
+            shared.permission = SharedResourceVO.PERMISSION_READ
+            shared = dbf.persistAndRefresh(shared)
+            assertDenied(sessions[1].uuid)
+            shared.permission = SharedResourceVO.PERMISSION_WRITE
+            shared = dbf.updateAndRefresh(shared)
+            assert request(sessions[1].uuid).error == null
+            dbf.remove(shared)
+            shared = null
+            assertDenied(sessions[1].uuid)
+
+            sessions.take(2).each { SessionInventory session ->
+                def user = createUser {
+                    name = "console-user"
+                    password = "password"
+                    sessionId = session.uuid
+                }
+                def policy = createPolicy {
+                    name = "console-access"
+                    statements = [new PolicyStatement(name: "allow-console", effect: PolicyStatementEffect.Allow,
+                            actions: ["org.zstack.header.console.APIRequestConsoleAccessMsg"])]
+                    sessionId = session.uuid
+                }
+                attachPolicyToUser {
+                    userUuid = user.uuid
+                    policyUuid = policy.uuid
+                    sessionId = session.uuid
+                }
+                SessionInventory userSession = logInByUser {
+                    accountName = accounts.find { it.uuid == session.accountUuid }.name
+                    userName = user.name
+                    password = "password"
+                }
+                sessions.add(userSession)
+                assert userSession.accountUuid == session.accountUuid
+                if (session.accountUuid == accounts[0].uuid) {
+                    assert request(userSession.uuid).error == null
+                    detachPolicyFromUser {
+                        userUuid = user.uuid
+                        policyUuid = policy.uuid
+                        sessionId = session.uuid
+                    }
+                    assert request(userSession.uuid).error != null
+                } else {
+                    assertDenied(userSession.uuid)
+                }
+            }
+        } finally {
+            if (shared != null) {
+                dbf.remove(shared)
+            }
+            changeResourceOwner {
+                resourceUuid = vm.uuid
+                accountUuid = org.zstack.header.identity.AccountConstant.INITIAL_SYSTEM_ADMIN_UUID
+                sessionId = adminSession()
+            }
+            sessions.each { session -> logOut { sessionUuid = session.uuid } }
+            accounts.each { account -> deleteAccount { uuid = account.uuid; sessionId = adminSession() } }
+            env.cleanAfterSimulatorHandlers()
         }
     }
 
