@@ -7,7 +7,8 @@ public class VolumeCreationContext {
     private final VolumeType volumeType;
     private final String sourceType;
     private final String sourceUuid;
-    private final VolumeEncryptionState targetEncryptionState;
+    private VolumeEncryptionState sourceEncryptionState = VolumeEncryptionState.Unencrypted;
+    private VolumeEncryptionState targetEncryptionState;
     private final String hostUuid;
     private String primaryStorageUuid;
     private String allocatedInstallUrl;
@@ -90,8 +91,24 @@ public class VolumeCreationContext {
         return sourceUuid;
     }
 
+    public VolumeEncryptionState getSourceEncryptionState() {
+        return sourceEncryptionState;
+    }
+
+    public void setSourceEncryptionState(VolumeEncryptionState sourceEncryptionState) {
+        this.sourceEncryptionState = Objects.requireNonNull(sourceEncryptionState, "sourceEncryptionState");
+    }
+
     public boolean isTargetEncrypted() {
         return targetEncryptionState == VolumeEncryptionState.Encrypted;
+    }
+
+    public VolumeEncryptionState getTargetEncryptionState() {
+        return targetEncryptionState;
+    }
+
+    public void setTargetEncryptionState(VolumeEncryptionState targetEncryptionState) {
+        this.targetEncryptionState = Objects.requireNonNull(targetEncryptionState, "targetEncryptionState");
     }
 
     public String getHostUuid() {

@@ -560,7 +560,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         ExternalVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(
                                 candidate -> candidate.canHandleVolumeInstantiation(controller, volume));
                         if (extension != null) {
-                            extension.cloneRoot(controller, self.getUuid(), pathInCache,
+                            extension.cloneRoot(controller, self.getUuid(), msg.getTemplateSpec().getInventory().getUuid(), pathInCache,
                                     spec, msg.getDestHost() == null ? null : msg.getDestHost().getUuid(), completion);
                         } else if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
                             completion.fail(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_ENCRYPTION_10000, "primary storage[uuid:%s] has no encrypted volume creation extension", self.getUuid()));
@@ -1403,7 +1403,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void success(VolumeStats returnValue) {
                 reply.setInstallPath(returnValue.getInstallPath());
-                reply.setFormat(msg.getImage().getFormat());
+                reply.setFormat(returnValue.getFormat() == null ? msg.getImage().getFormat() : returnValue.getFormat());
                 reply.setProtocol(externalVO.getDefaultProtocol());
                 bus.reply(msg, reply);
             }
@@ -1502,6 +1502,12 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void downloadImageTo(ImageInventory image, CreateVolumeSpec spec, String targetClz, ReturnValueCompletion<VolumeStats> completion) {
+        ExternalVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(
+                candidate -> candidate.canHandleImageDownload(controller, image));
+        if (extension != null) {
+            extension.downloadImageBits(controller, self.getUuid(), image, image.getBackupStorageRefs().get(0), spec, targetClz, completion);
+            return;
+        }
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("download-image-%s-to-%s", image.getUuid(), spec.getName()));
         chain.then(new ShareFlow() {

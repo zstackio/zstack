@@ -5,6 +5,8 @@ import org.zstack.header.core.workflow.Flow;
 import java.util.List;
 
 public interface VolumeCreationFlowExtensionPoint {
+    default void prepareCreation(VolumeCreationContext context) {}
+
     List<Flow> beforeStorageWrite(VolumeCreationContext context);
 
     List<Flow> beforeReady(VolumeCreationContext context);

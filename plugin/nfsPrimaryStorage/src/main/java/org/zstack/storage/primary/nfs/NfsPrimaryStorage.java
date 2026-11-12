@@ -1217,8 +1217,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getImage().getFormat(), self.getUuid())
         );
 
-        mediator.downloadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo),
-                msg.getBackupStorageRef().getInstallPath(), installPath, true, new Completion(msg) {
+        mediator.downloadBits(msg.getImage().getUuid(), getSelfInventory(), BackupStorageInventory.valueOf(bsvo),
+                msg.getBackupStorageRef().getInstallPath(), installPath, ImageDownloadPurpose.DataVolume, new Completion(msg) {
                     @Override
                     public void success() {
                         reply.setInstallPath(installPath);

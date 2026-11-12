@@ -1,5 +1,6 @@
 package org.zstack.storage.volume;
 
+import org.zstack.tag.SystemTagCreator;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -240,6 +241,20 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
+        VolumeCreationContext creationContext = VolumeCreationContext.builder()
+                .volumeUuid(vol.getUuid())
+                .volumeType(VolumeType.Data)
+                .source(ImageVO.class.getSimpleName(), template.getUuid())
+                .targetEncryptionState(msg.getTargetEncryptionState())
+                .hostUuid(msg.getHostUuid())
+                .primaryStorageUuid(msg.getPrimaryStorageUuid())
+                .build();
+        List<VolumeCreationFlowExtensionPoint> creationExts = pluginRgty.getExtensionList(VolumeCreationFlowExtensionPoint.class);
+
+        creationExts.forEach(ext -> ext.prepareCreation(creationContext));
+        boolean inheritedEncryption = msg.getTargetEncryptionState() != VolumeEncryptionState.Encrypted
+                && creationContext.getTargetEncryptionState() == VolumeEncryptionState.Encrypted;
+        msg.setTargetEncryptionState(creationContext.getTargetEncryptionState());
         if (msg.getTargetEncryptionState() == VolumeEncryptionState.Encrypted && vol.isShareable()) {
             throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] cannot be shareable", vol.getUuid()));
         }
@@ -264,6 +279,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 if (msg.getApiMsg() != null) {
                     tagMgr.createTagsFromAPICreateMessage(msg.getApiMsg(), vol.getUuid(), VolumeVO.class.getSimpleName());
                 }
+                if (inheritedEncryption) {
+                    SystemTagCreator creator = VolumeSystemTags.ENCRYPTED.newSystemTagCreator(vol.getUuid());
+                    creator.ignoreIfExisting = true;
+                    creator.create();
+                }
                 return vol;
             }
         }.execute();
@@ -283,20 +303,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String prePSInstallPath;
             String volumeFormat;
             String volumeProtocol;
+            Long downloadSize;
             String allocatedInstallUrl;
-            VolumeCreationContext creationContext = VolumeCreationContext.builder()
-                    .volumeUuid(vol.getUuid())
-                    .volumeType(VolumeType.Data)
-                    .source(ImageVO.class.getSimpleName(), template.getUuid())
-                    .targetEncryptionState(msg.getTargetEncryptionState())
-                    .hostUuid(msg.getHostUuid())
-                    .primaryStorageUuid(msg.getPrimaryStorageUuid())
-                    .build();
-            List<VolumeCreationFlowExtensionPoint> creationExts = pluginRgty.getExtensionList(VolumeCreationFlowExtensionPoint.class);
-
             @Override
             public void setup() {
-                if (creationContext.isTargetEncrypted() && creationExts.isEmpty()) {
+                if (creationContext.getTargetEncryptionState() == VolumeEncryptionState.Encrypted && creationExts.isEmpty()) {
                     flow(new NoRollbackFlow() {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
@@ -476,6 +487,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                     primaryStorageInstallPath = r.getInstallPath();
                                     volumeFormat = r.getFormat();
                                     volumeProtocol = r.getProtocol();
+                                    downloadSize = r.getSize();
+                                    if (r.getActualSize() != null) {
+                                        creationContext.setActualSize(r.getActualSize());
+                                    }
                                     creationContext.setInstallPath(primaryStorageInstallPath);
                                     creationContext.setFormat(volumeFormat);
                                     trigger.next();
@@ -533,6 +548,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         }
                         if (volumeProtocol != null) {
                             vo.setProtocol(volumeProtocol);
+                        }
+                        if (downloadSize != null) {
+                            vo.setSize(downloadSize);
+                            vol.setSize(downloadSize);
                         }
                         if (creationContext.getActualSize() != null) {
                             vo.setActualSize(creationContext.getActualSize());

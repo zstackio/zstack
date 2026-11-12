@@ -5,6 +5,7 @@ import org.zstack.header.core.Completion;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Unified resource key management service.
@@ -73,6 +74,8 @@ public interface EncryptedResourceKeyManager {
      * @throws org.zstack.header.errorcode.OperationFailureException when the key cannot be loaded
      */
     ResourceKeyResult getKey(GetOrCreateResourceKeyContext ctx);
+
+    void getKeys(String resourceType, Collection<String> resourceUuids, BiConsumer<String, ResourceKeyResult> consumer);
 
     /**
      * Roll back a newly created resource key during upper-layer workflow rollback.

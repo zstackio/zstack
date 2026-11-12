@@ -11,6 +11,8 @@ import org.zstack.tag.SystemTag;
  */
 @TagDefinition
 public class ImageSystemTags {
+    public static SystemTag ENCRYPTED_BACKUP_SOURCE = new SystemTag("image::encryptedBackupSource", ImageVO.class);
+
     public static String IMAGE_NAME_TOKEN = "imageName";
     public static String PRIMARY_STORAGE_UUID_TOKEN = "primaryStorageUuid";
     public static String IMAGE_INJECT_QEMUGA_TOKEN = "qemuga";

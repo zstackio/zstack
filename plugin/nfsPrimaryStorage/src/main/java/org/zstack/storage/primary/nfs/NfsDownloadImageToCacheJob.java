@@ -189,7 +189,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                                 nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid())
                         );
 
-                        mediator.downloadBits(primaryStorage, backupStorage, image.getSelectedBackupStorage().getInstallPath(), cacheInstallPath, false, new Completion(trigger) {
+                        mediator.downloadBits(image.getInventory().getUuid(), primaryStorage, backupStorage, image.getSelectedBackupStorage().getInstallPath(), cacheInstallPath, ImageDownloadPurpose.ImageCache, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

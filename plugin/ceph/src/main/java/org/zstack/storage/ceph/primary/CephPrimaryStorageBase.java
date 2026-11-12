@@ -2677,6 +2677,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             ImageCacheInventory cache;
             Long actualSize;
             boolean creationHandledByExtension;
+            String format;
 
             @Override
             public void setup() {
@@ -2717,11 +2718,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             creationHandledByExtension = true;
                             Long virtualSize = ispec.getInventory().getSize() < msg.getVolume().getSize()
                                     ? msg.getVolume().getSize() : null;
-                            extension.cloneRoot(self.getUuid(), msg.getVolume().getUuid(), cloneInstallPath, volumePath,
-                                    msg.getDestHost().getUuid(), virtualSize, new ReturnValueCompletion<Long>(trigger) {
+                            extension.cloneRoot(self.getUuid(), msg.getVolume().getUuid(), ispec.getInventory().getUuid(), cloneInstallPath, volumePath,
+                                    msg.getDestHost().getUuid(), virtualSize, new ReturnValueCompletion<VolumeStats>(trigger) {
                                 @Override
-                                public void success(Long size) {
-                                    actualSize = size;
+                                public void success(VolumeStats stats) {
+                                    actualSize = stats.getActualSize();
+                                    format = stats.getFormat();
+                                    if (stats.getSize() != null) {
+                                        msg.getVolume().setSize(stats.getSize());
+                                    }
                                     trigger.next();
                                 }
 
@@ -2790,7 +2795,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void handle(Map data) {
                         VolumeInventory vol = msg.getVolume();
                         vol.setInstallPath(volumePath);
-                        vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                        vol.setFormat(format == null ? VolumeConstant.VOLUME_FORMAT_RAW : format);
                         vol.setActualSize(actualSize);
                         reply.setVolume(vol);
 
@@ -3331,11 +3336,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         param.setPrimaryStorageUuid(self.getUuid());
         param.setShareable(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class).isShareable());
         mediator.param = param;
-        mediator.download(new ReturnValueCompletion<String>(msg) {
+        mediator.downloadVolume(new ReturnValueCompletion<VolumeStats>(msg) {
             @Override
-            public void success(String returnValue) {
-                reply.setInstallPath(returnValue);
-                reply.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+            public void success(VolumeStats returnValue) {
+                reply.setInstallPath(returnValue.getInstallPath());
+                reply.setFormat(returnValue.getFormat() == null ? VolumeConstant.VOLUME_FORMAT_RAW : returnValue.getFormat());
+                reply.setSize(returnValue.getSize());
+                reply.setActualSize(returnValue.getActualSize());
                 bus.reply(msg, reply);
                 completion.done();
             }

@@ -722,6 +722,18 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 .build();
         creationContext.setAllocatedInstallUrl(msg.getAllocatedInstallUrl());
         List<VolumeCreationFlowExtensionPoint> creationExts = pluginRgty.getExtensionList(VolumeCreationFlowExtensionPoint.class);
+        creationExts.forEach(ext -> ext.prepareCreation(creationContext));
+        if (targetEncryptionState != creationContext.getTargetEncryptionState()) {
+            if (self.isShareable()) {
+                reply.setError(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] cannot be shareable", self.getUuid()));
+                bus.reply(msg, reply);
+                completion.done();
+                return;
+            }
+            SystemTagCreator creator = VolumeSystemTags.ENCRYPTED.newSystemTagCreator(self.getUuid());
+            creator.ignoreIfExisting = true;
+            creator.create();
+        }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("instantiate-volume-%s", self.getUuid()));
@@ -735,7 +747,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
             @Override
             public void setup() {
-                if (creationContext.isTargetEncrypted() && creationExts.isEmpty()) {
+                if (creationContext.getTargetEncryptionState() == VolumeEncryptionState.Encrypted && creationExts.isEmpty()) {
                     flow(new NoRollbackFlow() {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
@@ -766,7 +778,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             VolumePrimaryStorageAllocationContext allocationContext = VolumePrimaryStorageAllocationContext.builder()
                                     .volumeUuid(self.getUuid())
                                     .source(self.getRootImageUuid() == null ? null : "ImageVO", self.getRootImageUuid())
-                                    .targetEncryptionState(targetEncryptionState)
+                                    .targetEncryptionState(creationContext.getTargetEncryptionState())
                                     .hostUuid(msg.getHostUuid())
                                     .primaryStorageUuid(msg.getPrimaryStorageUuid())
                                     .build();
@@ -1764,6 +1776,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 .set(VolumeVO_.primaryStorageUuid, volume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, volume.getActualSize())
                                 .set(VolumeVO_.protocol, volume.getProtocol())
+
+                                .set(VolumeVO_.format, volume.getFormat())
                                 .update();
 
                         sql(VolumeVO.class)
@@ -1774,6 +1788,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 .set(VolumeVO_.primaryStorageUuid, transientVolume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, transientVolume.getActualSize())
                                 .set(VolumeVO_.protocol, transientVolume.getProtocol())
+
+                                .set(VolumeVO_.format, transientVolume.getFormat())
                                 .update();
 
                         pluginRgty.getExtensionList(OverwriteVolumeExtensionPoint.class).forEach(it ->

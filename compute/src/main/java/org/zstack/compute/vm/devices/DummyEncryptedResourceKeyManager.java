@@ -10,6 +10,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -46,6 +47,14 @@ public class DummyEncryptedResourceKeyManager implements EncryptedResourceKeyMan
                 ctx.getResourceType(), ctx.getResourceUuid()));
         throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
                 "crypto module is not installed, cannot manage resource encryption keys"));
+    }
+
+    @Override
+    public void getKeys(String resourceType, Collection<String> resourceUuids, BiConsumer<String, ResourceKeyResult> consumer) {
+        if (!resourceUuids.isEmpty()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                    "crypto module is not installed, cannot manage resource encryption keys"));
+        }
     }
 
     @Override
