@@ -1130,7 +1130,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final IpOverrideInfo overrideInfo, final Completion completion) {
-        final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+        VmNicVO matchedNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
                 for (UsedIpVO ip : arg.getUsedIps()) {
@@ -1142,6 +1142,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return null;
             }
         });
+
+        if (matchedNic == null) {
+            matchedNic = self.getVmNics().stream().filter(nic -> l3Uuid.equals(nic.getL3NetworkUuid()) &&
+                    nic.getUsedIps().isEmpty() && VmSystemTags.USER_VM_VF_BOND.hasTag(nic.getUuid())).findFirst().orElse(null);
+        }
+        final VmNicVO targetNic = matchedNic;
 
         if (targetNic == null) {
             throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10269, "the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), l3Uuid));
@@ -2447,6 +2453,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         setFlowMarshaller(flowChain);
         flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuids.get(0)));
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        setFlowBeforeFormalWorkFlow(flowChain, spec);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString(), setStaticIp.nicNetworkInfo);
         for (VmNicPrepareResourceExtensionPoint exp : pluginRgty.getExtensionList(VmNicPrepareResourceExtensionPoint.class)) {
@@ -2462,6 +2469,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
         }
         flowChain.then(new VmAttachNicOnHypervisorFlow());
+        setFlowAfterFormalWorkFlow(flowChain, spec);
 
         flowChain.done(new FlowDoneHandler(completion) {
             @Override
@@ -2549,6 +2557,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
+                spec.setMessage(msg);
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
                 final L3NetworkInventory l3 = L3NetworkInventory.valueOf(l3vo);
                 final VmInstanceInventory vm = getSelfInventory();
@@ -2579,6 +2588,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 setFlowMarshaller(flowChain);
                 flowChain.setName(String.format("attachNic-vm-%s-nic-%s", self.getUuid(), vmNicVO.getUuid()));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+                setFlowBeforeFormalWorkFlow(flowChain, spec);
 
                 flowChain.then(new Flow() {
                     String __name__ = "update-nic";
@@ -2637,6 +2647,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     flowChain.then(new VmAttachNicOnHypervisorFlow());
                 }
 
+                setFlowAfterFormalWorkFlow(flowChain, spec);
                 flowChain.done(new FlowDoneHandler(chain) {
                     @Override
                     public void handle(Map data) {
@@ -3264,6 +3275,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         for (Flow flow : flows) {
             chain.then(flow);
+        }
+    }
+
+    protected void setFlowAfterFormalWorkFlow(FlowChain chain, VmInstanceSpec spec) {
+        for (VmOperationAdditionalFlowExtensionPoint ext : pluginRgty.getExtensionList(VmOperationAdditionalFlowExtensionPoint.class)) {
+            for (Flow flow : ext.getAfterFormalWorkFlows(spec)) {
+                chain.then(flow);
+            }
         }
     }
 

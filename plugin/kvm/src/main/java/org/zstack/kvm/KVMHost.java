@@ -3859,6 +3859,14 @@ public class KVMHost extends HostBase implements Host {
         new Http<>(attachNicPath, cmd, AttachNicResponse.class).call(new ReturnValueCompletion<AttachNicResponse>(msg, completion) {
             @Override
             public void success(AttachNicResponse ret) {
+                if (ret.isSuccess() && VmSystemTags.USER_VM_VF_BOND.hasTag(to.getUuid()) &&
+                        (ret.getVirtualDeviceInfoList() == null || ret.getVirtualDeviceInfoList().size() != 2 ||
+                         ret.getVirtualDeviceInfoList().stream().noneMatch(info ->
+                                 VmNicHelper.getVfSecondaryDeviceUuid(to.getUuid()).equals(info.getResourceUuid())))) {
+                    ret.setSuccess(false);
+                    ret.setError("KVM agent did not confirm both VF devices; check agent version and clean up residual devices before retrying");
+                    ret.setVfBondCleanupRequired(true);
+                }
                 if (!ret.isSuccess()) {
                     if (ret.getError().contains("Device or resource busy")) {
                         reply.setError(operr(ORG_ZSTACK_KVM_10065, "failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
@@ -3871,26 +3879,85 @@ public class KVMHost extends HostBase implements Host {
                     }
                 }
 
-                bus.reply(msg, reply);
-
-                if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
-                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(msg.getNicInventory().getUuid(),
-                            info.getDeviceAddress(), msg.getNicInventory().getVmInstanceUuid(),
-                            null, null));
+                if (ret.isVfBondCleanupRequired()) {
+                    markVfBondCleanupRequired(to.getUuid(), reply);
                 }
 
-                completion.done();
+                try {
+                    if (ret.isSuccess() && ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
+                        ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(
+                                info.getResourceUuid() == null ? msg.getNicInventory().getUuid() : info.getResourceUuid(),
+                                info.getDeviceAddress(), msg.getNicInventory().getVmInstanceUuid(),
+                                null, null));
+                    }
+                } catch (Exception ex) {
+                    if (!VmSystemTags.USER_VM_VF_BOND.hasTag(to.getUuid())) {
+                        // Preserve the ordinary NIC's successful host-attach result.
+                        logger.warn(String.format("failed to record device address for nic[uuid:%s]", to.getUuid()), ex);
+                        replyAttachNic(msg, reply, completion);
+                        return;
+                    }
+                    reply.setError(operr(ORG_ZSTACK_KVM_10066, "failed to record VF bond device addresses: %s", ex.getMessage()));
+                    DetachNicCommand rollbackCmd = new DetachNicCommand();
+                    rollbackCmd.setVmUuid(cmd.getVmUuid());
+                    rollbackCmd.setNic(to);
+                    new Http<>(detachNicPath, rollbackCmd, DetachNicRsp.class).call(new ReturnValueCompletion<DetachNicRsp>(msg, completion) {
+                        @Override
+                        public void success(DetachNicRsp rollbackRsp) {
+                            if (!rollbackRsp.isSuccess()) {
+                                markVfBondCleanupRequired(to.getUuid(), reply);
+                            }
+                            replyAttachNic(msg, reply, completion);
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            markVfBondCleanupRequired(to.getUuid(), reply);
+                            replyAttachNic(msg, reply, completion);
+                        }
+                    });
+                    return;
+                }
+
+                replyAttachNic(msg, reply, completion);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
-                bus.reply(msg, reply);
-                completion.done();
+                if (to.getExtraPciDeviceAddresses() != null && !to.getExtraPciDeviceAddresses().isEmpty()) {
+                    markVfBondCleanupRequired(to.getUuid(), reply);
+                }
+                replyAttachNic(msg, reply, completion);
             }
         });
     }
 
+
+    private void markVfBondCleanupRequired(String nicUuid, VmAttachNicOnHypervisorReply reply) {
+        try {
+            SystemTagCreator creator = VmSystemTags.VF_BOND_CLEANUP_REQUIRED.newSystemTagCreator(nicUuid);
+            creator.ignoreIfExisting = true;
+            creator.create();
+        } catch (Exception ex) {
+            logger.warn(String.format("failed to mark VF bond nic[uuid:%s] as requiring cleanup", nicUuid), ex);
+            reply.setError(operr(ORG_ZSTACK_KVM_10066,
+                    "failed to mark VF bond nic[uuid:%s] as requiring cleanup: %s; check residual devices before retrying",
+                    nicUuid, ex.getMessage()).causedBy(reply.getError()));
+        }
+    }
+
+    private void replyAttachNic(VmAttachNicOnHypervisorMsg msg, VmAttachNicOnHypervisorReply reply,
+                                NoErrorCompletion completion) {
+        try {
+            bus.reply(msg, reply);
+        } catch (Exception ex) {
+            // Do not let the HTTP wrapper re-enter fail() after this callback has completed.
+            logger.warn(String.format("failed to reply to attach nic[uuid:%s]", msg.getNicInventory().getUuid()), ex);
+        } finally {
+            completion.done();
+        }
+    }
 
     private void handle(DetachVolumeFromVmOnHypervisorMsg msg) {
         VmInstanceState state = Q.New(VmInstanceVO.class)
@@ -4566,6 +4633,13 @@ public class KVMHost extends HostBase implements Host {
         String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
         to.setCleanTraffic(tagValue == null ? Boolean.FALSE : Boolean.parseBoolean(tagValue));
 
+        DeviceAddress pci = vidm.getVmDeviceAddress(nic.getUuid(), nic.getVmInstanceUuid());
+        if (pci != null) {
+            to.setPci(pci);
+        }
+        to.setResourceUuid(nic.getUuid());
+        to.setSecondaryPci(vidm.getVmDeviceAddress(VmNicHelper.getVfSecondaryDeviceUuid(nic.getUuid()), nic.getVmInstanceUuid()));
+
         VmNicType nicType = VmNicType.valueOf(nic.getType());
         if (!nicType.isHasAddon()) {
             return to;
@@ -4612,12 +4686,7 @@ public class KVMHost extends HostBase implements Host {
 
         to.setvHostAddOn(vHostAddOn);
 
-        DeviceAddress pci = vidm.getVmDeviceAddress(nic.getUuid(), nic.getVmInstanceUuid());
-        if (pci != null) {
-            to.setPci(pci);
-        }
         to.setL2NetworkUuid(l2inv.getUuid());
-        to.setResourceUuid(nic.getUuid());
         to.setState(nic.getState());
         to.setIsolated(l2inv.getIsolated());
         return to;
@@ -5026,7 +5095,7 @@ public class KVMHost extends HostBase implements Host {
 
                     for (VmNicInfo vmNicInfo : ret.getNicInfos()) {
                         VmNicInventory nic = macNicMap.get(vmNicInfo.getMacAddress());
-                        if (nic == null) {
+                        if (nic == null || (vmNicInfo.getAlias() != null && vmNicInfo.getAlias().endsWith("-slave1"))) {
                             continue;
                         }
 

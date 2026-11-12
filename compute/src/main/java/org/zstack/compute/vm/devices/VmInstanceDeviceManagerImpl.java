@@ -371,7 +371,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
             return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10007, "cannot find vm with uuid: %s", vmInstanceUuid);
         }
 
-        if (!vmDeviceExists(resourceUuid)) {
+        List<String> vfNicUuids = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmInstanceUuid)
+                .eq(VmNicVO_.type, "VF").select(VmNicVO_.uuid).listValues();
+        boolean secondaryVf = vfNicUuids.stream().anyMatch(uuid -> VmNicHelper.getVfSecondaryDeviceUuid(uuid).equals(resourceUuid));
+        if (!secondaryVf && !vmDeviceExists(resourceUuid)) {
             return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10008, "cannot find vm device with uuid: %s", resourceUuid);
         }
 

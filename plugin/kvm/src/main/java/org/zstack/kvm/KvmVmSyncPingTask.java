@@ -21,6 +21,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -62,17 +63,13 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     @Autowired
     private PluginRegistry pluginRgty;
 
-    // A map from apiId to VM instance uuid
-    private ConcurrentHashMap<String, ConcurrentHashMap<String, String>> vmApis = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Set<String>> vmsToSkip = new ConcurrentHashMap<>();
+    @Autowired private ResourceDestinationMaker destinationMaker;
+    private final VmSkipTraceRegistry skipRegistry=new VmSkipTraceRegistry(Platform.getManagementServerId());
+    private final Map<String,VmSkipTraceRegistry.Source> snapshotRequests=new ConcurrentHashMap<>();
+    private volatile boolean joined;
     private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
     private List<Class> skipVmTracerReplies = new ArrayList<>();
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
-
-    // Orphaned skip entries from departed MN nodes. Key=vmUuid, Value=timestamp when orphaned.
-    // These VMs remain in skip-trace state to avoid false HA triggers
-    // when a MN restarts and its in-flight VM operations haven't completed yet. See ZSTAC-80821.
-    private final ConcurrentHashMap<String, Long> orphanedSkipVms = new ConcurrentHashMap<>();
 
     private long getOrphanTtlMs() {
         return KVMGlobalConfig.ORPHANED_VM_SKIP_TIMEOUT.value(Long.class) * 1000;
@@ -115,6 +112,9 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                 data.setManagementNodeId(Platform.getManagementServerId());
 
+                VmSkipTraceRegistry.Change change=skipRegistry.localChange(msg.getId(),vmUuid,true);
+                if(change==null)return;
+                data.setMessageId(change.messageId);data.setSourceIncarnation(change.incarnation);data.setRevision(change.revision);
                 evtf.fire(VmTracerCanonicalEvents.VM_SKIP_TRACE_PATH, data);
             }
         }, skipVmTracerMessages);
@@ -124,21 +124,13 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             protected void run(Map tokens, Object data) {
                 VmTracerCanonicalEvents.VmSkipTraceData data1
                         = (VmTracerCanonicalEvents.VmSkipTraceData) data;
-                if (data1.getVmUuid() != null) {
-                    vmsToSkip.putIfAbsent(data1.getManagementNodeId(), ConcurrentHashMap.newKeySet());
-                    vmsToSkip.get(data1.getManagementNodeId()).add(data1.getVmUuid());
+                if(data1.getSourceIncarnation()==null) {
+                    skipRegistry.receiveLegacy(data1.getManagementNodeId(),data1.getApiId(),data1.getVmUuid(),true);
+                } else {
+                    skipRegistry.receive(data1.getManagementNodeId(),new VmSkipTraceRegistry.Change(
+                        data1.getSourceIncarnation(),data1.getRevision(),data1.getMessageId(),data1.getVmUuid(),true));
                 }
-
-                if (data1.getApiId() == null) {
-                    logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s",
-                            data1.getVmUuid(), data1.getMsgName()));
-                    return;
-                }
-
-                vmApis.putIfAbsent(data1.getManagementNodeId(), new ConcurrentHashMap<>());
-                if (vmApis.get(data1.getManagementNodeId()).putIfAbsent(data1.getApiId(), data1.getVmUuid()) == null) {
-                    logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s, api=%s", data1.getVmUuid(), data1.getMsgName(), data1.getApiId()));
-                }
+                requestTraceSnapshots();
             }
         });
 
@@ -147,17 +139,13 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             protected void run(Map tokens, Object data) {
                 VmTracerCanonicalEvents.VmContinueTraceData data1
                         = (VmTracerCanonicalEvents.VmContinueTraceData) data;
-                if (data1.getApiId() != null && vmApis.containsKey(data1.getManagementNodeId()) && vmApis.get(data1.getManagementNodeId()).contains(data1.getApiId())) {
-                    String vmUuid = vmApis.get(data1.getManagementNodeId()).remove(data1.getApiId());
-                    logger.info("Continuing tracing VM: " + vmUuid);
-                    vmsToSkip.get(data1.getManagementNodeId()).remove(vmUuid);
-                    return;
+                if(data1.getSourceIncarnation()==null) {
+                    skipRegistry.receiveLegacy(data1.getManagementNodeId(),data1.getApiId(),data1.getVmUuid(),false);
+                } else {
+                    skipRegistry.receive(data1.getManagementNodeId(),new VmSkipTraceRegistry.Change(
+                        data1.getSourceIncarnation(),data1.getRevision(),data1.getMessageId(),data1.getVmUuid(),false));
                 }
-
-                if (data1.getVmUuid() != null) {
-                    logger.info("Continuing tracing VM: " + data1.getVmUuid());
-                    vmsToSkip.get(data1.getManagementNodeId()).remove(data1.getVmUuid());
-                }
+                requestTraceSnapshots();
             }
         });
     }
@@ -177,41 +165,74 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         continueTraceVmAfterWhenMessageReplied(replyOrEvent, msg);
     }
 
+    static String traceReplyMessageId(Message replyOrEvent, NeedReplyMessage msg) {
+        // CloudBus publishes APIEvent with no original request object.
+        return replyOrEvent instanceof APIEvent ? ((APIEvent) replyOrEvent).getApiId()
+                : msg == null ? null : msg.getId();
+    }
+
     private void continueTraceVmAfterWhenMessageReplied(Message replyOrEvent, NeedReplyMessage msg) {
-        String vmUuid = null;
-        String apiId = null;
-
-        if (msg instanceof VmInstanceMessage) {
-            vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
-        } else if (replyOrEvent instanceof APIEvent) {
-            // do not rely on the inventory from event reply - the VM operation might fail
-            apiId = ((APIEvent) replyOrEvent).getApiId();
+        String messageId = traceReplyMessageId(replyOrEvent, msg);
+        if (messageId == null) {
+            return;
         }
-
-        if (apiId != null) {
-            vmUuid = vmApis.get(Platform.getManagementServerId()).get(apiId);
+        VmSkipTraceRegistry.Change change = skipRegistry.localChange(messageId, null, false);
+        if (change == null) {
+            return;
         }
+        VmTracerCanonicalEvents.VmContinueTraceData data = new VmTracerCanonicalEvents.VmContinueTraceData();
+        data.setVmUuid(change.vmUuid);
+        data.setApiId(replyOrEvent instanceof APIEvent ? messageId : null);
+        data.setManagementNodeId(Platform.getManagementServerId());
+        data.setMessageId(change.messageId);
+        data.setSourceIncarnation(change.incarnation);
+        data.setRevision(change.revision);
+        evtf.fire(VmTracerCanonicalEvents.VM_CONTINUE_TRACE_PATH, data);
+    }
 
-        if (vmUuid != null) {
-            VmTracerCanonicalEvents.VmContinueTraceData data = new VmTracerCanonicalEvents.VmContinueTraceData();
-            data.setApiId(apiId);
-            data.setVmUuid(vmUuid);
-            data.setManagementNodeId(Platform.getManagementServerId());
-            evtf.fire(VmTracerCanonicalEvents.VM_CONTINUE_TRACE_PATH, data);
-        }
+    public void handle(GetVmSkipTraceSnapshotMsg msg) {bus.reply(msg,skipRegistry.snapshot());}
+
+    static boolean unsupportedTraceSnapshot(MessageReply reply) {
+        return !reply.isSuccess() && reply.getError()!=null && reply.getError().isError(SysErrors.UNKNOWN_MESSAGE_ERROR);
+    }
+
+    private void requestTraceSnapshots() {
+        if(!joined)return;
+        skipRegistry.pendingSources().forEach((node,source)->{
+            if(snapshotRequests.putIfAbsent(node,source)!=null)return;
+            GetVmSkipTraceSnapshotMsg msg=new GetVmSkipTraceSnapshotMsg();msg.setTimeout(10000);
+            bus.makeServiceIdByManagementNodeId(msg,KVMConstant.SERVICE_ID,node);
+            try {
+                bus.send(msg,new CloudBusCallBack(null) {
+                    @Override public void run(MessageReply reply) {
+                        try {
+                            if(reply.isSuccess()&&reply instanceof GetVmSkipTraceSnapshotReply) {
+                                GetVmSkipTraceSnapshotReply snapshot=(GetVmSkipTraceSnapshotReply)reply;
+                                if(skipRegistry.install(node,source,snapshot))logger.debug("VM trace snapshot installed node="+node+
+                                    " revision="+snapshot.revision+" references="+snapshot.references.size());
+                            } else if(unsupportedTraceSnapshot(reply)) {
+                                if(skipRegistry.legacy(node,source))logger.debug("VM trace uses legacy events for management node "+node);
+                            } else logger.debug("VM trace snapshot unavailable from management node "+node);
+                        } finally {snapshotRequests.remove(node,source);}
+                    }
+                });
+            } catch(Exception error) {
+                snapshotRequests.remove(node,source);logger.warn("VM trace snapshot request failed: "+node,error);
+            }
+        });
+    }
+    private Set<String> traceSkips(Map<String,VmInstanceState> states) {
+        Set<String> skipped=skipRegistry.skipped(System.currentTimeMillis(),getOrphanTtlMs());
+        if(!joined||!skipRegistry.ready(System.currentTimeMillis(),getOrphanTtlMs()))states.forEach((vm,state)->{if(VmInstanceState.intermediateStates.contains(state))skipped.add(vm);});
+        return skipped;
     }
 
     private void syncVm(final HostInventory host, final Completion completion) {
         // Get vms to skip before send command to host to confirm the vm will be skipped after sync command finished.
         // The problem is if one vm-sync skipped operation is started and finished during vm sync command's handling
         // vm state would still be sync to mn
-        // ZSTAC-80821: clean up expired orphaned entries each sync cycle
-        cleanupExpiredOrphanedSkipVms();
-
-        Set<String> vmsToSkipSetHostSide = new HashSet<>();
-        vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
-        // ZSTAC-80821: also skip VMs from departed MN nodes that are still within TTL
-        vmsToSkipSetHostSide.addAll(orphanedSkipVms.keySet());
+        requestTraceSnapshots();
+        Set<String> vmsToSkipSetHostSide = skipRegistry.skipped(System.currentTimeMillis(),getOrphanTtlMs());
 
         // if the vm is not running on host when sync command executing but started as soon as possible
         // before response handling of vm sync, mgmtSideStates will including the running vm but not result in
@@ -220,6 +241,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         // wrong but it will be fixed in next vm sync and different from creation, normally vm operations skip
         // vm sync during processing
         Map<String, VmInstanceState> mgmtSideStates = buildManagementServerSideVmStates(host.getUuid());
+        vmsToSkipSetHostSide.addAll(traceSkips(mgmtSideStates));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         VmSyncCmd cmd = new VmSyncCmd();
@@ -241,9 +263,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     Map<String, VmInstanceState> states = new HashMap<>(ret.getStates().size());
 
                     // Get vms to skip after sync result returned.
-                    vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
-                    // ZSTAC-80821: include orphaned entries from departed MN nodes
-                    vmsToSkipSetHostSide.addAll(orphanedSkipVms.keySet());
+                    vmsToSkipSetHostSide.addAll(traceSkips(mgmtSideStates));
 
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
@@ -273,6 +293,11 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     }
 
                     checkVmInShutdown(ret.getVmInShutdowns(), states);
+                    for(String vm:vmsToSkipSetHostSide) {
+                        if(VmInstanceState.intermediateStates.contains(mgmtSideStates.get(vm)))logger.debug(
+                            "VM trace deferred vm="+vm+" expected="+mgmtSideStates.get(vm)+" observed="+states.get(vm)+
+                            " host="+host.getUuid()+" snapshotReady="+(joined&&skipRegistry.ready(System.currentTimeMillis(),getOrphanTtlMs())));
+                    }
                     reportVmState(host.getUuid(), states, vmsToSkipSetHostSide, mgmtSideStates);
                     completion.success();
                 } else {
@@ -455,72 +480,29 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     @Override
     public void nodeJoin(ManagementNodeInventory inv) {
-        vmApis.putIfAbsent(inv.getUuid(), new ConcurrentHashMap<>());
-        vmsToSkip.putIfAbsent(inv.getUuid(), ConcurrentHashMap.newKeySet());
+        skipRegistry.join(inv.getUuid());requestTraceSnapshots();
     }
 
     @Override
     public void nodeLeft(ManagementNodeInventory inv) {
-        vmApis.remove(inv.getUuid());
-
-        // ZSTAC-80821: Instead of immediately removing skip list entries, move them
-        // to the orphaned set with a TTL. This prevents false HA triggers for VMs that
-        // are still being started by kvmagent but whose controlling MN has restarted.
-        Set<String> skippedVms = vmsToSkip.remove(inv.getUuid());
-        if (skippedVms != null && !skippedVms.isEmpty()) {
-            long now = System.currentTimeMillis();
-            for (String vmUuid : skippedVms) {
-                orphanedSkipVms.put(vmUuid, now);
-                logger.info(String.format("moved VM[uuid:%s] from departed MN[uuid:%s] skip list to orphaned set" +
-                        " (will expire in %d minutes)", vmUuid, inv.getUuid(), getOrphanTtlMs() / 60000));
-            }
-        }
+        skipRegistry.left(inv.getUuid(),System.currentTimeMillis());snapshotRequests.remove(inv.getUuid());
     }
 
     @Override
-    public void iAmDead(ManagementNodeInventory inv) {
-    }
+    public void iAmDead(ManagementNodeInventory inv) { }
 
     @Override
     public void iJoin(ManagementNodeInventory inv) {
-        vmApis.putIfAbsent(inv.getUuid(), new ConcurrentHashMap<>());
-        vmsToSkip.putIfAbsent(inv.getUuid(), ConcurrentHashMap.newKeySet());
+        destinationMaker.getManagementNodesInHashRing().forEach(skipRegistry::join);
+        joined=true;requestTraceSnapshots();
     }
 
     public boolean isVmDoNotNeedToTrace(String vmUuid) {
-        if (vmsToSkip.values().stream().anyMatch(vmsToSkipSet -> vmsToSkipSet.contains(vmUuid))) {
-            return true;
+        if(skipRegistry.skipped(System.currentTimeMillis(),getOrphanTtlMs()).contains(vmUuid))return true;
+        if(!joined||!skipRegistry.ready(System.currentTimeMillis(),getOrphanTtlMs())) {
+            VmInstanceVO vm=dbf.findByUuid(vmUuid,VmInstanceVO.class);
+            return vm!=null&&VmInstanceState.intermediateStates.contains(vm.getState());
         }
-
-        // ZSTAC-80821: Also check orphaned skip entries from departed MN nodes
-        Long orphanedAt = orphanedSkipVms.get(vmUuid);
-        if (orphanedAt != null) {
-            if (System.currentTimeMillis() - orphanedAt < getOrphanTtlMs()) {
-                logger.debug(String.format("VM[uuid:%s] is in orphaned skip set, skipping trace", vmUuid));
-                return true;
-            } else {
-                // Expired, clean up
-                orphanedSkipVms.remove(vmUuid, orphanedAt);
-                logger.info(String.format("orphaned skip entry for VM[uuid:%s] expired after %d minutes, resuming trace",
-                        vmUuid, getOrphanTtlMs() / 60000));
-            }
-        }
-
         return false;
-    }
-
-    // Periodically clean up expired orphaned entries. Called from VM sync cycle.
-    private void cleanupExpiredOrphanedSkipVms() {
-        if (orphanedSkipVms.isEmpty()) {
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        for (Map.Entry<String, Long> entry : orphanedSkipVms.entrySet()) {
-            if (now - entry.getValue() >= getOrphanTtlMs()) {
-                orphanedSkipVms.remove(entry.getKey(), entry.getValue());
-                logger.info(String.format("cleaned up expired orphaned skip entry for VM[uuid:%s]", entry.getKey()));
-            }
-        }
     }
 }

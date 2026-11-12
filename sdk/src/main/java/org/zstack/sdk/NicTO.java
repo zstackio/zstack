@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.VHostAddOn;
 import org.zstack.sdk.DeviceAddress;
+import org.zstack.sdk.DeviceAddress;
 
 public class NicTO extends org.zstack.sdk.BaseVirtualDeviceTO {
 
@@ -155,6 +156,14 @@ public class NicTO extends org.zstack.sdk.BaseVirtualDeviceTO {
     }
     public java.util.List getExtraPciDeviceAddresses() {
         return this.extraPciDeviceAddresses;
+    }
+
+    public DeviceAddress secondaryPci;
+    public void setSecondaryPci(DeviceAddress secondaryPci) {
+        this.secondaryPci = secondaryPci;
+    }
+    public DeviceAddress getSecondaryPci() {
+        return this.secondaryPci;
     }
 
     public java.lang.String ipForTf;

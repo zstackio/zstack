@@ -16,6 +16,15 @@ public class VmTracerCanonicalEvents {
 
     @NeedJsonSchema
     public static class VmSkipTraceData {
+        private String messageId;
+        private String sourceIncarnation;
+        private long revision;
+        public String getMessageId() { return messageId; }
+        public void setMessageId(String value) { messageId=value; }
+        public String getSourceIncarnation() { return sourceIncarnation; }
+        public void setSourceIncarnation(String value) { sourceIncarnation=value; }
+        public long getRevision() { return revision; }
+        public void setRevision(long value) { revision=value; }
         private String vmUuid;
         private String apiId;
         private String msgName;
@@ -56,6 +65,15 @@ public class VmTracerCanonicalEvents {
 
     @NeedJsonSchema
     public static class VmContinueTraceData {
+        private String messageId;
+        private String sourceIncarnation;
+        private long revision;
+        public String getMessageId() { return messageId; }
+        public void setMessageId(String value) { messageId=value; }
+        public String getSourceIncarnation() { return sourceIncarnation; }
+        public void setSourceIncarnation(String value) { sourceIncarnation=value; }
+        public long getRevision() { return revision; }
+        public void setRevision(long value) { revision=value; }
         private String vmUuid;
         private String apiId;
         private String managementNodeId;
