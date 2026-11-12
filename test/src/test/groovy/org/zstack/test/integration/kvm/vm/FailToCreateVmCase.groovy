@@ -1,5 +1,11 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.zstack.compute.vm.VmInstanceExtensionPointEmitter
+import org.zstack.core.db.Q
+import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.vm.VmInstanceBeforeStartExtensionPoint
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.ImageInventory
@@ -133,6 +139,46 @@ class FailToCreateVmCase extends SubCase {
     void test() {
         env.create {
             createVmWithAL3NetworkWhichNotAttachedToTheCluster()
+            createVmWithSystemTagErrors()
+        }
+    }
+
+    void createVmWithSystemTagErrors() {
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+        L3NetworkInventory l3 = env.inventoryByName("pubL3")
+        VmInstanceExtensionPointEmitter emitter = bean(VmInstanceExtensionPointEmitter)
+        def originalExtensions = emitter.VmInstanceBeforeStartExtensions
+        def disabled = new ErrorCode(code: "TEST.DEVICE_DISABLED", description: "An operation failed",
+                details: "PCI device[uuid:device-a] is not enabled (state:Disabled)")
+        def occupied = new ErrorCode(code: "TEST.DEVICE_OCCUPIED", description: "An operation failed",
+                details: "PCI device[uuid:device-b] is occupied (vmUuid:other-vm)")
+        def descriptionOnly = new ErrorCode(code: "TEST.TAG_REJECTED", description: "System tag is not supported")
+
+        try {
+            // Simulate extension failures through the real Create API and its rollback chain.
+            [[disabled], [disabled, occupied], [descriptionOnly]].each { List<ErrorCode> errors ->
+                emitter.VmInstanceBeforeStartExtensions = errors.collect { ErrorCode error ->
+                    return { String vmUuid, List<String> tags -> error } as VmInstanceBeforeStartExtensionPoint
+                }
+                String vmUuid = org.zstack.core.Platform.uuid
+                def action = new CreateVmInstanceAction(
+                        name: "system-tag-error", resourceUuid: vmUuid,
+                        instanceOfferingUuid: instanceOffering.uuid, imageUuid: image.uuid,
+                        l3NetworkUuids: [l3.uuid], systemTags: ["hostname::tag-error-vm"],
+                        sessionId: adminSession())
+                def result = action.call()
+
+                assert result.error != null
+                assert result.error.globalErrorCode == "ORG_ZSTACK_COMPUTE_VM_10241"
+                assert result.error.cause != null
+                errors.each { ErrorCode error ->
+                    assert result.error.details.contains(error.details ?: error.description)
+                }
+                assert !Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).isExists()
+            }
+        } finally {
+            emitter.VmInstanceBeforeStartExtensions = originalExtensions
         }
     }
 

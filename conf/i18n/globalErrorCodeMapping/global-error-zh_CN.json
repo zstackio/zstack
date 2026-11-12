@@ -2905,7 +2905,7 @@
   "ORG_ZSTACK_PCIDEVICE_10080": "PCI 设备[uuid:%s]已被进行中的任务预留",
   "ORG_ZSTACK_PCIDEVICE_10081": "PCI 设备[uuid:%s]未启用（state:%s）",
   "ORG_ZSTACK_PCIDEVICE_10082": "物理机[uuid:%s]不存在、未连接或未启用，PCI 设备[uuid:%s]不可分配",
-  "ORG_ZSTACK_PCIDEVICE_10083": "物理机[uuid:%s]的 IOMMU 未生效，或 PCI 设备[uuid:%s]的 IOMMU 组[group:%s]未知",
+  "ORG_ZSTACK_PCIDEVICE_10083": "物理机[uuid:%s]的 IOMMU 未启用或未生效，或 PCI 设备[uuid:%s]的 IOMMU 组[group:%s]未知",
   "ORG_ZSTACK_PCIDEVICE_10084": "PCI 设备[uuid:%s]在物理机[uuid:%s]上存在不可用的 IOMMU 同组设备或依赖设备，请核对组[%s]及依赖设备 PCI 地址[%s]",
   "ORG_ZSTACK_PCIDEVICE_10085": "PCI 设备[uuid:%s，address:%s]在物理机[uuid:%s]上的采集信息尚未确认（collectionStatus:%s）",
   "ORG_ZSTACK_PCIDEVICE_10086": "PCI 设备[uuid:%s]在当前状态[%s]下不能分配",

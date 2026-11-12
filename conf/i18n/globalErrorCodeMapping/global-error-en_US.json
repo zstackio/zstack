@@ -2905,7 +2905,7 @@
   "ORG_ZSTACK_PCIDEVICE_10080": "PCI device[uuid:%s] is reserved by an ongoing task",
   "ORG_ZSTACK_PCIDEVICE_10081": "PCI device[uuid:%s] is not enabled (state:%s)",
   "ORG_ZSTACK_PCIDEVICE_10082": "Host[uuid:%s] is missing, disconnected or not enabled; PCI device[uuid:%s] cannot be allocated",
-  "ORG_ZSTACK_PCIDEVICE_10083": "Host[uuid:%s] IOMMU is inactive or PCI device[uuid:%s] has an unknown IOMMU group[group:%s]",
+  "ORG_ZSTACK_PCIDEVICE_10083": "Host[uuid:%s] IOMMU is not enabled or inactive, or PCI device[uuid:%s] has an unknown IOMMU group[group:%s]",
   "ORG_ZSTACK_PCIDEVICE_10084": "PCI device[uuid:%s] on host[uuid:%s] has an unavailable IOMMU group member or dependent device; check group[%s] and dependent PCI addresses[%s]",
   "ORG_ZSTACK_PCIDEVICE_10085": "PCI device[uuid:%s, address:%s] information on host[uuid:%s] is unconfirmed (collectionStatus:%s)",
   "ORG_ZSTACK_PCIDEVICE_10086": "pci device[uuid:%s] cannot be allocated in its current status[%s]",
