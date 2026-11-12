@@ -121,6 +121,23 @@ public class MemoryRepositoryRulesTest {
         assertEquals("the reply still counts for the configuration", MemoryRepository.CONVERGING, stored.getStatus());
     }
 
+    @Test public void aReplyFromTheBootBeforeARebootDoesNotReplaceTheNewBootsSample() {
+        // Generation 4 was being applied when the Host rebooted; the new boot has not applied it.
+        stored.setDesiredRevision(4); stored.setStatus(MemoryRepository.CONVERGING);
+        MemoryAgentResponse newBoot = ksmSample(3, "active");
+        newBoot.state.put("bootId", "new-boot");
+        repository.observe("host1", newBoot);
+        String sample = stored.getState();
+        Long sampledAt = stored.getLastSampleTime();
+        MemoryAgentResponse late = ksmSample(4, "active");
+        late.state.put("bootId", "old-boot"); late.state.put("sampleTime", sampledAt - 205229);
+        repository.record("host1", 4, late);
+        assertEquals("the new boot's sample stays", sample, stored.getState());
+        assertEquals("its time does not go back", sampledAt, stored.getLastSampleTime());
+        assertEquals("generation 4 is sent to the new boot again", MemoryRepository.CONVERGING, stored.getStatus());
+        assertEquals(Long.valueOf(3), stored.getAppliedRevision());
+    }
+
     @Test public void anEventThatCannotBeFiredReachesTheCallerAndKeepsTheSample() {
         repository.observe("host1", ksmSample(3, "active"));
         failingFire = true;
