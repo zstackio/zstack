@@ -4,6 +4,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
@@ -13,6 +14,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_ALLOCATOR_10037;
 
 public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilterExtensionPoint {
     private CLogger logger = Utils.getLogger(KVMHostAllocatorFilterExtensionPoint.class);
@@ -158,6 +161,21 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         return hostPropertyMap;
     }
 
+    public static String getCpuVendorMismatchError(String srcHostUuid, String dstHostUuid) {
+        String srcFlag = KVMSystemTags.HVM_CPU_FLAG.getTokenByResourceUuid(srcHostUuid, KVMSystemTags.HVM_CPU_FLAG_TOKEN);
+        String dstFlag = KVMSystemTags.HVM_CPU_FLAG.getTokenByResourceUuid(dstHostUuid, KVMSystemTags.HVM_CPU_FLAG_TOKEN);
+        // AMD and Hygon both use SVM. Unknown flags retain the existing checks.
+        if (!("vmx".equals(srcFlag) && "svm".equals(dstFlag))
+                && !("svm".equals(srcFlag) && "vmx".equals(dstFlag))) {
+            return null;
+        }
+
+        return String.format("cannot live migrate between Intel (VMX) and AMD/Hygon (SVM) hosts: "
+                        + "source host[uuid:%s, CPU virtualization:%s], destination host[uuid:%s, CPU virtualization:%s]; "
+                        + "use cold migration instead",
+                srcHostUuid, srcFlag, dstHostUuid, dstFlag);
+    }
+
     private boolean allPropertiesMatched(Map<KVMPropertyName, String> srcHostProperties, Map<KVMPropertyName, String> dstHostProperties) {
         if (srcHostProperties == null || srcHostProperties.isEmpty()) {
             return true;
@@ -204,7 +222,17 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         String srcHostUuid = spec.getVmInstance().getHostUuid();
         // nothing to check
         Map<KVMPropertyName, String> srcHostPropertyMap = getPropertyMapOfHost(srcHostUuid);
+        int cpuVendorRejectedHosts = 0;
+        String cpuVendorError = null;
         for (HostVO host : candidates) {
+            String mismatch = getCpuVendorMismatchError(srcHostUuid, host.getUuid());
+            if (mismatch != null) {
+                cpuVendorRejectedHosts++;
+                cpuVendorError = mismatch;
+                logger.debug(mismatch);
+                continue;
+            }
+
             Map<KVMPropertyName, String> candidateHostPropertyMap = getPropertyMapOfHost(host.getUuid(), srcHostPropertyMap.keySet());
             if (allPropertiesMatched(srcHostPropertyMap, candidateHostPropertyMap)) {
                 result.add(host);
@@ -212,6 +240,12 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
                 logger.debug(String.format("cannot migrate vm[uuid:%s] to host[uuid:%s] because kvm properties mismatch detected",
                         spec.getVmInstance().getUuid(), host.getUuid()));
             }
+        }
+
+        if (cpuVendorError != null && cpuVendorRejectedHosts == candidates.size()) {
+            throw new OperationFailureException(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10037,
+                    "after filtering, HostAllocatorFilterExtensionPoint[%s] returns zero candidate host, it means: %s",
+                    getClass().getSimpleName(), cpuVendorError));
         }
 
         return result;
