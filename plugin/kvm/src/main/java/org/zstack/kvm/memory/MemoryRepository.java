@@ -446,7 +446,8 @@ public class MemoryRepository {
 
     /**
      * Records an Agent apply result for a generation. A result for an older
-     * generation is ignored; failures back off and become Failed after five.
+     * generation, or one from a boot the Host has left, is ignored; failures
+     * back off and become Failed after five.
      */
     public Outcome record(String host, long generation, MemoryAgentResponse response) {
         List<MemoryTaskFailureEvent> events = new ArrayList<>();
@@ -454,6 +455,8 @@ public class MemoryRepository {
         Outcome outcome = transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null || state.getDesiredRevision() != generation) { return null; }
+            // A reply delivered after the Host rebooted says nothing of the new boot; the generation is sent again.
+            if (fromEarlierBoot(state, response)) { return null; }
             long now = System.currentTimeMillis();
             // An apply reply is a sample too: a service the apply started again is reported like an observed one.
             serviceEvents.add(observe(state, response, now));
@@ -546,12 +549,27 @@ public class MemoryRepository {
         // Only a sample carries its time; a reply whose observation failed (only a reason) keeps the last sample.
         Object sampled = response == null || response.state == null ? null : response.state.get("sampleTime");
         if (!(sampled instanceof Number)) { return Collections::emptyList; }
+        // A sample older than the stored one, e.g. a reply delivered late, does not replace it.
+        if (state.getLastSampleTime() != null && ((Number) sampled).longValue() < state.getLastSampleTime()) {
+            return Collections::emptyList;
+        }
         String previous = state.getState();
         state.setState(GSON.toJson(response.state));
         state.setLastSampleTime(((Number) sampled).longValue());
         Object capabilities = response.state.get("capabilities");
         if (capabilities instanceof Map) { state.setCapabilities(GSON.toJson(capabilities)); }
         return () -> MemoryObservationRules.serviceEvents(state.getHostUuid(), response, state, previous, now);
+    }
+
+    /** A sample older than the stored one and not of its boot: the Host rebooted after it was taken. */
+    @SuppressWarnings("unchecked")
+    private static boolean fromEarlierBoot(MemoryStateVO state, MemoryAgentResponse response) {
+        Object sampled = response == null || response.state == null ? null : response.state.get("sampleTime");
+        if (!(sampled instanceof Number) || state.getLastSampleTime() == null
+                || ((Number) sampled).longValue() >= state.getLastSampleTime()) { return false; }
+        Map<String, Object> stored = state.getState() == null ? null : MemoryObservationRules.readJson(state.getState(),
+                LinkedHashMap.class, String.format("Host[%s] stored memory observation is unreadable", state.getHostUuid()));
+        return stored == null || !Objects.equals(stored.get("bootId"), response.state.get("bootId"));
     }
 
     private void fire(List<Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>>> serviceEvents) {
