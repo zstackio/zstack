@@ -12,6 +12,7 @@ import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.sshkeypair.*;
 import org.zstack.header.vm.VmInstanceVO;
 
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.Tuple;
 import java.sql.Timestamp;
 import java.util.*;
@@ -70,11 +71,22 @@ public class SshKeyPairUpgradeExtension implements Component {
                     .eq(AccountResourceRefVO_.resourceType, SshKeyPairVO.class.getSimpleName())
                     .listValues();
             if (!sshKeyPairUuids.isEmpty()) {
-                sshKeyPairUuid = Q.New(SshKeyPairVO.class)
-                        .select(SshKeyPairVO_.uuid)
+                List<Tuple> candidates = Q.New(SshKeyPairVO.class)
+                        .select(SshKeyPairVO_.uuid, SshKeyPairVO_.publicKey)
                         .in(SshKeyPairVO_.uuid, sshKeyPairUuids)
                         .eq(SshKeyPairVO_.publicKey, sshKey)
-                        .findValue();
+                        .listTuple();
+                // Database collation may match keys that differ in case.
+                for (Tuple candidate : candidates) {
+                    if (!sshKey.equals(candidate.get(1, String.class))) {
+                        continue;
+                    }
+                    if (sshKeyPairUuid != null) {
+                        throw new NonUniqueResultException(String.format(
+                                "multiple SSH key pairs match exactly for account[uuid:%s]", accountUuid));
+                    }
+                    sshKeyPairUuid = candidate.get(0, String.class);
+                }
             }
 
             if (sshKeyPairUuid == null) {
