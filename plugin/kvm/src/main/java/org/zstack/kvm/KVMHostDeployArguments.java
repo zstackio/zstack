@@ -44,7 +44,18 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     @SerializedName("tls_cert_ips")
     private String tlsCertIps;
 
+    @SerializedName("deploy_mode")
+    private String deployMode;
+
     private transient boolean forceRun = false;
+
+    public String getDeployMode() {
+        return deployMode;
+    }
+
+    public void setDeployMode(String deployMode) {
+        this.deployMode = deployMode;
+    }
 
     public String getInit() {
         return init;
