@@ -641,6 +641,10 @@ public class MemoryRepository {
         if (reason == null && zramWanted && !zramSupported(observed)) {
             // The Host leaves a ZRAM it cannot run unmanaged; say why it is not running.
             Object code = field(observed.get("capabilities"), "zramReasonCode");
+            if (code == null || "".equals(code)) {
+                // An unsupported Host gives only its overall reason.
+                code = field(observed.get("capabilities"), "reasonCode");
+            }
             reason = code == null || "".equals(code) ? "ZRAM_UNSUPPORTED" : "ZRAM_UNSUPPORTED: " + code;
         }
         row.setReason(trim(reason));
@@ -674,6 +678,8 @@ public class MemoryRepository {
     /** A Host that reports it cannot run ZRAM runs without it; the Agent leaves it unmanaged. */
     static boolean zramSupported(Map<String, Object> observed) {
         Object capabilities = observed.get("capabilities");
+        // A Host that is unsupported as a whole sends no ZRAM verdict and cannot run ZRAM either.
+        if (Boolean.FALSE.equals(field(capabilities, "supported"))) { return false; }
         // A stopped service cannot report its qualification; only a known verdict makes ZRAM unsupported.
         return !Boolean.FALSE.equals(field(capabilities, "zram"))
                 || "SERVICE_RECLAIM_CAPABILITY_UNKNOWN".equals(field(capabilities, "zramReasonCode"));

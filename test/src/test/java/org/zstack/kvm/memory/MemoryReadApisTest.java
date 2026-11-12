@@ -42,6 +42,16 @@ public class MemoryReadApisTest {
         assertNull(MemoryOptimizationManager.supportedCapabilities(Collections.emptyMap()));
     }
 
+    @Test public void aHostReportedUnsupportedCannotRunZram() {
+        Map<String, Object> capabilities = new LinkedHashMap<>();
+        capabilities.put("supported", false); capabilities.put("reasonCode", "UNSUPPORTED_OS_RELEASE");
+        Map<String, Object> observed = new LinkedHashMap<>();
+        observed.put("capabilities", capabilities);
+        assertFalse("a Host that reports itself unsupported, without a ZRAM verdict, cannot run ZRAM",
+                MemoryRepository.zramSupported(observed));
+        assertEquals("Unsupported", MemoryRepository.featureState(observed, MemoryRepository.ZramExpectation.NONE));
+    }
+
     @Test public void aSampleTheAgentCouldNotCompleteIsAFailedObservation() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("inventoryComplete", true);
