@@ -293,7 +293,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         amsg.setAllocatorStrategy(msg.getAllocatorStrategy());
         amsg.setRequiredIp(msg.getRequiredIp());
-        amsg.setSystem(msg.isSystem());
         amsg.setSession(msg.getSession());
         if (msg.getRequiredIp() != null) {
             if (NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
@@ -311,7 +310,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                 amsg.setIpVersion(IPv6Constants.IPv6);
             }
         }
-        docreateVip(amsg, new ReturnValueCompletion<VipInventory>(msg) {
+        docreateVip(amsg, msg.isSystem(), new ReturnValueCompletion<VipInventory>(msg) {
             @Override
             public void success(VipInventory returnValue) {
                 reply.setVip(returnValue);
@@ -326,7 +325,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         });
     }
 
-    private void docreateVip(final APICreateVipMsg msg, ReturnValueCompletion<VipInventory> completion) {
+    private void docreateVip(final APICreateVipMsg msg, final boolean isSystem, ReturnValueCompletion<VipInventory> completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-vip-%s-from-l3-%s", msg.getName(), msg.getL3NetworkUuid()));
         chain.then(new ShareFlow() {
@@ -423,7 +422,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setNetmask(ip.getNetmask());
                         vipvo.setUsedIpUuid(ip.getUuid());
                         vipvo.setAccountUuid(msg.getSession().getAccountUuid());
-                        vipvo.setSystem(msg.isSystem());
+                        vipvo.setSystem(isSystem);
 
                         IpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), IpRangeVO.class);
                         vipvo.setPrefixLen(ipr.getPrefixLen());
@@ -473,7 +472,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     private void handle(final APICreateVipMsg msg) {
         final APICreateVipEvent evt = new APICreateVipEvent(msg.getId());
 
-        docreateVip(msg, new ReturnValueCompletion<VipInventory>(msg) {
+        docreateVip(msg, false, new ReturnValueCompletion<VipInventory>(msg) {
             @Override
             public void success(VipInventory returnValue) {
                 evt.setInventory(returnValue);

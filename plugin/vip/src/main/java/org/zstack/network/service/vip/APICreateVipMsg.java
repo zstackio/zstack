@@ -8,7 +8,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.other.APIAuditor;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -85,9 +84,6 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
     @APIParam(required = false)
     private String requiredIp;
 
-    @APINoSee
-    private boolean system;
-
     @APIParam(required = false)
     private Integer ipVersion;
 
@@ -131,14 +127,6 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public boolean isSystem() {
-        return system;
-    }
-
-    public void setSystem(boolean system) {
-        this.system = system;
     }
 
     public Integer getIpVersion() {

@@ -137,7 +137,7 @@ public class VipApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
 
             UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getRequiredIp())
                     .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).find();
-            if (usedIpVO != null && !msg.isSystem()) {
+            if (usedIpVO != null) {
                 throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIP_10009, "required ip address [%s] is already used", msg.getRequiredIp()));
             }
 

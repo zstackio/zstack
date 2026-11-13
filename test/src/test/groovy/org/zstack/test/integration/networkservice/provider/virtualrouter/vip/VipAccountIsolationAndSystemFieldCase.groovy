@@ -1,5 +1,10 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.vip
 
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
 import org.zstack.core.db.Q
 import org.zstack.header.identity.IdentityErrors
 import org.zstack.header.network.service.NetworkServiceType
@@ -9,6 +14,8 @@ import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.service.vip.VipNetworkServicesRefVO
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_
+import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.CreateEipAction
@@ -24,7 +31,9 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.testlib.WebBeanConstructor
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 class VipAccountIsolationAndSystemFieldCase extends SubCase {
     EnvSpec env
@@ -140,6 +149,7 @@ class VipAccountIsolationAndSystemFieldCase extends SubCase {
     void test() {
         env.create {
             testCrossAccountVipIsolation()
+            testCreateVipIgnoresSystemFieldInRestPayload()
         }
     }
 
@@ -270,6 +280,78 @@ class VipAccountIsolationAndSystemFieldCase extends SubCase {
             deleteAccount { uuid = accB.uuid }
             deleteAccount { uuid = accA.uuid }
         }
+    }
+
+    void testCreateVipIgnoresSystemFieldInRestPayload() {
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
+        String sessionUuid = adminSession()
+        OkHttpClient client = new OkHttpClient()
+
+        def postRawVip = { Map paramsMap ->
+            String bodyJson = JSONObjectUtil.toJsonString([params: paramsMap])
+            Request createReq = new Request.Builder()
+                    .url("http://127.0.0.1:${WebBeanConstructor.port}/v1/vips")
+                    .addHeader("Authorization", "OAuth ${sessionUuid}")
+                    .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyJson))
+                    .build()
+            String jobUrl = null
+            Response resp = client.newCall(createReq).execute()
+            try {
+                if (resp.code() != 202) {
+                    return [code: resp.code(), body: JSONObjectUtil.toObject(resp.body().string(), LinkedHashMap.class)]
+                }
+                Map locBody = JSONObjectUtil.toObject(resp.body().string(), LinkedHashMap.class)
+                String rawLocation = locBody.get("location") as String
+                String suffix = rawLocation.contains("/v1/api-jobs")
+                        ? rawLocation.substring(rawLocation.indexOf("/v1/api-jobs"))
+                        : rawLocation
+                jobUrl = suffix.startsWith("http") ? suffix : "http://127.0.0.1:${WebBeanConstructor.port}${suffix}"
+            } finally {
+                resp.close()
+            }
+            for (int i = 0; i < 100; i++) {
+                Request pollReq = new Request.Builder()
+                        .url(jobUrl)
+                        .addHeader("Authorization", "OAuth ${sessionUuid}")
+                        .get()
+                        .build()
+                Response pollResp = client.newCall(pollReq).execute()
+                try {
+                    if (pollResp.code() != 202) {
+                        return [code: pollResp.code(), body: JSONObjectUtil.toObject(pollResp.body().string(), LinkedHashMap.class)]
+                    }
+                } finally {
+                    pollResp.close()
+                }
+                Thread.sleep(100)
+            }
+            throw new IllegalStateException("timed out polling async createVip job: ${jobUrl}")
+        }
+
+        Map created = postRawVip([
+                name         : "vip-raw-system",
+                l3NetworkUuid: pubL3.uuid,
+                system       : true
+        ])
+        assert created.code == 200 : "expected 200 for createVip, got ${created}"
+        Map inv = (created.body as Map).get("inventory") as Map
+        String vipUuid = inv.get("uuid") as String
+        String vipIp = inv.get("ip") as String
+        assert inv.get("system") == false
+        assert Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).select(VipVO_.system).findValue() == false
+
+        Map duplicateAttempt = postRawVip([
+                name         : "vip-raw-dup-ip",
+                l3NetworkUuid: pubL3.uuid,
+                requiredIp   : vipIp,
+                system       : true
+        ])
+        assert duplicateAttempt.code == 503 : "expected duplicate IP createVip with system:true to fail, got ${duplicateAttempt}"
+
+        deleteVip {
+            uuid = vipUuid
+        }
+        assert !Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).isExists()
     }
 
     private static void assertPermissionDenied(org.zstack.sdk.ErrorCode err) {
