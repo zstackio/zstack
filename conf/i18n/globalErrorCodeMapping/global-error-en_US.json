@@ -512,6 +512,7 @@
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "volume snapshot operation failed: %s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "volume snapshot group[uuid:%s] contains a memory snapshot, cannot create a vm from it",
   "ORG_ZSTACK_COMPUTE_VM_10336": "cannot delete %s of vm[uuid:%s] in state %s, the vm must be in state %s",
+  "ORG_ZSTACK_COMPUTE_VM_10337": "cannot enable Secure Boot on vm[uuid:%s], UEFI boot mode is required",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "volume snapshot group[uuid:%s] holds TPM or NVRAM backup files, cannot be ungrouped",
   "ORG_ZSTACK_STORAGE_VOLUME_10102": "VM[uuid:%s] has a TPM device, cannot create a volume snapshot group with memory",
   "ORG_ZSTACK_STORAGE_CDP_10122": "VM[uuid:%s] has a TPM device, restoring it from CDP backup is not supported",
