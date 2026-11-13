@@ -7,4 +7,11 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+    <config>
+        <category>flatNetworkProvider</category>
+        <name>eip.syncOnHostPing.count</name>
+        <description>number of consecutive successful host pings before syncing flat EIPs on the host; 0 disables periodic sync</description>
+        <defaultValue>10</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
