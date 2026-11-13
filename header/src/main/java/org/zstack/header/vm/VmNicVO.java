@@ -1,5 +1,8 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.vm.devices.VmDevice;
+import org.zstack.header.vm.devices.VmDeviceMigrationCapability;
+
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -25,7 +28,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid")
         }
 )
-public class VmNicVO extends ResourceVO implements OwnedByAccount {
+public class VmNicVO extends ResourceVO implements OwnedByAccount, VmDevice {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String vmInstanceUuid;
@@ -267,5 +270,14 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public void setState(VmNicState enable) {
         this.state = enable;
+    }
+    @Override
+    public VmDeviceMigrationCapability getMigrationCapability() {
+        return VmNicType.valueOf(type).getMigrationCapability();
+    }
+
+    @Override
+    public String getMigrationErrorCode() {
+        return null;
     }
 }

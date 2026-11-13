@@ -637,6 +637,11 @@ public class VmInstanceSpec implements Serializable {
         this.ipAllocatorStrategy = ipAllocatorStrategy;
     }
 
+    public VmMigrationMode getMigrationMode() {
+        return message instanceof MigrateVmMessage ? ((MigrateVmMessage) message).getMigrationMode()
+                : VmMigrationMode.Live;
+    }
+
     public Message getMessage() {
         return message;
     }

@@ -16,12 +16,13 @@ import javax.persistence.PersistenceException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.header.vm.devices.VmDeviceMigrationCapability.Live;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmNicFactory implements VmInstanceNicFactory {
     private static final CLogger logger = Utils.getLogger(VmNicFactory.class);
     private static final VSwitchType vSwitchType = new VSwitchType(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
-    private static final VmNicType type = new VmNicType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+    private static final VmNicType type = new VmNicType(VmInstanceConstant.VIRTUAL_NIC_TYPE, Live);
 
     @Autowired
     private DatabaseFacade dbf;

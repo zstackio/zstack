@@ -19,19 +19,33 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
+
+import org.zstack.core.asyncbatch.While;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.header.allocator.HostAllocatorReserveExtensionPoint;
+import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForMigrateVmFlow implements Flow {
+    private static final CLogger logger = Utils.getLogger(VmAllocateHostForMigrateVmFlow.class);
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static final String SUCCESS = VmAllocateHostForMigrateVmFlow.class.getName();
 
@@ -64,7 +78,8 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         msg.setVmInstance(spec.getVmInventory());
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setAllocatorStrategy(HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE);
-        msg.setVmOperation(spec.getCurrentVmOperation().toString());
+        msg.setVmOperation(VmInstanceConstant.VmOperation.Migrate.toString());
+        msg.setMigrationMode(spec.getMigrationMode());
         msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
                 .map(VolumeInventory::getPrimaryStorageUuid)
                 .collect(Collectors.toSet()));
@@ -93,15 +108,54 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
-        if (data.containsKey(SUCCESS)) {
-            final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-            ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-            msg.setHostUuid(spec.getDestHost().getUuid());
-            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
-            msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-            bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
-            bus.send(msg);
+        if (!data.containsKey(SUCCESS)) {
+            chain.rollback();
+            return;
         }
+        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        if (spec.getMigrationMode() == VmMigrationMode.Live) {
+            returnCapacity(spec, chain);
+            return;
+        }
+        HostAllocatorSpec allocation = new HostAllocatorSpec();
+        allocation.setVmInstance(spec.getVmInventory());
+        allocation.setVmOperation(VmInstanceConstant.VmOperation.Migrate.toString());
+        allocation.setMigrationMode(spec.getMigrationMode());
+        new While<>(pluginRgty.getExtensionList(HostAllocatorReserveExtensionPoint.class))
+                .each((ext, next) -> ext.releaseReservation(allocation, spec.getDestHost(), new Completion(next) {
+                    @Override
+                    public void success() {
+                        next.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode error) {
+                        logger.error(String.format("failed to release migration reservation for vm[%s] on host[%s], " +
+                                "extension[%s]: %s", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid(),
+                                ext.getClass().getName(), error));
+                        next.addError(error);
+                        next.done();
+                    }
+                })).run(new WhileDoneCompletion(chain) {
+                    @Override
+                    public void done(ErrorCodeList errors) {
+                        if (!errors.getCauses().isEmpty()) {
+                            logger.error(String.format("migration reservation cleanup incomplete for vm[%s] " +
+                                    "on host[%s]: %s", spec.getVmInventory().getUuid(),
+                                    spec.getDestHost().getUuid(), errors));
+                        }
+                        returnCapacity(spec, chain);
+                    }
+                });
+    }
+
+    private void returnCapacity(VmInstanceSpec spec, FlowRollback chain) {
+        ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+        msg.setHostUuid(spec.getDestHost().getUuid());
+        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+        msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+        bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+        bus.send(msg);
         chain.rollback();
     }
 }

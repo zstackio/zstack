@@ -1,5 +1,10 @@
 package org.zstack.compute.vm.devices;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.compute.vm.VmCapabilitiesExtensionPoint;
+import org.zstack.header.Component;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.Platform;
@@ -27,10 +32,77 @@ import java.util.Map;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
-public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
+public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager, Component, VmCapabilitiesExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceDeviceManagerImpl.class);
     @Autowired
     private DatabaseFacade dbf;
+
+    @Autowired
+    private PluginRegistry pluginRgty;
+    private List<VmDeviceProvider> deviceProviders;
+
+    @Override
+    public boolean start() {
+        deviceProviders = pluginRgty.getExtensionList(VmDeviceProvider.class);
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VmDevice> getAttachedDevices(String vmUuid) {
+        List<VmDevice> devices = new ArrayList<>();
+        devices.addAll(getNics(vmUuid));
+        devices.addAll(Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, vmUuid).list());
+        devices.addAll(Q.New(VmCdRomVO.class).eq(VmCdRomVO_.vmInstanceUuid, vmUuid).list());
+        for (VmDeviceProvider provider : deviceProviders) {
+            devices.addAll(provider.getAttachedDevices(vmUuid));
+        }
+        return devices;
+    }
+
+    protected List<VmNicVO> getNics(String vmUuid) {
+        return Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmUuid).list();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ErrorCode checkMigration(String vmUuid, VmMigrationMode mode) {
+        ErrorCode error = checkMigration(vmUuid, mode, getNics(vmUuid));
+        if (error != null) {
+            return error;
+        }
+        for (VmDeviceProvider provider : deviceProviders) {
+            error = checkMigration(vmUuid, mode, provider.getAttachedDevices(vmUuid));
+            if (error != null) {
+                return error;
+            }
+        }
+        return null;
+    }
+
+    private ErrorCode checkMigration(String vmUuid, VmMigrationMode mode, List<? extends VmDevice> devices) {
+        for (VmDevice device : devices) {
+            if (!device.getMigrationCapability().supports(mode)) {
+                return operr(device.getMigrationErrorCode(),
+                        "cannot migrate vm[uuid:%s] in mode[%s] with device[uuid:%s, type:%s, migrationCapability:%s]",
+                        vmUuid, mode, device.getUuid(), device.getClass().getSimpleName(),
+                        device.getMigrationCapability());
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void checkVmCapability(VmInstanceInventory vm, VmCapabilities capabilities) {
+        if (capabilities.isSupportLiveMigration() && checkMigration(vm.getUuid(), VmMigrationMode.Live) != null) {
+            capabilities.setSupportLiveMigration(false);
+        }
+    }
 
     private boolean deviceAddressRecordingDisabled() {
         return !VmGlobalConfig.ENABLE_VM_DEVICE_ADDRESS_RECORDING.value(Boolean.class);

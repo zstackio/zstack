@@ -20,6 +20,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.VmMigrationMode;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
@@ -169,7 +170,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     ));
                 }
             }
-        } else if (VmOperation.Start.toString().equals(spec.getVmOperation())) {
+        } else if (VmOperation.Start.toString().equals(spec.getVmOperation())
+                || spec.getMigrationMode() == VmMigrationMode.StopAndStart) {
             checkLocalStorageForVmStart(spec.getVmInstance(), candidates);
         }
 

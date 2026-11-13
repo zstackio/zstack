@@ -208,6 +208,7 @@ public class SourceClassMap {
 			put("org.zstack.guesttools.InvocationRecordDetail", "org.zstack.sdk.InvocationRecordDetail");
 			put("org.zstack.ha.HaNetworkGroupInventory", "org.zstack.sdk.HaNetworkGroupInventory");
 			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
+			put("org.zstack.ha.HaStrategyConditionType", "org.zstack.sdk.HaStrategyConditionType");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
@@ -703,6 +704,11 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceState", "org.zstack.sdk.PciDeviceState");
 			put("org.zstack.pciDevice.PciDeviceStatus", "org.zstack.sdk.PciDeviceStatus");
 			put("org.zstack.pciDevice.PciDeviceType", "org.zstack.sdk.PciDeviceType");
+			put("org.zstack.pciDevice.crypto.CryptoDeviceAllocateStatus", "org.zstack.sdk.CryptoDeviceAllocateStatus");
+			put("org.zstack.pciDevice.crypto.CryptoDeviceHealth", "org.zstack.sdk.CryptoDeviceHealth");
+			put("org.zstack.pciDevice.crypto.CryptoDeviceInventory", "org.zstack.sdk.CryptoDeviceInventory");
+			put("org.zstack.pciDevice.crypto.CryptoDeviceQualification", "org.zstack.sdk.CryptoDeviceQualification");
+			put("org.zstack.pciDevice.crypto.CryptoDeviceUnavailableReason", "org.zstack.sdk.CryptoDeviceUnavailableReason");
 			put("org.zstack.pciDevice.gpu.GpuAllocateStatus", "org.zstack.sdk.GpuAllocateStatus");
 			put("org.zstack.pciDevice.gpu.GpuDeviceInventory", "org.zstack.sdk.GpuDeviceInventory");
 			put("org.zstack.pciDevice.gpu.GpuDeviceSpecCandidateInventory", "org.zstack.sdk.GpuDeviceSpecCandidateInventory");
@@ -1121,6 +1127,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CpuMemoryCapacityData", "org.zstack.header.allocator.datatypes.CpuMemoryCapacityData");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
+			put("org.zstack.sdk.CryptoDeviceAllocateStatus", "org.zstack.pciDevice.crypto.CryptoDeviceAllocateStatus");
+			put("org.zstack.sdk.CryptoDeviceHealth", "org.zstack.pciDevice.crypto.CryptoDeviceHealth");
+			put("org.zstack.sdk.CryptoDeviceInventory", "org.zstack.pciDevice.crypto.CryptoDeviceInventory");
+			put("org.zstack.sdk.CryptoDeviceQualification", "org.zstack.pciDevice.crypto.CryptoDeviceQualification");
+			put("org.zstack.sdk.CryptoDeviceUnavailableReason", "org.zstack.pciDevice.crypto.CryptoDeviceUnavailableReason");
 			put("org.zstack.sdk.DGpuBillingInventory", "org.zstack.billing.generator.dgpu.DGpuBillingInventory");
 			put("org.zstack.sdk.DGpuDeviceInventory", "org.zstack.pciDevice.gpu.dgpu.DGpuDeviceInventory");
 			put("org.zstack.sdk.DGpuProfileInventory", "org.zstack.pciDevice.gpu.dgpu.DGpuProfileInventory");
@@ -1206,6 +1217,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.H3cSdnControllerTenantInventory", "org.zstack.sdnController.header.H3cSdnControllerTenantInventory");
 			put("org.zstack.sdk.HaNetworkGroupInventory", "org.zstack.ha.HaNetworkGroupInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
+			put("org.zstack.sdk.HaStrategyConditionType", "org.zstack.ha.HaStrategyConditionType");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");

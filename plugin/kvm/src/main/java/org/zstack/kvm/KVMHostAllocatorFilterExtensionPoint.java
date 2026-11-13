@@ -4,6 +4,7 @@ import org.zstack.core.Platform;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.vm.VmMigrationMode;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
@@ -176,7 +177,8 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
             return candidates;
         }
 
-        if (VmInstanceState.Stopped.toString().equals(spec.getVmInstance().getState())) {
+        if (spec.getMigrationMode() == VmMigrationMode.StopAndStart
+                || VmInstanceState.Stopped.toString().equals(spec.getVmInstance().getState())) {
             return candidates;
         }
 

@@ -1,11 +1,16 @@
 package org.zstack.header.vm.devices;
 
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.vm.VmMigrationMode;
 
 import java.util.List;
 import java.util.Map;
 
 public interface VmInstanceDeviceManager {
+    List<VmDevice> getAttachedDevices(String vmUuid);
+
+    ErrorCode checkMigration(String vmUuid, VmMigrationMode mode);
+
     String MEM_BALLOON_UUID = "4780bf6d2fa65700f22e36c27e8ff05c";
 
     String RESOURCE_CONFIG_UUID = "65700f22e34780bf6d2fa6c27e8ff05c";

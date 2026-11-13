@@ -16,6 +16,8 @@ public interface VmInstanceManager {
     FlowChain getDestroyVmWorkFlowChain(VmInstanceInventory inv);
     
     FlowChain getMigrateVmWorkFlowChain(VmInstanceInventory inv);
+
+    FlowChain getStopAndStartMigrateVmWorkFlowChain(VmInstanceInventory inv);
     
     FlowChain getAttachUninstantiatedVolumeWorkFlowChain(VmInstanceInventory inv);
 

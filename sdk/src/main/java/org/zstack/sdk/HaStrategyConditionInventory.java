@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.HaStrategyConditionType;
 
 public class HaStrategyConditionInventory  {
 
@@ -26,6 +26,14 @@ public class HaStrategyConditionInventory  {
     }
     public java.lang.String getFencerName() {
         return this.fencerName;
+    }
+
+    public HaStrategyConditionType type;
+    public void setType(HaStrategyConditionType type) {
+        this.type = type;
+    }
+    public HaStrategyConditionType getType() {
+        return this.type;
     }
 
     public java.lang.String state;

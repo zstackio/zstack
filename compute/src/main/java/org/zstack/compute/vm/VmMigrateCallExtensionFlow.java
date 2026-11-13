@@ -29,10 +29,11 @@ public class VmMigrateCallExtensionFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         final HostInventory destHost = spec.getDestHost();
-        extEmitter.preMigrateVm(spec.getVmInventory(), destHost.getUuid(), new Completion(trigger) {
+        extEmitter.preMigrateVm(spec.getVmInventory(), destHost.getUuid(), spec.getMigrationMode(),
+                new Completion(trigger) {
             @Override
             public void success() {
-                extEmitter.beforeMigrateVm(spec.getVmInventory(), destHost.getUuid());
+                extEmitter.beforeMigrateVm(spec.getVmInventory(), destHost.getUuid(), spec.getMigrationMode());
                 trigger.next();
             }
 
