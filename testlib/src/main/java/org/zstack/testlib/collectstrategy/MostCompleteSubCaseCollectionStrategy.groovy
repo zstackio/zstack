@@ -39,7 +39,8 @@ class MostCompleteSubCaseCollectionStrategy implements SubCaseCollectionStrategy
         assert null != test : "test is null, can not find subcase"
 
         def cases = Platform.reflections.getSubTypesOf(Case.class).findAll { !Modifier.isAbstract(it.modifiers) }
-        cases = cases.findAll { it.package.name.startsWith(test.class.package.name) }
+        cases = cases.findAll { it.package.name == test.class.package.name ||
+                it.package.name.startsWith(test.class.package.name + ".") }
         cases = cases.sort{ a, b ->
             return a.name.compareTo(b.name)
         }
