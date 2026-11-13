@@ -247,6 +247,8 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                                     innerTrigger.fail(reply.getError());
                                     return;
                                 }
+                                InstantiateVolumeReply ir = reply.castReply();
+                                volumeInventory = ir.getVolume();
                                 innerTrigger.next();
                             }
                         });
