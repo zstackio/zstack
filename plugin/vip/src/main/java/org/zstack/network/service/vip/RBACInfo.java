@@ -24,8 +24,5 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void globalReadableResources() {
-        globalReadableResourceBuilder()
-                .resources(VipVO.class)
-                .build();
     }
 }
