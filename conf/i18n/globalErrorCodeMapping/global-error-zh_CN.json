@@ -498,6 +498,7 @@
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "云盘快照操作失败：%s",
   "ORG_ZSTACK_COMPUTE_VM_10335": "快照组[uuid:%s]包含内存快照，无法从该快照组创建云主机",
   "ORG_ZSTACK_COMPUTE_VM_10336": "不能删除资源配置 %s：云主机[uuid:%s]当前状态为 %s，必须处于 %s 状态",
+  "ORG_ZSTACK_COMPUTE_VM_10337": "无法为云主机[uuid:%s]开启安全引导，需要使用 UEFI 引导模式",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "快照组[uuid:%s]包含 TPM 或 NVRAM 安全附件，无法解绑",
   "ORG_ZSTACK_STORAGE_VOLUME_10102": "云主机[uuid:%s]已添加 vTPM 设备，不支持创建包含内存的快照组",
   "ORG_ZSTACK_STORAGE_CDP_10122": "云主机[uuid:%s]已添加 vTPM 设备，不支持从 CDP 备份恢复",

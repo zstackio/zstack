@@ -1,6 +1,8 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.devices.VmTpmManager;
+import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
@@ -11,6 +13,8 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.resourceconfig.APIDeleteResourceConfigMsg;
+import org.zstack.resourceconfig.APIUpdateResourceConfigMsg;
+import org.zstack.resourceconfig.APIUpdateResourceConfigsMsg;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigInventory;
@@ -21,6 +25,7 @@ import java.util.List;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10336;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10337;
 
 public class SecureBootResourceConfigGuard implements Component, GlobalApiMessageInterceptor {
     private static final List<VmInstanceState> ALLOWED_STATES = Arrays.asList(VmInstanceState.Created, VmInstanceState.Stopped);
@@ -53,7 +58,7 @@ public class SecureBootResourceConfigGuard implements Component, GlobalApiMessag
     @Override
     @SuppressWarnings("rawtypes")
     public List<Class> getMessageClassToIntercept() {
-        return list(APIDeleteResourceConfigMsg.class);
+        return list(APIDeleteResourceConfigMsg.class, APIUpdateResourceConfigMsg.class, APIUpdateResourceConfigsMsg.class);
     }
 
     @Override
@@ -66,7 +71,29 @@ public class SecureBootResourceConfigGuard implements Component, GlobalApiMessag
         if (msg instanceof APIDeleteResourceConfigMsg) {
             validate((APIDeleteResourceConfigMsg) msg);
         }
+        if (msg instanceof APIUpdateResourceConfigMsg) {
+            APIUpdateResourceConfigMsg update = (APIUpdateResourceConfigMsg) msg;
+            validateBootMode(update.getResourceUuid(), update.getIdentity(), update.getValue());
+        }
+        if (msg instanceof APIUpdateResourceConfigsMsg) {
+            APIUpdateResourceConfigsMsg update = (APIUpdateResourceConfigsMsg) msg;
+            update.getResourceConfigs().forEach(config -> validateBootMode(update.getResourceUuid(),
+                    GlobalConfig.produceIdentity(config.getCategory(), config.getName()), config.getValue()));
+        }
         return msg;
+    }
+
+    private void validateBootMode(String resourceUuid, String identity, String value) {
+        if (!VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT.getIdentity().equals(identity) || !"true".equals(value)
+                || vmStateOf(resourceUuid) == null) {
+            return;
+        }
+
+        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(resourceUuid, VmSystemTags.BOOT_MODE_TOKEN);
+        if (!VmTpmManager.isUefiBootMode(bootMode)) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10337,
+                    "cannot enable Secure Boot on vm[uuid:%s], UEFI boot mode is required", resourceUuid));
+        }
     }
 
     private void validate(APIDeleteResourceConfigMsg msg) {
