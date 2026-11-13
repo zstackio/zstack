@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -12,6 +13,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.quota.FixedSizeRequiredRequest;
@@ -21,11 +23,16 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.utils.Utils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +45,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class QuotaUtil {
+    static final String QUOTA_OPERATOR_ACCOUNT_UUID = "quotaOperatorAccountUuid";
+    public static final String QUOTA_CHECK_NAMES = "quotaCheckNames";
     private static final CLogger logger = Utils.getLogger(QuotaUtil.class);
 
     @Autowired
@@ -68,6 +77,47 @@ public class QuotaUtil {
                     String.format("cannot find owner account uuid for resource[uuid:%s]", resourceUuid));
         } else {
             return owner;
+        }
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void lockAndCheckQuota(String accountUuid, String quotaName, long request) {
+        Collection<?> quotaNames = (Collection<?>) TaskContext.getTaskContextItem(QUOTA_CHECK_NAMES);
+        if (quotaNames == null || !quotaNames.contains(quotaName)) {
+            return;
+        }
+
+        if (accountUuid == null || request == 0 || AccountConstant.isAdminPermission(accountUuid)) {
+            return;
+        }
+
+        String operatorAccountUuid = (String) TaskContext.getTaskContextItem(QUOTA_OPERATOR_ACCOUNT_UUID);
+        if (operatorAccountUuid != null && (AccountConstant.isAdminPermission(operatorAccountUuid)
+                || isAdminAccount(operatorAccountUuid))) {
+            return;
+        }
+
+        AccountVO account = dbf.getEntityManager().find(AccountVO.class, accountUuid, LockModeType.PESSIMISTIC_WRITE);
+        if (account == null || account.getType() == AccountType.SystemAdmin) {
+            return;
+        }
+
+        Quota.QuotaPair pair = makeQuotaPairs(accountUuid).get(quotaName);
+        if (pair == null) {
+            return;
+        }
+
+        Long used = acntMgr.getQuotasDefinitions().get(quotaName).getQuotaUsage(accountUuid);
+        QuotaCompareInfo info = new QuotaCompareInfo();
+        info.currentAccountUuid = operatorAccountUuid == null ? accountUuid : operatorAccountUuid;
+        info.resourceTargetOwnerAccountUuid = accountUuid;
+        info.quotaName = quotaName;
+        info.quotaValue = pair.getValue();
+        info.currentUsed = used == null ? 0L : used;
+        info.request = request;
+        ErrorCode error = checkQuotaAndReturn(info);
+        if (error != null) {
+            throw new OperationFailureException(error);
         }
     }
 
@@ -163,6 +213,10 @@ public class QuotaUtil {
             return;
         }
 
+        if (msg instanceof APIMessage) {
+            TaskContext.putTaskContextItem(QUOTA_CHECK_NAMES, Collections.emptyList());
+        }
+
         if (AccountConstant.isAdminPermission(targetAccountUuid) || isAdminAccount(targetAccountUuid)) {
             return;
         }
@@ -177,6 +231,7 @@ public class QuotaUtil {
         }
 
         Map<String, Quota.QuotaPair> pairs = makeQuotaPairs(targetAccountUuid);
+        List<String> checkedQuotaNames = new ArrayList<>();
         logger.trace("dump quota pairs of before handle" + targetAccountUuid + " :\n" + JSONObjectUtil.toJsonString(pairs));
         for (QuotaMessageHandler checker : handlers) {
             if (needSkipCheck(msg, checker)) {
@@ -186,12 +241,19 @@ public class QuotaUtil {
 
             logger.trace(String.format("start quota message[name: %s] check[name: %s]", msg.getClass(), checker.getClass()));
             for (Object request : checker.getFunctionalSizeRequiredRequests()) {
-                checkFunctionalSizeRequest(msg, (FunctionalSizeRequiredRequest) request, currentAccountUuid, targetAccountUuid, pairs);
+                if (checkFunctionalSizeRequest(msg, (FunctionalSizeRequiredRequest) request, currentAccountUuid, targetAccountUuid, pairs)) {
+                    checkedQuotaNames.add(((FunctionalSizeRequiredRequest) request).getQuotaName());
+                }
             }
 
             for (Object request : checker.getFixedSizeRequiredRequests()) {
-                checkFixedSizeRequest((FixedSizeRequiredRequest) request, currentAccountUuid, targetAccountUuid, pairs);
+                if (checkFixedSizeRequest((FixedSizeRequiredRequest) request, currentAccountUuid, targetAccountUuid, pairs)) {
+                    checkedQuotaNames.add(((FixedSizeRequiredRequest) request).getQuotaName());
+                }
             }
+        }
+        if (msg instanceof APIMessage) {
+            TaskContext.putTaskContextItem(QUOTA_CHECK_NAMES, checkedQuotaNames);
         }
     }
 
@@ -209,7 +271,7 @@ public class QuotaUtil {
     }
 
     @Transactional(readOnly = true)
-    private void checkFunctionalSizeRequest(Message msg,
+    private boolean checkFunctionalSizeRequest(Message msg,
                                             FunctionalSizeRequiredRequest requiredRequest,
                                             String currentAccountUuid,
                                             String targetAccountUuid,
@@ -223,14 +285,14 @@ public class QuotaUtil {
 
         if (asked == null || asked == 0) {
             logger.trace("skip quota check because no required");
-            return;
+            return false;
         }
 
         Quota.QuotaPair pair = pairs.get(requiredRequest.getQuotaName());
         if (pair == null) {
             logger.warn(String.format("quota[name: %s] not defined for account[uuid: %s], skip check",
                     requiredRequest.getQuotaName(), targetAccountUuid));
-            return;
+            return false;
         }
 
         QuotaUtil.QuotaCompareInfo quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
@@ -241,21 +303,22 @@ public class QuotaUtil {
         quotaCompareInfo.currentUsed = used;
         quotaCompareInfo.request = asked;
         CheckQuota(quotaCompareInfo);
+        return true;
     }
 
     @Transactional(readOnly = true)
-    private void checkFixedSizeRequest(FixedSizeRequiredRequest fixedSizeRequiredRequest, String currentAccountUuid, String targetAccountUuid, Map<String, Quota.QuotaPair> pairs) {
+    private boolean checkFixedSizeRequest(FixedSizeRequiredRequest fixedSizeRequiredRequest, String currentAccountUuid, String targetAccountUuid, Map<String, Quota.QuotaPair> pairs) {
         Long asked = fixedSizeRequiredRequest.getValue();
         Long used = acntMgr.getQuotasDefinitions().get(fixedSizeRequiredRequest.getQuotaName()).getQuotaUsage(targetAccountUuid);
         if (asked == 0) {
-            return;
+            return false;
         }
 
         Quota.QuotaPair pair = pairs.get(fixedSizeRequiredRequest.getQuotaName());
         if (pair == null) {
             logger.warn(String.format("quota[name: %s] not defined for account[uuid: %s], skip check",
                     fixedSizeRequiredRequest.getQuotaName(), targetAccountUuid));
-            return;
+            return false;
         }
 
         QuotaUtil.QuotaCompareInfo quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
@@ -267,5 +330,6 @@ public class QuotaUtil {
         quotaCompareInfo.currentUsed = used;
         quotaCompareInfo.request = asked;
         CheckQuota(quotaCompareInfo);
+        return true;
     }
 }

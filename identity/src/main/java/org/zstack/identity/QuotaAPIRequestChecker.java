@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.identity.rbac.RBACEntity;
+import org.zstack.utils.TaskContext;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class QuotaAPIRequestChecker implements APIRequestChecker {
@@ -15,6 +16,9 @@ public class QuotaAPIRequestChecker implements APIRequestChecker {
 
     @Override
     public void check(RBACEntity entity) {
+        TaskContext.putTaskContextItem(QuotaUtil.QUOTA_OPERATOR_ACCOUNT_UUID,
+                entity.getApiMessage().getSession().getAccountUuid());
+        TaskContext.removeTaskContextItem(QuotaUtil.QUOTA_CHECK_NAMES);
         if (acntMgr.isAdmin(entity.getApiMessage().getSession())) {
             return;
         }

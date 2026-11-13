@@ -5,6 +5,8 @@ public interface VolumeConstant {
 
     String ACTION_CATEGORY = "volume";
 
+    String VOLUME_SIZE_QUOTA = "volume.capacity";
+
     String VOLUME_FORMAT_RAW = "raw";
     String VOLUME_FORMAT_QCOW2 = "qcow2";
     String VOLUME_FORMAT_VMTX = "vmtx";
