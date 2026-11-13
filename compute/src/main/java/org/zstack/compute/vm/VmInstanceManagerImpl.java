@@ -665,6 +665,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
+        amsg.setAccountUuid(msg.getSession().getAccountUuid());
 
         ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         amsg.setImage(ImageInventory.valueOf(image));
