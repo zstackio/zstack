@@ -16,6 +16,8 @@ import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageRepl
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 
 public interface NfsPrimaryStorageBackend {
+    void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg,
+                ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply> completion);
     HypervisorType getHypervisorType();
 
     void ping(PrimaryStorageInventory inv, Completion completion);

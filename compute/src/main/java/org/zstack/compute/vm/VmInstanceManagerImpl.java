@@ -777,6 +777,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
         APIGetCandidatePrimaryStoragesForCreatingVmReply reply = new APIGetCandidatePrimaryStoragesForCreatingVmReply();
         List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
+        VolumeEncryptionState targetEncryptionState = msg.getTargetEncryptionState() == null
+                ? VolumeEncryptionState.Unencrypted : VolumeEncryptionState.valueOf(msg.getTargetEncryptionState());
 
         Set<String> psTypes = new HashSet<>();
         List<String> clusterUuids = new ArrayList<>();
@@ -854,6 +856,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
+        rmsg.setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext.builder()
+                .source("Image", msg.getImageUuid())
+                .targetEncryptionState(targetEncryptionState)
+                .build());
         rmsg.setPossiblePrimaryStorageTypes(new ArrayList<>(psTypes));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
@@ -866,6 +872,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
             amsg.setRequiredClusterUuids(clusterUuids);
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
+            amsg.setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext.builder()
+                    .source("DiskOffering", dinv.getUuid())
+                    .targetEncryptionState(targetEncryptionState)
+                    .build());
             if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(dinv.getUuid())) {
                 DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(dinv.getUuid(), DiskOfferingUserConfig.class);
                 if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
@@ -883,6 +893,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                 amsg.setDryRun(true);
                 amsg.setSize(size);
+                amsg.setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext.builder()
+                        .source("Blank", null)
+                        .targetEncryptionState(targetEncryptionState)
+                        .build());
                 amsg.setRequiredClusterUuids(clusterUuids);
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                 msgs.add(amsg);

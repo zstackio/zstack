@@ -64,6 +64,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -241,6 +242,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof EncryptVolumeBitsOnPrimaryStorageMsg) {
+            handle((EncryptVolumeBitsOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -498,6 +501,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
 
         final VolumeInventory volume = msg.getVolume();
+        if (StringUtils.isEmpty(volume.getProtocol())) {
+            volume.setProtocol(externalVO.getDefaultProtocol());
+        }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("external-create-root-volume-from-image-%s", image.getUuid()));
@@ -535,7 +541,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        controller.cloneVolume(pathInCache, spec, new ReturnValueCompletion<VolumeStats>(trigger) {
+                        ReturnValueCompletion<VolumeStats> completion = new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats returnValue) {
                                 size = returnValue.getSize();
@@ -550,7 +556,17 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        });
+                        };
+                        ExternalVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(
+                                candidate -> candidate.canHandleVolumeInstantiation(controller, volume));
+                        if (extension != null) {
+                            extension.cloneRoot(controller, self.getUuid(), pathInCache,
+                                    spec, msg.getDestHost() == null ? null : msg.getDestHost().getUuid(), completion);
+                        } else if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
+                            completion.fail(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_ENCRYPTION_10000, "primary storage[uuid:%s] has no encrypted volume creation extension", self.getUuid()));
+                        } else {
+                            controller.cloneVolume(pathInCache, spec, completion);
+                        }
                     }
                 });
 
@@ -563,9 +579,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                         volume.setActualSize(actualSize);
                         volume.setFormat(format);
                         volume.setSize(size);
-                        if (StringUtils.isEmpty(volume.getProtocol())) {
-                            volume.setProtocol(externalVO.getDefaultProtocol());
-                        }
                         reply.setVolume(volume);
                         bus.reply(msg, reply);
                     }
@@ -586,19 +599,67 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     private void createEmptyVolume(InstantiateVolumeOnPrimaryStorageMsg msg, CreateVolumeSpec spec) {
         InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         VolumeInventory volume = msg.getVolume();
+        if (StringUtils.isEmpty(volume.getProtocol())) {
+            volume.setProtocol(externalVO.getDefaultProtocol());
+        }
 
-        controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(msg) {
+        ReturnValueCompletion<VolumeStats> completion = new ReturnValueCompletion<VolumeStats>(msg) {
             @Override
             public void success(VolumeStats stats) {
                 volume.setActualSize(stats.getActualSize());
                 volume.setSize(stats.getSize());
                 volume.setFormat(stats.getFormat());
                 volume.setInstallPath(stats.getInstallPath());
-                if (StringUtils.isEmpty(volume.getProtocol())) {
-                    volume.setProtocol(externalVO.getDefaultProtocol());
-                }
                 reply.setVolume(volume);
                 bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        };
+        ExternalVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(
+                candidate -> candidate.canHandleVolumeInstantiation(controller, volume));
+        if (extension != null) {
+            extension.createEmpty(controller, self.getUuid(), spec,
+                    msg.getDestHost() == null ? null : msg.getDestHost().getUuid(), completion);
+        } else if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
+            completion.fail(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_ENCRYPTION_10000, "primary storage[uuid:%s] has no encrypted volume creation extension", self.getUuid()));
+        } else {
+            controller.createVolume(spec, completion);
+        }
+    }
+
+    private ExternalVolumeCreationExtensionPoint selectVolumeCreationExtension(Predicate<ExternalVolumeCreationExtensionPoint> accepts) {
+        ExternalVolumeCreationExtensionPoint selected = null;
+        for (ExternalVolumeCreationExtensionPoint extension : pluginRgty.getExtensionList(ExternalVolumeCreationExtensionPoint.class)) {
+            if (!accepts.test(extension)) {
+                continue;
+            }
+            if (selected != null) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_ENCRYPTION_10000, "multiple volume creation extensions accept primary storage[uuid:%s]", self.getUuid()));
+            }
+            selected = extension;
+        }
+        return selected;
+    }
+
+    private void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg) {
+        EncryptVolumeBitsOnPrimaryStorageReply reply = new EncryptVolumeBitsOnPrimaryStorageReply();
+        ExternalVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(
+                candidate -> candidate.supportsDataTemplateEncryption(controller));
+        if (extension == null) {
+            reply.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_ENCRYPTION_10000, "primary storage[uuid:%s] does not support encrypted template conversion", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        extension.encryptDataTemplate(controller, msg,
+                new ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(EncryptVolumeBitsOnPrimaryStorageReply result) {
+                bus.reply(msg, result);
             }
 
             @Override

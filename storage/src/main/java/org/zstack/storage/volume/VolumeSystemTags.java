@@ -4,6 +4,7 @@ import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.tag.EphemeralPatternSystemTag;
 import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.EphemeralPatternSystemTag;
@@ -15,6 +16,8 @@ import org.zstack.tag.SystemTag;
  */
 @TagDefinition
 public class VolumeSystemTags {
+    @NonCloneable
+    public static SystemTag ENCRYPTED = new SystemTag(VolumeConstant.ENCRYPTED_VOLUME_TAG, VolumeVO.class);
     public static EphemeralSystemTag SHAREABLE = new EphemeralSystemTag("shareable");
 
     public static String VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN = "volumeSnapshotMaxNum";

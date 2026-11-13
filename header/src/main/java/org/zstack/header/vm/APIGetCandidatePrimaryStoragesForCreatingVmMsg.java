@@ -40,9 +40,19 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallM
     private String zoneUuid;
     private String clusterUuid;
     private String defaultL3NetworkUuid;
+    @APIParam(required = false, validValues = {"Encrypted", "Unencrypted"})
+    private String targetEncryptionState;
 
     @APIParam(required = false, resourceType = InstanceOfferingVO.class, checkAccount = true)
     private String instanceOfferingUuid;
+
+    public String getTargetEncryptionState() {
+        return targetEncryptionState;
+    }
+
+    public void setTargetEncryptionState(String targetEncryptionState) {
+        this.targetEncryptionState = targetEncryptionState;
+    }
 
     public String getInstanceOfferingUuid() {
         return instanceOfferingUuid;

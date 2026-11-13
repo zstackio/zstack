@@ -19,6 +19,7 @@ public class CreateDataVolumeFromVolumeTemplateMsg extends NeedReplyMessage impl
     private String resourceUuid;
     private String accountUuid;
     private APICreateDataVolumeFromVolumeTemplateMsg apiMsg;
+    private VolumeEncryptionState targetEncryptionState = VolumeEncryptionState.Unencrypted;
 
     public CreateDataVolumeFromVolumeTemplateMsg() {
     }
@@ -32,6 +33,17 @@ public class CreateDataVolumeFromVolumeTemplateMsg extends NeedReplyMessage impl
         resourceUuid = amsg.getResourceUuid();
         accountUuid = amsg.getSession().getAccountUuid();
         apiMsg = amsg;
+        if (amsg.getSystemTags() != null && amsg.getSystemTags().contains(VolumeConstant.ENCRYPTED_VOLUME_TAG)) {
+            targetEncryptionState = VolumeEncryptionState.Encrypted;
+        }
+    }
+
+    public VolumeEncryptionState getTargetEncryptionState() {
+        return targetEncryptionState;
+    }
+
+    public void setTargetEncryptionState(VolumeEncryptionState targetEncryptionState) {
+        this.targetEncryptionState = targetEncryptionState;
     }
 
     public String getAccountUuid() {

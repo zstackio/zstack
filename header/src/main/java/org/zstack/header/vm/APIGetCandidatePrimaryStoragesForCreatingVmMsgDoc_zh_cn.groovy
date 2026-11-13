@@ -121,6 +121,15 @@ doc {
 					since "2.1"
 				}
 				column {
+					name "targetEncryptionState"
+					enclosedIn ""
+					desc "目标加密状态。Encrypted 只返回支持加密建盘的候选，Unencrypted 或省略时按普通建盘规则返回候选"
+					location "query"
+					type "String"
+					optional true
+					since "5.7.10"
+				}
+				column {
 					name "instanceOfferingUuid"
 					enclosedIn ""
 					desc "计算规格UUID"

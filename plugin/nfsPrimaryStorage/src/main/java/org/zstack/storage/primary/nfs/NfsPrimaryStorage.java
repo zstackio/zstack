@@ -134,9 +134,33 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CommitVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PullVolumeSnapshotOnPrimaryStorageMsg) {
             handle((PullVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof EncryptVolumeBitsOnPrimaryStorageMsg) {
+            handle((EncryptVolumeBitsOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg) {
+        EncryptVolumeBitsOnPrimaryStorageReply reply = new EncryptVolumeBitsOnPrimaryStorageReply();
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            reply.setError(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_ENCRYPTION_10000, "NFS primary storage[uuid:%s] has no usable backend", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        backend.handle(msg, new ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(EncryptVolumeBitsOnPrimaryStorageReply result) {
+                bus.reply(msg, result);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     protected void updateMountPoint(String newUrl, Completion completion) {

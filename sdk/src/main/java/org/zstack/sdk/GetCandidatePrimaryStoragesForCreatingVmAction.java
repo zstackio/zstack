@@ -52,6 +52,9 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     @Param(required = false)
     public java.lang.String defaultL3NetworkUuid;
 
+    @Param(required = false, validValues = {"Encrypted","Unencrypted"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String targetEncryptionState;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
 

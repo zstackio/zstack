@@ -113,6 +113,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CBD_TO_NBD_PATH = "/zbs/primarystorage/volume/cbdtonbd";
     public static final String CLEAN_NBD_PATH = "/zbs/primarystorage/volume/cleannbd";
     public static final String CREATE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/create";
+    public static final String QUERY_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/query";
     public static final String DELETE_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/delete";
     public static final String ROLLBACK_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/rollback";
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
@@ -1315,6 +1316,27 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
+    public void resolveSnapshotReadPath(String installPath, ReturnValueCompletion<String> comp) {
+        QuerySnapshotCmd cmd = new QuerySnapshotCmd();
+        cmd.setPath(installPath);
+        httpCall(QUERY_SNAPSHOT_PATH, cmd, QuerySnapshotRsp.class, new ReturnValueCompletion<QuerySnapshotRsp>(comp) {
+            @Override
+            public void success(QuerySnapshotRsp rsp) {
+                if (StringUtils.isBlank(rsp.getInstallPath())) {
+                    comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10008, "snapshot path resolution returned no path for [%s]", installPath));
+                    return;
+                }
+                comp.success(rsp.getInstallPath());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
     public void stats(String installPath, ReturnValueCompletion<VolumeStats> comp) {
         QueryVolumeCmd cmd = new QueryVolumeCmd();
         cmd.setPath(installPath);
@@ -1951,6 +1973,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class CreateSnapshotRsp extends VolumeResponse {
     }
 
+    public static class QuerySnapshotRsp extends VolumeResponse {
+    }
+
     public static class DeleteVolumeRsp extends AgentResponse {
     }
 
@@ -2073,6 +2098,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public void setDstVolume(String dstVolume) {
             this.dstVolume = dstVolume;
         }
+    }
+
+    public static class QuerySnapshotCmd extends VolumeCommand {
     }
 
     public static class CreateSnapshotCmd extends VolumeCommand {

@@ -16,6 +16,15 @@ public class CreateVolumeMsg extends NeedReplyMessage implements VolumeCreateMes
     private String format;
     private String resourceUuid;
     private String protocol;
+    private VolumeEncryptionState targetEncryptionState = VolumeEncryptionState.Unencrypted;
+
+    public VolumeEncryptionState getTargetEncryptionState() {
+        return targetEncryptionState;
+    }
+
+    public void setTargetEncryptionState(VolumeEncryptionState targetEncryptionState) {
+        this.targetEncryptionState = targetEncryptionState;
+    }
 
     public String getFormat() {
         return format;

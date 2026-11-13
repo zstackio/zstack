@@ -33,7 +33,9 @@ import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeEncryptionState;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumePrimaryStorageAllocationContext;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -87,12 +89,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         if (isLegacyBootImage(rmsg.getImageUuid())) {
             rmsg.setRequiredFeatures(Collections.singleton(PrimaryStorageFeature.LEGACY_BOOT));
         }
+        rmsg.setVolumePrimaryStorageAllocationContext(spec.getRootVolumePrimaryStorageAllocationContext());
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
 
         // allocate ps for data volumes
-        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+        for (int index = 0; index < spec.getDataDiskOfferings().size(); index++) {
+            DiskOfferingInventory dinv = spec.getDataDiskOfferings().get(index);
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setCandidatePrimaryStorageUuids(spec.getCandidatePrimaryStorageUuidsForDataVolume());
             amsg.setSize(dinv.getDiskSize());
@@ -100,7 +104,21 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
             amsg.setDiskOfferingUuid(dinv.getUuid());
-            amsg.setSystemTags(spec.getDataVolumeSystemTags());
+            List<String> tags = new ArrayList<>();
+            if (spec.getDataVolumeSystemTags() != null) {
+                tags.addAll(spec.getDataVolumeSystemTags());
+            }
+            if (spec.getDataVolumeSystemTagsOnIndex() != null) {
+                List<String> indexTags = spec.getDataVolumeSystemTagsOnIndex().get(String.valueOf(index));
+                if (indexTags != null) {
+                    tags.addAll(indexTags);
+                }
+            }
+            amsg.setSystemTags(tags);
+            amsg.setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext.builder()
+                    .targetEncryptionState(spec.isDataVolumeEncrypted(index) ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted)
+                    .hostUuid(destHost.getUuid())
+                    .build());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
@@ -129,12 +147,16 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                         volumeSpec.setType(PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(msg.getPurpose()) ?
                                 VolumeType.Root.toString() : VolumeType.Data.toString());
                         volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+                        VolumePrimaryStorageAllocationContext allocationContext = msg.getVolumePrimaryStorageAllocationContext();
+                        if (allocationContext != null) {
+                            volumeSpec.setTargetEncryptionState(allocationContext.getTargetEncryptionState());
+                        }
                         if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
                             spec.setAllocatedPrimaryStorageUuidForRootVolume(ar.getPrimaryStorageInventory().getUuid());
                             volumeSpec.setTags(spec.getRootVolumeSystemTags());
                         } else {
                             spec.setAllocatedPrimaryStorageUuidForDataVolume(ar.getPrimaryStorageInventory().getUuid());
-                            volumeSpec.setTags(spec.getDataVolumeSystemTags());
+                            volumeSpec.setTags(msg.getSystemTags());
                         }
 
                         spec.getVolumeSpecs().add(volumeSpec);

@@ -7714,7 +7714,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setCandidatePrimaryStorageUuidsForRootVolume(struct.getCandidatePrimaryStorageUuidsForRootVolume());
         spec.setCandidatePrimaryStorageUuidsForDataVolume(struct.getCandidatePrimaryStorageUuidsForDataVolume());
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
-        spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
+        List<String> rootVolumeSystemTags = struct.getRootVolumeSystemTags();
+        if (!CollectionUtils.isEmpty(struct.getDiskAOs()) && struct.getDiskAOs().stream()
+                .anyMatch(disk -> disk != null && disk.isBoot() && VmInstanceSpec.isEncryptedDisk(disk))
+                && (rootVolumeSystemTags == null || !rootVolumeSystemTags.contains(VmInstanceSpec.ENCRYPTED_VOLUME_TAG))) {
+            rootVolumeSystemTags = rootVolumeSystemTags == null ? new ArrayList<>() : new ArrayList<>(rootVolumeSystemTags);
+            rootVolumeSystemTags.add(VmInstanceSpec.ENCRYPTED_VOLUME_TAG);
+        }
+        spec.setRootVolumeSystemTags(rootVolumeSystemTags);
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());
         spec.setDataVolumeSystemTagsOnIndex(struct.getDataVolumeSystemTagsOnIndex());
         spec.setDisableL3Networks(struct.getDisableL3Networks());

@@ -59,6 +59,7 @@ import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
 import org.zstack.header.vm.*;
+import org.zstack.header.volume.VolumePrimaryStorageRequirementExtensionPoint;
 import org.zstack.resourceconfig.*;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
@@ -83,6 +84,32 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator,
         PrimaryStorageSortExtensionPoint, PrimaryStorageFeatureAllocatorExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
+
+    @Override
+    public Map<PrimaryStorageHostStatus, List<String>> getHostUuidsByConnectionStatus(String primaryStorageUuid) {
+        List<Tuple> refs = Q.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, primaryStorageUuid)
+                .select(PrimaryStorageHostRefVO_.status, PrimaryStorageHostRefVO_.hostUuid).listTuple();
+        Map<PrimaryStorageHostStatus, List<String>> hosts = new HashMap<>();
+        for (Tuple ref : refs) {
+            hosts.computeIfAbsent(ref.get(0, PrimaryStorageHostStatus.class), status -> new ArrayList<>())
+                    .add(ref.get(1, String.class));
+        }
+        return hosts;
+    }
+
+    @Override
+    public String getPrimaryStorageType(String primaryStorageUuid) {
+        return Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, primaryStorageUuid)
+                .select(PrimaryStorageVO_.type).findValue();
+    }
+
+    @Override
+    public List<String> getAttachedClusterUuids(String primaryStorageUuid) {
+        return Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, primaryStorageUuid)
+                .select(PrimaryStorageClusterRefVO_.clusterUuid).listValues();
+    }
 
     @Autowired
     private CloudBus bus;
@@ -830,7 +857,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private PrimaryStorageAllocationSpec buildAllocateSpecFromMsg(AllocatePrimaryStorageMsg msg) {
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
         spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
-        spec.setRequiredFeatures(msg.getRequiredFeatures());
+        Set<PrimaryStorageFeature> requiredFeatures = msg.getRequiredFeatures() == null
+                ? new HashSet<>() : new HashSet<>(msg.getRequiredFeatures());
+        if (msg.getVolumePrimaryStorageAllocationContext() != null) {
+            for (VolumePrimaryStorageRequirementExtensionPoint ext : pluginRgty.getExtensionList(VolumePrimaryStorageRequirementExtensionPoint.class)) {
+                requiredFeatures.addAll(ext.getRequirements(msg.getVolumePrimaryStorageAllocationContext()));
+            }
+        }
+        spec.setRequiredFeatures(requiredFeatures);
         spec.setRequiredProtocol(resolveRequiredProtocol(msg));
         spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
         spec.setImageUuid(msg.getImageUuid());

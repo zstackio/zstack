@@ -26,7 +26,9 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeEncryptionState;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumePrimaryStorageAllocationContext;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -93,6 +95,11 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                         AllocatePrimaryStorageSpaceReply ar = reply.castReply();
                         VolumeSpec vspec = new VolumeSpec();
                         vspec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
+                        VolumePrimaryStorageAllocationContext allocationContext = msg.getVolumePrimaryStorageAllocationContext();
+                        if (allocationContext != null) {
+                            vspec.setTargetEncryptionState(allocationContext.getTargetEncryptionState());
+                        }
+                        vspec.setTags(msg.getSystemTags());
                         if (msg == rootVolumeAllocationMsg) {
                             vspec.setSize(ar.getSize());
                             vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
@@ -159,6 +166,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         rmsg.setSize(spec.getRootDiskAllocateSize());
         rmsg.setSystemTags(spec.getRootVolumeSystemTags());
+        rmsg.setVolumePrimaryStorageAllocationContext(spec.getRootVolumePrimaryStorageAllocationContext());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         }
@@ -190,18 +198,34 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             return msgs;
         }
 
-        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+        String specifiedDataStorageUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
+        String requiredPrimaryStorageType = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.type)
+                .eq(PrimaryStorageVO_.uuid, specifiedDataStorageUuid)
+                .findValue();
+        for (int index = 0; index < spec.getDataDiskOfferings().size(); index++) {
+            DiskOfferingInventory dinv = spec.getDataDiskOfferings().get(index);
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-            amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
-            amsg.setSystemTags(spec.getDataVolumeSystemTags());
+            amsg.setRequiredPrimaryStorageUuid(specifiedDataStorageUuid);
+            List<String> tags = new ArrayList<>();
+            if (spec.getDataVolumeSystemTags() != null) {
+                tags.addAll(spec.getDataVolumeSystemTags());
+            }
+            if (spec.getDataVolumeSystemTagsOnIndex() != null) {
+                List<String> indexTags = spec.getDataVolumeSystemTagsOnIndex().get(String.valueOf(index));
+                if (indexTags != null) {
+                    tags.addAll(indexTags);
+                }
+            }
+            amsg.setSystemTags(tags);
+            amsg.setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext.builder()
+                    .targetEncryptionState(spec.isDataVolumeEncrypted(index) ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted)
+                    .hostUuid(spec.getDestHost().getUuid())
+                    .build());
 
-            String requiredPrimaryStorageType = Q.New(PrimaryStorageVO.class)
-                    .select(PrimaryStorageVO_.type)
-                    .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForDataVolume())
-                    .findValue();
-            if(LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(requiredPrimaryStorageType)){
+            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(requiredPrimaryStorageType)) {
                 amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
             }
 

@@ -31,7 +31,9 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeEncryptionState;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumePrimaryStorageAllocationContext;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -157,6 +159,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         rmsg.setSize(spec.getRootDiskAllocateSize());
         rmsg.setSystemTags(spec.getRootVolumeSystemTags());
+        rmsg.setVolumePrimaryStorageAllocationContext(spec.getRootVolumePrimaryStorageAllocationContext());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         }
@@ -175,39 +178,38 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         if (!spec.getDataDiskOfferings().isEmpty()) {
             boolean hasOtherNonLocalStoragePrimaryStorage = isThereOtherNonLocalStoragePrimaryStorageForTheHost(
                     spec.getDestHost().getUuid(), localStorageUuid);
+            String specifiedDataStorageUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
+            String localDataStorageUuid = null;
+            List<String> excludedLocalStorageUuids = Collections.emptyList();
+            if (specifiedDataStorageUuid != null && hasOtherNonLocalStoragePrimaryStorage) {
+                String specifiedDataStorageType = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, specifiedDataStorageUuid)
+                        .select(PrimaryStorageVO_.type).findValue();
+                if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(specifiedDataStorageType)) {
+                    trigger.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10085, "The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
+                            specifiedDataStorageUuid, specifiedDataStorageType, LocalStorageConstants.LOCAL_STORAGE_TYPE));
+                    return;
+                }
+            } else if (specifiedDataStorageUuid == null && hasOtherNonLocalStoragePrimaryStorage) {
+                excludedLocalStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
+                logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
+            } else if (specifiedDataStorageUuid == null) {
+                localDataStorageUuid = getRequiredStorageUuid(spec.getDestHost().getUuid(), null);
+            }
 
-            for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+            for (int index = 0; index < spec.getDataDiskOfferings().size(); index++) {
+                DiskOfferingInventory dinv = spec.getDataDiskOfferings().get(index);
                 AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-                if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null && hasOtherNonLocalStoragePrimaryStorage){
-
-                    PrimaryStorageVO requiredPrimaryStorageUuidForDataVolume = dbf.findByUuid(spec.getRequiredPrimaryStorageUuidForDataVolume(), PrimaryStorageVO.class);
-                    // data volume ps set local
-                    if(requiredPrimaryStorageUuidForDataVolume.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)){
-                        ErrorCode errorCode = operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10085, "The cluster mounts multiple primary storage[%s(%s), other non-LocalStorage primary storage], primaryStorageUuidForDataVolume cannot be specified %s",
-                                requiredPrimaryStorageUuidForDataVolume.getUuid(), requiredPrimaryStorageUuidForDataVolume.getType(),
-                                LocalStorageConstants.LOCAL_STORAGE_TYPE);
-                        trigger.fail(errorCode);
-                        return;
-                    }
-
-                    amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
-                } else if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null && !hasOtherNonLocalStoragePrimaryStorage){
-                    amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+                if (specifiedDataStorageUuid != null) {
+                    amsg.setRequiredPrimaryStorageUuid(specifiedDataStorageUuid);
                 } else if (hasOtherNonLocalStoragePrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
-
-                    List<String> localStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
-                    for (String lsuuid : localStorageUuids) {
-                        amsg.addExcludePrimaryStorageUuid(lsuuid);
-                    }
-
+                    excludedLocalStorageUuids.forEach(amsg::addExcludePrimaryStorageUuid);
                     amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-                    logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
                 } else {
                     amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-                    amsg.setRequiredPrimaryStorageUuid(getRequiredStorageUuid(spec.getDestHost().getUuid(), spec.getRequiredPrimaryStorageUuidForDataVolume()));
+                    amsg.setRequiredPrimaryStorageUuid(localDataStorageUuid);
                 }
 
                 amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
@@ -217,7 +219,21 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                     rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
                 }
 
-                amsg.setSystemTags(spec.getDataVolumeSystemTags());
+                List<String> tags = new ArrayList<>();
+                if (spec.getDataVolumeSystemTags() != null) {
+                    tags.addAll(spec.getDataVolumeSystemTags());
+                }
+                if (spec.getDataVolumeSystemTagsOnIndex() != null) {
+                    List<String> indexTags = spec.getDataVolumeSystemTagsOnIndex().get(String.valueOf(index));
+                    if (indexTags != null) {
+                        tags.addAll(indexTags);
+                    }
+                }
+                amsg.setSystemTags(tags);
+                amsg.setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext.builder()
+                        .targetEncryptionState(spec.isDataVolumeEncrypted(index) ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted)
+                        .hostUuid(spec.getDestHost().getUuid())
+                        .build());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                 msgs.add(amsg);
             }
@@ -242,6 +258,11 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                         AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                         VolumeSpec vspec = new VolumeSpec();
                         vspec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
+                        VolumePrimaryStorageAllocationContext allocationContext = msg.getVolumePrimaryStorageAllocationContext();
+                        if (allocationContext != null) {
+                            vspec.setTargetEncryptionState(allocationContext.getTargetEncryptionState());
+                        }
+                        vspec.setTags(msg.getSystemTags());
                         if (msg == rmsg) {
                             vspec.setSize(ar.getSize());
                             vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());

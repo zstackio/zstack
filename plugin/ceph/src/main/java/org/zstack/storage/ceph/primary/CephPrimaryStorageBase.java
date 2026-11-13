@@ -1755,12 +1755,55 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return CephPrimaryStorageInventory.valueOf(getSelf());
     }
 
+    private CephVolumeCreationExtensionPoint selectVolumeCreationExtension(VolumeInventory volume) {
+        CephVolumeCreationExtensionPoint selected = null;
+        for (CephVolumeCreationExtensionPoint extension : pluginRgty.getExtensionList(CephVolumeCreationExtensionPoint.class)) {
+            if (!extension.canHandleVolumeInstantiation(volume)) {
+                continue;
+            }
+            if (selected != null) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_ENCRYPTION_10000, "multiple volume creation extensions accept ceph volume[uuid:%s]", volume.getUuid()));
+            }
+            selected = extension;
+        }
+        return selected;
+    }
+
     private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         String volumeUuid = msg.getVolume().getUuid();
         final String finalPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
         cmd.installPath = makeVolumeInstallPathByTargetPool(volumeUuid, finalPoolName);
         cmd.size = msg.getVolume().getSize();
+        CephVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(msg.getVolume());
+        if (extension != null) {
+            InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
+            extension.createEmpty(self.getUuid(), volumeUuid, cmd.installPath, cmd.size,
+                    msg.getDestHost() == null ? null : msg.getDestHost().getUuid(), new ReturnValueCompletion<Long>(msg) {
+                @Override
+                public void success(Long actualSize) {
+                    VolumeInventory volume = msg.getVolume();
+                    volume.setInstallPath(cmd.installPath);
+                    volume.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                    volume.setActualSize(actualSize);
+                    reply.setVolume(volume);
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+            return;
+        }
+        if (VolumeSystemTags.ENCRYPTED.hasTag(msg.getVolume().getUuid())) {
+            InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
+            reply.setError(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_ENCRYPTION_10000, "ceph encrypted volume[uuid:%s] has no creation extension", volumeUuid));
+            bus.reply(msg, reply);
+            return;
+        }
         cmd.setShareable(msg.getVolume().isShareable());
         cmd.skipIfExisting = msg.isSkipIfExisting();
 
@@ -1788,6 +1831,29 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 vol.setActualSize(ret.actualSize);
                 reply.setVolume(vol);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg) {
+        EncryptVolumeBitsOnPrimaryStorageReply reply = new EncryptVolumeBitsOnPrimaryStorageReply();
+        List<CephVolumeCreationExtensionPoint> extensions = pluginRgty.getExtensionList(CephVolumeCreationExtensionPoint.class);
+        if (extensions.size() != 1) {
+            reply.setError(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_ENCRYPTION_10000, "ceph encrypted template conversion requires one creation extension"));
+            bus.reply(msg, reply);
+            return;
+        }
+        extensions.get(0).encryptDataTemplate(msg, new ReturnValueCompletion<Long>(msg) {
+            @Override
+            public void success(Long actualSize) {
+                reply.setActualSize(actualSize == null ? 0 : actualSize);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
@@ -2610,6 +2676,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             String volumePath = makeVolumeInstallPathByTargetPool(msg.getVolume().getUuid(), targetCephPoolName);
             ImageCacheInventory cache;
             Long actualSize;
+            boolean creationHandledByExtension;
 
             @Override
             public void setup() {
@@ -2645,6 +2712,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        CephVolumeCreationExtensionPoint extension = selectVolumeCreationExtension(msg.getVolume());
+                        if (extension != null) {
+                            creationHandledByExtension = true;
+                            Long virtualSize = ispec.getInventory().getSize() < msg.getVolume().getSize()
+                                    ? msg.getVolume().getSize() : null;
+                            extension.cloneRoot(self.getUuid(), msg.getVolume().getUuid(), cloneInstallPath, volumePath,
+                                    msg.getDestHost().getUuid(), virtualSize, new ReturnValueCompletion<Long>(trigger) {
+                                @Override
+                                public void success(Long size) {
+                                    actualSize = size;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                            return;
+                        }
+                        if (VolumeSystemTags.ENCRYPTED.hasTag(msg.getVolume().getUuid())) {
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_CEPH_PRIMARY_ENCRYPTION_10000, "ceph encrypted volume[uuid:%s] has no creation extension", msg.getVolume().getUuid()));
+                            return;
+                        }
                         CloneCmd cmd = new CloneCmd();
                         cmd.srcPath = cloneInstallPath;
                         cmd.dstPath = volumePath;
@@ -2670,7 +2761,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public boolean skip(Map data) {
                         ImageInventory image = ispec.getInventory();
-                        return image.getSize() >= msg.getVolume().getSize();
+                        return creationHandledByExtension || image.getSize() >= msg.getVolume().getSize();
                     }
 
                     @Override
@@ -4518,6 +4609,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetPrimaryStorageUsageReportMsg) msg);
         } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {
             handle((CleanUpStorageTrashOnPrimaryStorageMsg)msg);
+        } else if (msg instanceof EncryptVolumeBitsOnPrimaryStorageMsg) {
+            handle((EncryptVolumeBitsOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }

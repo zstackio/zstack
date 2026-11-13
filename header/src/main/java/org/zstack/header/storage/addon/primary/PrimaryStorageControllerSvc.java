@@ -73,6 +73,10 @@ public interface PrimaryStorageControllerSvc {
     void unexport(ExportSpec espec, RemoteTarget remoteTarget, VolumeProtocol protocol, Completion comp);
 
     void createSnapshot(CreateVolumeSnapshotSpec spec, ReturnValueCompletion<VolumeSnapshotStats> comp);
+    default void resolveSnapshotReadPath(String installPath, ReturnValueCompletion<String> comp) {
+        throw new UnsupportedOperationException("snapshot read path resolution is not supported");
+    }
+
     void deleteSnapshot(String installPath, Completion comp);
     void expungeSnapshot(String installPath, Completion comp);
     void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp);
