@@ -105,7 +105,7 @@ public class HypervisorMetadataCollectorImpl implements HypervisorMetadataCollec
      */
     protected String collectHypervisorMetadataAsProperties(HypervisorMetadataDefinition definition) throws IOException {
         String shellCmd = String.format("/bin/bash %s", definition.virtualizerScriptPath());
-        ShellResult result = ShellUtils.runAndReturn(shellCmd);
+        ShellResult result = ShellUtils.runAndReturn(shellCmd, true, 60);
         result.raiseExceptionIfFail();
 
         return result.getStdout();
