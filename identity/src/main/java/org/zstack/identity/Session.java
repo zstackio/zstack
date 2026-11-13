@@ -199,8 +199,11 @@ public class Session implements Component {
         return new SQLBatchWithReturn<ErrorCode>() {
             @Transactional(readOnly = true)
             private Timestamp getCurrentSqlDate() {
-                Query query = databaseFacade.getEntityManager().createNativeQuery("select current_timestamp()");
-                return (Timestamp) query.getSingleResult();
+                Query query = databaseFacade.getEntityManager().createNativeQuery(
+                        "select current_timestamp() from SessionVO where uuid = :uuid");
+                query.setParameter("uuid", uuid);
+                List<?> result = query.getResultList();
+                return result.isEmpty() ? null : (Timestamp) result.get(0);
             }
 
             @Override
@@ -211,6 +214,10 @@ public class Session implements Component {
                 }
 
                 Timestamp curr = getCurrentSqlDate();
+                if (curr == null) {
+                    sessions.remove(uuid);
+                    return err(ORG_ZSTACK_IDENTITY_10020, IdentityErrors.INVALID_SESSION, "Session expired");
+                }
                 if (curr.after(s.getExpiredDate())) {
                     if (logger.isTraceEnabled()) {
                         logger.debug(String.format("session expired[%s < %s] for account[uuid:%s] in cache", curr,

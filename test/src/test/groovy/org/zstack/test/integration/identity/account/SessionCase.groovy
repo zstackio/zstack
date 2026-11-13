@@ -13,6 +13,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.sdk.LogInByAccountAction
 import org.zstack.header.identity.IdentityErrors
+import org.zstack.header.identity.SessionVO
 
 import javax.persistence.Query
 import java.sql.Timestamp
@@ -54,6 +55,7 @@ class SessionCase extends SubCase {
             testRenewSessionFail()
             testInvalidSession()
             testValidateSessionApi()
+            testDeletedSessionWithCachedInventory()
             testMaxCurrentSessionExceeded()
         }
     }
@@ -116,6 +118,63 @@ class SessionCase extends SubCase {
 
         retryInSecs(2){
             assert acntMgr.getSessionsCopy().get(sessionInventory.uuid) == null
+        }
+    }
+
+    void testDeletedSessionWithCachedInventory() {
+        def account = createAccount {
+            name = "remote-logout"
+            password = "password"
+        } as AccountInventory
+
+        SessionInventory validationSession = logInByAccount {
+            accountName = "remote-logout"
+            password = "password"
+        } as SessionInventory
+        SessionInventory querySession = logInByAccount {
+            accountName = "remote-logout"
+            password = "password"
+        } as SessionInventory
+        SessionInventory activeSession = logInByAccount {
+            accountName = "remote-logout"
+            password = "password"
+        } as SessionInventory
+
+        assert validateSession {
+            sessionUuid = validationSession.uuid
+        }.valid
+        queryVmInstance {
+            sessionId = querySession.uuid
+        }
+
+        // Simulate another MN logging out without invalidating this MN's cache.
+        dbf.removeByPrimaryKey(validationSession.uuid, SessionVO.class)
+        dbf.removeByPrimaryKey(querySession.uuid, SessionVO.class)
+        assert Session.sessions.containsKey(validationSession.uuid)
+        assert Session.sessions.containsKey(querySession.uuid)
+
+        assert !validateSession {
+            sessionUuid = validationSession.uuid
+        }.valid
+        assert !Session.sessions.containsKey(validationSession.uuid)
+
+        expectApiFailure({
+            queryVmInstance {
+                sessionId = querySession.uuid
+            }
+        }, {
+            assert code == IdentityErrors.INVALID_SESSION.toString()
+        })
+        assert !Session.sessions.containsKey(querySession.uuid)
+        assert !validateSession {
+            sessionUuid = validationSession.uuid
+        }.valid
+        assert validateSession {
+            sessionUuid = activeSession.uuid
+        }.valid
+
+        deleteAccount {
+            uuid = account.uuid
         }
     }
 
