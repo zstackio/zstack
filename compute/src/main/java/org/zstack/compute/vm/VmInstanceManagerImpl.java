@@ -1244,9 +1244,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         errorCodes = extEmitterHandleSystemTag(msg, cmsg, finalVo);
                         if (!errorCodes.isEmpty()) {
-                            trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10241, "handle system tag fail when creating vm because [%s]",
-                                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
-                                            ", ")));
+                            ErrorCodeList causes = new ErrorCodeList();
+                            causes.setCauses(errorCodes);
+                            trigger.fail(operr(ORG_ZSTACK_COMPUTE_VM_10241, causes,
+                                    "handle system tag fail when creating vm because [%s]", causes.getReadableDetails()));
                             return;
                         }
                         trigger.next();
