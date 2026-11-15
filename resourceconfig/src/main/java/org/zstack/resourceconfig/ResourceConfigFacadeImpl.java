@@ -148,6 +148,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             struct.setName(rc.globalConfig.getName());
             struct.setValue(configs.isEmpty() ? rc.defaultValue(String.class) : configs.get(0).getValue());
 
+            struct.setRuntimeState(rc.getRuntimeState(msg.getResourceUuid()));
             reply.getConfigs().add(struct);
         }
 
@@ -161,6 +162,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         List<ResourceConfigInventory> configs = rc.getEffectiveResourceConfigs(msg.getResourceUuid());
         reply.setEffectiveConfigs(configs);
         reply.setValue(configs.isEmpty() ? rc.defaultValue(String.class) : configs.get(0).getValue());
+        reply.setRuntimeState(rc.getRuntimeState(msg.getResourceUuid()));
         bus.reply(msg, reply);
     }
 

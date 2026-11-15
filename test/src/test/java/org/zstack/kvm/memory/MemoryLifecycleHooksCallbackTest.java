@@ -8,6 +8,7 @@ import org.junit.AfterClass;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -80,7 +81,7 @@ public class MemoryLifecycleHooksCallbackTest {
         FakeRepository repository = heldMigration();
         FakeManager manager = new FakeManager();
         migrate(repository, manager);
-        assertFalse(manager.bindCommand.containsKey("participation"));
+        assertEquals("allow", manager.bindCommand.get("participation"));
         assertFalse(manager.bindCommand.containsKey("licensePermit"));
         assertEquals("Released", repository.hold.status);
     }
@@ -124,6 +125,29 @@ public class MemoryLifecycleHooksCallbackTest {
         assertNull(manager.bindCommand);
         assertNotNull(manager.revokeCommand);
         assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void directMigrationWithoutTargetGenerationKeepsHoldsUnknown() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true;
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command,
+                                Consumer<MemoryAgentResponse> callback) {
+                if ("host-b".equals(host) && "state".equals(action)) {
+                    MemoryAgentResponse answer = response(host, null);
+                    answer.state.put("managed", true);
+                    answer.state.put("vms", Collections.singletonMap("vm-1", Collections.emptyMap()));
+                    Map<String, Object> capabilities = new HashMap<>(); capabilities.put("service", true);
+                    capabilities.put("zram", false); answer.state.put("capabilities", capabilities);
+                    capabilities.put("zramReasonCode", "UNSUPPORTED_RECLAIM_KERNEL");
+                    callback.accept(answer);
+                } else { super.call(host, action, command, callback); }
+            }
+        };
+        migrate(repository, manager);
+        assertNull(manager.bindCommand);
+        assertNull(manager.revokeCommand);
+        assertEquals("Unknown", repository.hold.status);
     }
 
     @Test public void completeZramServiceWithoutGenerationRemainsUnknown() throws Exception {
@@ -582,13 +606,12 @@ public class MemoryLifecycleHooksCallbackTest {
         Map<String, Object> state = new HashMap<>(); state.put("inventoryComplete", true);
         state.put("vms", Collections.singletonMap("vm-1", vm)); response.state = state;
         hooks.reconcileObservedBindings("host-a", response);
-        assertFalse(manager.bindCommand.containsKey("participation"));
-        assertEquals("new-instance", manager.bindCommand.get("expectedInstanceGeneration"));
-        manager.bindCommand = null;
+        assertEquals("vm-1", manager.reconciledVm);
+        manager.reconciledVm = null;
         // The service reports a bound VM with these wire names; such a VM is not bound again.
         vm.put("binding_generation", "new-instance"); vm.put("binding_mode", "auto");
         hooks.reconcileObservedBindings("host-a", response);
-        assertNull("a VM already bound at its instance generation is not bound again", manager.bindCommand);
+        assertNull("a VM already bound at its instance generation is not bound again", manager.reconciledVm);
         vm.remove("binding_generation"); state.put("inventoryComplete", false);
         hooks.reconcileObservedBindings("host-a", response);
         assertNull(manager.bindCommand);
@@ -605,9 +628,283 @@ public class MemoryLifecycleHooksCallbackTest {
         return response;
     }
 
+    @Test public void directMigrationReleasesEachPoolUsingItsOwnGeneration() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true;
+        repository.hold.targetPoolGeneration = "pool-destination";
+        repository.hold.sourceHoldStatus = "Held"; repository.hold.targetHoldStatus = "Held";
+        Map<String, String> releases = new LinkedHashMap<>();
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                if ("migration-hold".equals(action)) { releases.put(host, (String) command.get("poolGeneration")); }
+                super.call(host, action, command, callback);
+            }
+        };
+        migrate(repository, manager);
+        assertEquals("pool-1", releases.get("host-a"));
+        assertEquals("pool-destination", releases.get("host-b"));
+        assertEquals("Released", repository.hold.sourceHoldStatus);
+        assertEquals("Released", repository.hold.targetHoldStatus);
+        assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void lostDestinationReleaseCannotBeReportedAsReleased() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true;
+        repository.hold.targetPoolGeneration = "pool-destination";
+        repository.hold.sourceHoldStatus = "Held"; repository.hold.targetHoldStatus = "Held";
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                if ("host-b".equals(host) && "migration-hold".equals(action)) { callback.accept(null); }
+                else { super.call(host, action, command, callback); }
+            }
+        };
+        migrate(repository, manager);
+        assertEquals("Released", repository.hold.sourceHoldStatus);
+        assertEquals("Unknown", repository.hold.targetHoldStatus);
+        assertEquals("Unknown", repository.hold.status);
+        // The same persisted intent is retried; its source release is already confirmed.
+        List<String> retries = new ArrayList<>();
+        migrate(repository, new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                if ("migration-hold".equals(action)) { retries.add(host); }
+                super.call(host, action, command, callback);
+            }
+        });
+        assertEquals(Collections.singletonList("host-b"), retries);
+        assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void commandRequiresBothConfirmedHoldsAndMatchingPlacement() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true; repository.hold.swapDirectState = "{\"operationUuid\":\"op-1\"}";
+        repository.hold.sourceHoldStatus = "Held"; repository.hold.targetHoldStatus = "Unknown";
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+        try { hooks.directMigrationCommand("vm-1", "host-a", "host-b"); fail("unknown target must reject"); }
+        catch (MemoryOperationException expected) { }
+        repository.hold.targetHoldStatus = "Held";
+        assertEquals("op-1", hooks.directMigrationCommand("vm-1", "host-a", "host-b").get("operationUuid"));
+        try { hooks.directMigrationCommand("vm-1", "host-a", "another-host"); fail("target changed"); }
+        catch (MemoryOperationException expected) { }
+        repository.hold.status = "Released";
+        assertNull(hooks.directMigrationCommand("vm-1", "host-a", "host-b"));
+    }
+
+    @Test public void failedCounterWriteDoesNotFailTheCompletedMigrationCallback() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true; repository.hold.swapDirectState = "{}";
+        repository.failedMerges = 1;
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+        hooks.recordDirectMigrationResult("vm-1", Collections.singletonMap("operationUuid", "op-1"),
+                Collections.singletonMap("pages-received", 1025), false);
+        assertEquals("Held", repository.hold.status);
+        assertEquals(0, repository.failedMerges);
+    }
+
+    @Test public void staleHoldCannotEraseCountersOrReacquireAReleasedSide() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true;
+        repository.hold.sourceHoldStatus = "Released"; repository.hold.targetHoldStatus = "Unknown";
+        repository.hold.status = "Unknown";
+        repository.hold.swapDirectState = "{\"sourceResult\":{\"pages-sent\":1024}}";
+        MemoryMigrationVO stale = heldMigration().hold;
+        stale.swapDirect = true; stale.sourceHoldStatus = "Held"; stale.targetHoldStatus = "Held";
+        stale.swapDirectState = "{\"operationUuid\":\"op-1\"}";
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+        java.lang.reflect.Method record = MemoryLifecycleHooks.class.getDeclaredMethod("record", MemoryMigrationVO.class);
+        record.setAccessible(true); record.invoke(hooks, stale);
+        assertEquals("Released", repository.hold.sourceHoldStatus);
+        assertEquals("Preparing", repository.hold.status);
+        assertTrue(repository.hold.swapDirectState.contains("pages-sent"));
+    }
+
+    @Test public void directPreparationGrantsQuotaAfterBothPreflightsAndWaitsForItsResult() throws Exception {
+        for (boolean acceptBudget : new boolean[]{true, false}) {
+            FakeRepository repository = heldMigration();
+            repository.hold.swapDirect = true;
+            repository.hold.sourceHoldStatus = "Held";
+            List<String> calls = new ArrayList<>();
+            FakeManager manager = new FakeManager() {
+                @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                    MemoryAgentResponse answer = response(host, null);
+                    if ("state".equals(action)) {
+                        answer.state.put("poolGeneration", "pool-target");
+                        if (Boolean.TRUE.equals(command.get("swapDirectPreflight"))) {
+                            calls.add("preflight-" + host);
+                            Map<String, Object> info = new HashMap<>();
+                            info.put("supported", true); info.put("protocol", 1); info.put("hostUuid", host);
+                            info.put("poolGeneration", command.get("poolGeneration")); info.put("compressor", "lzo-rle");
+                            info.put("memoryBytes", "8589934592"); info.put("coldBytes", "4294967296");
+                            if ("host-a".equals(host)) { info.put("backingPages", "625004"); }
+                            answer.state.put("swapDirect", info);
+                        }
+                    } else if ("migration-hold".equals(action)) {
+                        assertEquals("host-b", host);
+                        if (command.containsKey("writebackPages")) {
+                            calls.add("quota");
+                            assertNotNull(repository.hold.swapDirectState);
+                            assertEquals("625004", command.get("writebackPages"));
+                            if (!acceptBudget) { callback.accept(null); return; }
+                        } else { calls.add("hold"); }
+                    }
+                    callback.accept(answer);
+                }
+            };
+            MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+            inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+            boolean[] result = new boolean[2];
+            org.zstack.header.core.Completion completion = new org.zstack.header.core.Completion(null) {
+                @Override public void success() { result[0] = true; }
+                @Override public void fail(org.zstack.header.errorcode.ErrorCode error) { result[1] = true; }
+            };
+            java.lang.reflect.Method prepare = MemoryLifecycleHooks.class.getDeclaredMethod("prepareDirectTarget", MemoryMigrationVO.class, org.zstack.header.core.Completion.class);
+            prepare.setAccessible(true); prepare.invoke(hooks, repository.hold, completion);
+            assertEquals(Arrays.asList("hold", "preflight-host-a", "preflight-host-b", "quota"), calls);
+            assertEquals(acceptBudget, result[0]); assertEquals(!acceptBudget, result[1]);
+            assertEquals(acceptBudget ? "Held" : "Unknown", repository.hold.targetHoldStatus);
+        }
+    }
+
+    private static String directHostObservation(String boot, String pool, boolean supported) {
+        Map<String, Object> proof = new HashMap<>();
+        proof.put("bootId", boot); proof.put("poolGeneration", pool); proof.put("supported", supported);
+        proof.put("reasonCode", "SWAP_DIRECT_LIBVIRT_CAPABILITY_UNCONFIRMED");
+        Map<String, Object> raw = new HashMap<>();
+        raw.put("bootId", "boot"); raw.put("zram", Collections.singletonMap("poolGeneration", "pool-1"));
+        raw.put("capabilities", Collections.singletonMap("swapDirect", proof));
+        return new com.google.gson.Gson().toJson(raw);
+    }
+
+    private static MigrateVmCmd migrationCommand(boolean xbzrle) {
+        MigrateVmCmd cmd = new MigrateVmCmd(); cmd.setVmUuid("vm-1"); cmd.setXbzrle(xbzrle); return cmd;
+    }
+
+    private static boolean[] selectMigration(MemoryLifecycleHooks hooks, MigrateVmCmd cmd) {
+        boolean[] result = new boolean[2];
+        hooks.prepareMigrationCommand(cmd, "host-a", "host-b", new org.zstack.header.core.Completion(null) {
+            @Override public void success() { result[0] = true; }
+            @Override public void fail(org.zstack.header.errorcode.ErrorCode error) { result[1] = true; }
+        });
+        return result;
+    }
+
+    @Test public void unprovenOrStaleHostCacheAddsNoRpcOrHoldAndPreservesOrdinaryXbzrle() throws Exception {
+        List<String> observations = Arrays.asList("{}", "not-json", directHostObservation("boot", "pool-1", false),
+                directHostObservation("old-boot", "pool-1", true), directHostObservation("boot", "old-pool", true));
+        for (String rejectedHost : Arrays.asList("host-a", "host-b")) {
+            for (String observation : observations) {
+                for (boolean xbzrle : new boolean[]{false, true}) {
+                    FakeRepository repository = heldMigration(); repository.hold.sourceHoldStatus = "Held";
+                    repository.hostObservations.put("host-a", directHostObservation("boot", "pool-1", true));
+                    repository.hostObservations.put("host-b", directHostObservation("boot", "pool-1", true));
+                    repository.hostObservations.put(rejectedHost, observation);
+                    MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+                    inject(hooks, "manager", new FakeManager() {
+                        @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                            fail("cache rejection must not issue an Agent RPC: " + action);
+                        }
+                    });
+                    MigrateVmCmd cmd = migrationCommand(xbzrle);
+                    assertArrayEquals(new boolean[]{true, false}, selectMigration(hooks, cmd));
+                    assertNull(cmd.getSwapDirect()); assertEquals(xbzrle, cmd.isXbzrle());
+                    assertFalse(repository.hold.swapDirect); assertEquals("Held", repository.hold.sourceHoldStatus);
+                    assertNull(repository.hold.targetPoolGeneration); assertNull(repository.hold.targetHoldStatus);
+                    assertTrue(repository.hold.reason, repository.hold.reason.startsWith("host-a".equals(rejectedHost) ? "SOURCE " : "TARGET "));
+                }
+            }
+        }
+    }
+
+    @Test public void cachedSupportStillRejectsNonSharedOrDestinationDrivenCommandsBeforeExtraHolds() throws Exception {
+        for (int mode = 0; mode < 4; mode++) {
+            FakeRepository repository = heldMigration(); repository.hold.sourceHoldStatus = "Held";
+            for (String host : Arrays.asList("host-a", "host-b")) { repository.hostObservations.put(host, directHostObservation("boot", "pool-1", true)); }
+            MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+            inject(hooks, "manager", new FakeManager() {
+                @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                    fail("incompatible command must not acquire extra holds");
+                }
+            });
+            MigrateVmCmd cmd = migrationCommand(true);
+            if (mode == 0) { cmd.setMigrateFromDestination(true); }
+            if (mode == 1) { cmd.setDisks(Collections.singletonMap("disk", null)); }
+            if (mode == 2) { cmd.setStorageMigrationPolicy("FullCopy"); }
+            if (mode == 3) { cmd.setStorageMigrationPolicy("IncCopy"); }
+            assertArrayEquals(new boolean[]{true, false}, selectMigration(hooks, cmd));
+            assertNull(cmd.getSwapDirect()); assertTrue(cmd.isXbzrle());
+            assertEquals("SOURCE_DRIVEN_SHARED_STORAGE_PRECOPY_REQUIRED", repository.hold.reason);
+        }
+    }
+
+    @Test public void automaticDirectSelectionAndPreflightFallbackKeepTheOrdinarySourceHold() throws Exception {
+        for (String failure : Arrays.asList("none", "source-protocol", "target-protocol", "compressor", "target-identity", "budget", "cleanup", "source-released")) {
+            FakeRepository repository = heldMigration(); repository.hold.sourceHoldStatus = "Held";
+            for (String host : Arrays.asList("host-a", "host-b")) { repository.hostObservations.put(host, directHostObservation("boot", "pool-1", true)); }
+            List<String> calls = new ArrayList<>();
+            MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+            inject(hooks, "manager", new FakeManager() {
+                @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                    MemoryAgentResponse answer = response(host, null);
+                    if ("state".equals(action)) {
+                        answer.state.put("poolGeneration", "pool-target");
+                        if ("target-identity".equals(failure)) { answer.state.put("inventoryComplete", false); }
+                        if (Boolean.TRUE.equals(command.get("swapDirectPreflight"))) {
+                            calls.add("preflight-" + host);
+                            Map<String, Object> info = new HashMap<>();
+                            boolean supported = !("source-protocol".equals(failure) && "host-a".equals(host)
+                                    || ("target-protocol".equals(failure) || "cleanup".equals(failure) || "source-released".equals(failure)) && "host-b".equals(host));
+                            info.put("supported", supported); info.put("reasonCode", "RUNNING_PROTOCOL_UNCONFIRMED");
+                            info.put("protocol", 1); info.put("hostUuid", host); info.put("poolGeneration", command.get("poolGeneration"));
+                            info.put("compressor", "compressor".equals(failure) && "host-b".equals(host) ? "zstd" : "lzo-rle");
+                            info.put("memoryBytes", "8589934592"); info.put("coldBytes", "4096"); info.put("backingPages", "1");
+                            answer.state.put("swapDirect", info);
+                        }
+                    } else if ("migration-hold".equals(action)) {
+                        assertEquals("ordinary source hold must stay untouched", "host-b", host);
+                        if ("source-released".equals(failure) && "release".equals(command.get("holdAction"))) {
+                            repository.hold.sourceHoldStatus = "Released";
+                        }
+                        calls.add(command.containsKey("writebackPages") ? "budget" : (String) command.get("holdAction"));
+                        if ("budget".equals(failure) && command.containsKey("writebackPages")
+                                || "cleanup".equals(failure) && "release".equals(command.get("holdAction"))) {
+                            callback.accept(null); return;
+                        }
+                    } else { fail("unexpected action " + action); }
+                    callback.accept(answer);
+                }
+            });
+            MigrateVmCmd cmd = migrationCommand(true);
+            boolean[] result = selectMigration(hooks, cmd);
+            boolean cleanupUnconfirmed = "cleanup".equals(failure) || "source-released".equals(failure);
+            assertEquals(!cleanupUnconfirmed, result[0]); assertEquals(cleanupUnconfirmed, result[1]);
+            assertEquals("source-released".equals(failure) ? "Released" : "Held", repository.hold.sourceHoldStatus);
+            if ("none".equals(failure)) {
+                assertNotNull(cmd.getSwapDirect()); assertFalse(cmd.isXbzrle());
+                assertEquals(Arrays.asList("acquire", "preflight-host-a", "preflight-host-b", "budget"), calls);
+                assertEquals("Held", repository.hold.targetHoldStatus); assertTrue(repository.hold.swapDirect);
+            } else {
+                assertNull(cmd.getSwapDirect()); assertTrue(cmd.isXbzrle());
+                if (cleanupUnconfirmed) {
+                    assertTrue(repository.hold.swapDirect);
+                    assertEquals("cleanup".equals(failure) ? "Unknown" : "Released", repository.hold.targetHoldStatus);
+                } else {
+                    assertFalse(repository.hold.swapDirect); assertEquals("Held", repository.hold.status);
+                    assertEquals("Released", repository.hold.targetHoldStatus); assertNull(repository.hold.swapDirectState);
+                    assertNotNull(repository.hold.reason);
+                    if (failure.endsWith("protocol")) { assertTrue(repository.hold.reason.contains("RUNNING_PROTOCOL_UNCONFIRMED")); }
+                    if (!"target-identity".equals(failure)) { assertEquals("release", calls.get(calls.size() - 1)); }
+                }
+            }
+        }
+    }
+
     private static class FakeManager extends MemoryOptimizationManager {
         Map<String, Object> bindCommand;
         Map<String, Object> revokeCommand;
+        String reconciledVm;
+        @Override void reconcileVmConfiguration(String vm, Consumer<MemoryAgentResponse> callback) {
+            reconciledVm = vm; callback.accept(response("host-a", null));
+        }
         @Override void later(Runnable task, long seconds) { task.run(); }
         @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
             if ("state".equals(action)) {
@@ -624,6 +921,10 @@ public class MemoryLifecycleHooksCallbackTest {
 
     private static class FakeRepository extends MemoryRepository {
         MemoryMigrationVO hold;
+        String reclaimMode = "auto";
+        Boolean sharePages = true;
+        @Override public String vmReclaimMode(String vm) { return reclaimMode; }
+        @Override public Boolean vmSharePages(String vm) { return sharePages; }
         int failedMerges;
         private final EntityManager entityManager = (EntityManager) Proxy.newProxyInstance(
                 EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, (proxy, method, args) -> {
@@ -662,11 +963,12 @@ public class MemoryLifecycleHooksCallbackTest {
         @Override protected <T> T transaction(java.util.function.Function<EntityManager, T> function) {
             return function.apply(entityManager);
         }
+        final Map<String, String> hostObservations = new HashMap<>();
         final Set<String> hostsWithoutPool = new HashSet<>();
         @Override public MemoryStateVO state(String host) {
             MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host-a");
             state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
-            state.setState(hostsWithoutPool.contains(host) ? "{}" : "{\"zram\":{\"poolGeneration\":\"pool-1\"}}");
+            state.setState(hostObservations.getOrDefault(host, hostsWithoutPool.contains(host) ? "{}" : "{\"zram\":{\"poolGeneration\":\"pool-1\"}}"));
             return state;
         }
     }
@@ -708,4 +1010,133 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("STALE_GENERATION", MemoryOptimizationManager.failure(reply));
         assertEquals("AGENT_UNREACHABLE", MemoryOptimizationManager.failure(null));
     }
+
+    @Test public void migrationRebindRetainsTheCurrentVmReclaimOptOut() throws Exception {
+        FakeRepository repository = heldMigration(); repository.reclaimMode = "deny";
+        FakeManager manager = new FakeManager();
+        migrate(repository, manager);
+        assertEquals("deny", manager.bindCommand.get("participation"));
+        assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void vmConfigurationReadsLatestValueInsideTheVmLifecycleQueue() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.RECONCILE));
+        assertEquals("Vm-vm-1", f.queued.getSyncSignature());
+        assertNull(f.manager.bindCommand);
+        f.repository.reclaimMode = "deny";
+        f.runQueued();
+        assertTrue(f.reply.isSuccess());
+        assertEquals("deny", f.manager.bindCommand.get("participation"));
+        assertEquals("current-instance", f.manager.bindCommand.get("expectedInstanceGeneration"));
+        assertEquals(1, f.completed);
+        f.repository.reclaimMode = "auto";
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.RECONCILE));
+        f.runQueued();
+        assertEquals("allow", f.manager.bindCommand.get("participation"));
+    }
+
+    @Test public void vmReadStateRequiresMatchingInstanceAndQmpEvidence() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.reclaimMode = "deny"; f.repository.sharePages = false;
+        f.vm.put("binding_mode", "deny"); f.vm.put("binding_generation", "current-instance");
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.READ));
+        assertNull("read-only query does not enqueue a write", f.queued);
+        assertEquals("Applied", ((Map<?, ?>) f.reply.getState().get("ksm")).get("state"));
+        assertEquals("Applied", ((Map<?, ?>) f.reply.getState().get("zram")).get("state"));
+        f.vm.put("binding_generation", "old-instance"); f.proof.put("instanceGeneration", "old-instance");
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.READ));
+        assertEquals("Unknown", ((Map<?, ?>) f.reply.getState().get("ksm")).get("state"));
+        assertEquals("Pending", ((Map<?, ?>) f.reply.getState().get("zram")).get("state"));
+        assertNull(f.manager.bindCommand);
+    }
+
+    @Test public void vmConfigurationDoesNotModifyAnUnknownOrReplacedVm() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.vmState = "Unknown";
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.RECONCILE)); f.runQueued();
+        assertFalse(f.reply.isSuccess()); assertNull(f.manager.bindCommand);
+        f.repository.vmState = "Running"; f.vm.remove("instanceGeneration");
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.RECONCILE)); f.runQueued();
+        assertFalse(f.reply.isSuccess()); assertNull(f.manager.bindCommand);
+        assertEquals(2, f.completed);
+    }
+
+    @Test public void vmConfigurationSharesReadAcrossFeaturesButNotAfterChanges() throws Exception {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.coordinator.readState("vm-1", "ksm");
+        f.coordinator.readState("vm-1", "zram");
+        assertEquals("two config categories must share one READ", 1, f.readCalls);
+        assertEquals(10000L, f.readTimeout);
+        f.repository.reclaimMode = "deny";
+        assertEquals(false, f.coordinator.readState("vm-1", "zram").get("configuredValue"));
+        assertEquals("configuration changes bypass cached evidence", 2, f.readCalls);
+        Thread.sleep(1100);
+        f.coordinator.readState("vm-1", "ksm");
+        assertEquals("readback cache must not outlive one second", 3, f.readCalls);
+    }
+
+    @Test public void vmConfigurationReadFailureIsUnknownAndShared() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.readFailure = true;
+        assertEquals("Unknown", f.coordinator.readState("vm-1", "ksm").get("state"));
+        assertEquals("Unknown", f.coordinator.readState("vm-1", "zram").get("state"));
+        assertEquals("timeout must not trigger a second wait for the other feature", 1, f.readCalls);
+        assertEquals(10000L, f.readTimeout);
+    }
+
+    private static class VmConfigurationFixture {
+        final FakeRepository repository = new FakeRepository();
+        final Map<String, Object> vm = new HashMap<>(), proof = new HashMap<>();
+        org.zstack.core.thread.ChainTask queued;
+        MemoryVmConfigurationMsg.Reply reply;
+        int completed;
+        int readCalls;
+        long readTimeout;
+        boolean readFailure;
+        final FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                if (!"state".equals(action)) {
+                    super.call(host, action, command, answer -> {
+                        answer.operationUuid = (String) command.get("operationUuid"); callback.accept(answer);
+                    }); return;
+                }
+                MemoryAgentResponse observed = response(host, "current-instance");
+                observed.state.put("vms", Collections.singletonMap("vm-1", vm));
+                observed.state.put("vmMemoryState", proof);
+                callback.accept(observed);
+            }
+        };
+        MemoryVmConfiguration coordinator;
+        VmConfigurationFixture() {
+            vm.put("instanceGeneration", "current-instance");
+            proof.put("instanceGeneration", "current-instance"); proof.put("supported", true);
+            proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", false)));
+            org.zstack.core.cloudbus.CloudBus bus = (org.zstack.core.cloudbus.CloudBus) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class[]{org.zstack.core.cloudbus.CloudBus.class}, (proxy, method, args) -> {
+                    if ("reply".equals(method.getName())) { reply = (MemoryVmConfigurationMsg.Reply) args[1]; }
+                    if ("call".equals(method.getName())) {
+                        MemoryVmConfigurationMsg msg = (MemoryVmConfigurationMsg) args[0];
+                        readCalls++; readTimeout = msg.getTimeout();
+                        if (readFailure) { throw new IllegalStateException("READ_TIMEOUT"); }
+                        coordinator.handle(msg);
+                        return reply;
+                    }
+                    return null;
+                });
+            org.zstack.core.thread.ThreadFacade threads = (org.zstack.core.thread.ThreadFacade) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class[]{org.zstack.core.thread.ThreadFacade.class}, (proxy, method, args) -> {
+                    if ("chainSubmit".equals(method.getName())) { queued = (org.zstack.core.thread.ChainTask) args[0]; }
+                    return null;
+                });
+            coordinator = new MemoryVmConfiguration(bus, threads, repository, manager);
+        }
+        MemoryVmConfigurationMsg message(MemoryVmConfigurationMsg.Action action) {
+            MemoryVmConfigurationMsg msg = new MemoryVmConfigurationMsg(); msg.setVmUuid("vm-1"); msg.setAction(action); return msg;
+        }
+        void runQueued() {
+            queued.run(() -> completed++);
+        }
+    }
+
 }

@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -69,6 +71,7 @@ public class MemoryRepository {
     @Autowired private DatabaseFacade dbf;
     @Autowired private EventFacade evtf;
     @Autowired private GlobalConfigFacade gcf;
+    @Autowired private ResourceConfigFacade rcf;
     private final MemoryStandardConfigAdapter standardConfigs = new MemoryStandardConfigAdapter();
     private static final Gson GSON = new Gson();
 
@@ -823,6 +826,17 @@ public class MemoryRepository {
         VmPlacement(VmInstanceState state, String hostUuid) { this.state = state; this.hostUuid = hostUuid; }
     }
 
+    public String vmReclaimMode(String vmUuid) {
+        Boolean enabled = rcf.getResourceConfigValue(MemoryStandardGlobalConfig.VM_ZRAM_RECLAIM_ENABLED, vmUuid, Boolean.class);
+        if (enabled == null) { throw error("VM_CONFIGURATION_UNKNOWN", "VM reclaim configuration is unavailable"); }
+        return enabled ? "auto" : "deny";
+    }
+
+    public Boolean vmSharePages(String vmUuid) {
+        ResourceConfig config = rcf.getResourceConfig("vmMemory.memory.backing.share.pages");
+        return config == null ? null : config.getResourceConfigValue(vmUuid, Boolean.class);
+    }
+
     public VmPlacement vmPlacement(String vmUuid) {
         return transaction(em -> Q.New(VmInstanceVO.class).select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
                 .eq(VmInstanceVO_.uuid, vmUuid).listTuple().stream()
@@ -836,14 +850,14 @@ public class MemoryRepository {
 
     /** The Unknown holds of a source, and the unreleased holds of VMs that no longer exist. */
     public List<MemoryMigrationVO> unknownOrOrphanedHolds(String sourceHost) {
-        return transaction(em -> SQL.New("from MemoryMigrationVO m where m.sourceHostUuid = :host and (m.status = :unknown"
+        return transaction(em -> SQL.New("from MemoryMigrationVO m where (m.sourceHostUuid = :host or m.swapDirect = true and m.targetHostUuid = :host) and (m.status = :unknown"
                 + " or m.status <> :released and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid))",
                 MemoryMigrationVO.class).param("host", sourceHost).param("unknown", "Unknown").param("released", RELEASED).list());
     }
 
     /** The Preparing or Held holds of a source whose VM is not migrating. */
     public List<MemoryMigrationVO> settledHolds(String sourceHost) {
-        return transaction(em -> SQL.New("from MemoryMigrationVO m where m.sourceHostUuid = :host and m.status in (:held)"
+        return transaction(em -> SQL.New("from MemoryMigrationVO m where (m.sourceHostUuid = :host or m.swapDirect = true and m.targetHostUuid = :host) and m.status in (:held)"
                 + " and exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid and v.state <> :migrating)",
                 MemoryMigrationVO.class).param("host", sourceHost).param("held", Arrays.asList("Preparing", "Held"))
                 .param("migrating", VmInstanceState.Migrating).list());

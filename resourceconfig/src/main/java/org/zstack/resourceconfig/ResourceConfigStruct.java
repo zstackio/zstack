@@ -1,8 +1,13 @@
 package org.zstack.resourceconfig;
 
 import java.util.List;
+import java.util.Map;
 
 public class ResourceConfigStruct {
+    private Map<String, Object> runtimeState;
+    public Map<String, Object> getRuntimeState() { return runtimeState; }
+    public void setRuntimeState(Map<String, Object> value) { runtimeState = value; }
+
     private String value;
     private List<ResourceConfigInventory> effectiveConfigs;
     private String name;

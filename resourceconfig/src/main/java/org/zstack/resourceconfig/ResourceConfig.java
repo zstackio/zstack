@@ -19,6 +19,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -49,6 +50,18 @@ public class ResourceConfig {
     private List<ResourceConfigDeleteExtensionPoint> localDeleteExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteExtensionPoint> deleteExtensions = new ArrayList<>();
     private List<ResourceConfigValidatorExtensionPoint> validatorExtensions = new ArrayList<>();
+
+    private Function<String, Map<String, Object>> runtimeStateReader;
+
+    /** Optional live evidence for this configuration, queried under the existing resource API authorization. */
+    public void installRuntimeStateReader(Function<String, Map<String, Object>> reader) {
+        if (runtimeStateReader != null) { throw new IllegalStateException("Runtime state reader already installed"); }
+        runtimeStateReader = reader;
+    }
+
+    public Map<String, Object> getRuntimeState(String resourceUuid) {
+        return runtimeStateReader == null ? null : runtimeStateReader.apply(resourceUuid);
+    }
 
     public static ResourceConfig valueOf(GlobalConfig globalConfig, BindResourceConfig bindInfo) {
         ResourceConfig result = new ResourceConfig();

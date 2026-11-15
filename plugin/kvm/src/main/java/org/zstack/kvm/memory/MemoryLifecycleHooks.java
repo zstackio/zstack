@@ -12,6 +12,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.vm.*;
+import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Never changes CPU controller, multipath, VM XML or the migration data path. */
+/** Protects service-owned pools across the platform's existing migration lifecycle. */
 public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, HostDeleteExtensionPoint,
         VmInstanceStartExtensionPoint, VmInstanceStopExtensionPoint, VmInstanceDestroyExtensionPoint,
         VmJustAfterDeleteFromDbExtensionPoint {
@@ -50,6 +51,26 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             MemoryMigrationVO existing = em.find(MemoryMigrationVO.class, hold.vmUuid, LockModeType.PESSIMISTIC_WRITE);
             if (existing != null && !Objects.equals(existing.operationUuid, hold.operationUuid)) {
                 return null;
+            }
+            if (existing != null && hold.swapDirect) {
+                // Result collection and either Host's reconciliation can finish
+                // independently. Never overwrite newer counters or released holds.
+                if (existing.swapDirectState != null) {
+                    Map<String, Object> current = new Gson().fromJson(existing.swapDirectState, Map.class);
+                    if (hold.swapDirectState != null) {
+                        Map<String, Object> candidate = new Gson().fromJson(hold.swapDirectState, Map.class);
+                        candidate.putAll(current); current = candidate;
+                    }
+                    hold.swapDirectState = new Gson().toJson(current);
+                }
+                if ("Released".equals(existing.sourceHoldStatus)) { hold.sourceHoldStatus = "Released"; }
+                if ("Released".equals(existing.targetHoldStatus)) { hold.targetHoldStatus = "Released"; }
+                if ("Released".equals(existing.status)
+                        || "Released".equals(hold.sourceHoldStatus) && "Released".equals(hold.targetHoldStatus)) {
+                    hold.status = "Released"; hold.reason = null;
+                } else if ("Held".equals(hold.status) && !Objects.equals(hold.sourceHoldStatus, hold.targetHoldStatus)) {
+                    hold.status = "Preparing";
+                }
             }
             em.merge(hold); em.flush(); return null;
         });
@@ -116,11 +137,206 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 completion.fail(error("MEMORY_RESULT_UNKNOWN", hold.reason)); return;
             }
             hold.poolGeneration = pool; hold.sourceInstanceGeneration = instance; record(hold);
-            hold(hold, "acquire", acquired -> {
+            holdSide(hold, Side.SOURCE, "acquire", 1, acquired -> {
                 if (acquired) { completion.success(); }
                 else { completion.fail(error("MEMORY_MIGRATION_HOLD_PENDING", "Source active operations were not confirmed held")); }
             });
         });
+    }
+
+    /** Read only the latest Host observation; an absent or mismatched cache cannot grant support. */
+    private String directCapabilityRejection(String host) {
+        MemoryStateVO observed = state(host);
+        if (observed == null || observed.getState() == null) { return "HOST_CAPABILITY_UNKNOWN"; }
+        try {
+            Map<?, ?> raw = new Gson().fromJson(observed.getState(), Map.class);
+            Map<?, ?> caps = raw != null && raw.get("capabilities") instanceof Map ? (Map<?, ?>) raw.get("capabilities") : null;
+            Map<?, ?> direct = caps != null && caps.get("swapDirect") instanceof Map ? (Map<?, ?>) caps.get("swapDirect") : null;
+            Map<?, ?> zram = raw != null && raw.get("zram") instanceof Map ? (Map<?, ?>) raw.get("zram") : null;
+            Object boot = raw == null ? null : raw.get("bootId");
+            Object pool = zram == null ? null : zram.get("poolGeneration");
+            if (direct == null || !(boot instanceof String) || ((String) boot).isEmpty()
+                    || !Objects.equals(boot, direct.get("bootId")) || !Objects.equals(pool, direct.get("poolGeneration"))) {
+                return "HOST_CAPABILITY_IDENTITY_UNKNOWN";
+            }
+            if (Boolean.TRUE.equals(direct.get("supported")) && pool instanceof String && !((String) pool).isEmpty()) { return null; }
+            return direct.get("reasonCode") instanceof String ? (String) direct.get("reasonCode") : "HOST_CAPABILITY_UNCONFIRMED";
+        } catch (RuntimeException unreadable) {
+            return "HOST_CAPABILITY_UNREADABLE";
+        }
+    }
+
+    /** Select only after the actual storage/direction parameters are known, before sending migrate. */
+    public void prepareMigrationCommand(MigrateVmCmd cmd, String source, String target, Completion completion) {
+        final long started = System.nanoTime();
+        String rejection = directCapabilityRejection(source);
+        if (rejection != null) { rejection = "SOURCE " + rejection; }
+        else {
+            rejection = directCapabilityRejection(target);
+            if (rejection != null) { rejection = "TARGET " + rejection; }
+        }
+        if (rejection == null && (cmd.isMigrateFromDestination()
+                || cmd.getDisks() != null && !cmd.getDisks().isEmpty()
+                || "FullCopy".equals(cmd.getStorageMigrationPolicy()) || "IncCopy".equals(cmd.getStorageMigrationPolicy()))) {
+            rejection = "SOURCE_DRIVEN_SHARED_STORAGE_PRECOPY_REQUIRED";
+        }
+        MemoryMigrationVO hold = repository.transaction(em -> em.find(MemoryMigrationVO.class, cmd.getVmUuid()));
+        if (rejection != null) {
+            if (hold != null && !hold.swapDirect && "Held".equals(hold.status)
+                    && source.equals(hold.sourceHostUuid) && target.equals(hold.targetHostUuid)) {
+                hold.reason = rejection; record(hold);
+            }
+            migrationSelection(cmd.getVmUuid(), false, rejection, started); completion.success(); return;
+        }
+        if (hold == null || !"Held".equals(hold.status) || !"Held".equals(hold.sourceHoldStatus)
+                || !source.equals(hold.sourceHostUuid) || !target.equals(hold.targetHostUuid)) {
+            migrationSelection(cmd.getVmUuid(), false, "SOURCE_MIGRATION_HOLD_UNCONFIRMED", started);
+            completion.success(); return;
+        }
+        hold.swapDirect = true; record(hold);
+        prepareDirectTarget(hold, new Completion(completion) {
+            @Override public void success() {
+                cmd.setSwapDirect(directMigrationCommand(cmd.getVmUuid(), source, target));
+                // Preserve the global XBZRLE setting; only this command changes.
+                cmd.setXbzrle(false);
+                migrationSelection(cmd.getVmUuid(), true, null, started);
+                completion.success();
+            }
+            @Override public void fail(ErrorCode errorCode) {
+                final String reason = hold.reason == null ? errorCode.getDetails() : hold.reason;
+                // No migrate command has been sent. Release only the extra destination
+                // hold/budget; ordinary migration still needs its original source hold.
+                holdSide(hold, Side.TARGET, "release", 1, released -> {
+                    if (!released) {
+                        completion.fail(error("MEMORY_MIGRATION_HOLD_PENDING", "Cannot confirm destination preflight hold cleanup: " + reason));
+                        return;
+                    }
+                    boolean ordinaryReady = repository.transaction(em -> {
+                        MemoryMigrationVO current = em.find(MemoryMigrationVO.class, hold.vmUuid, LockModeType.PESSIMISTIC_WRITE);
+                        if (current == null || !hold.operationUuid.equals(current.operationUuid)
+                                || !"Held".equals(current.sourceHoldStatus) || !"Released".equals(current.targetHoldStatus)) { return false; }
+                        current.swapDirect = false; current.swapDirectState = null;
+                        current.status = "Held"; current.reason = reason;
+                        em.merge(current); em.flush(); return true;
+                    });
+                    if (!ordinaryReady) {
+                        completion.fail(error("MEMORY_MIGRATION_HOLD_PENDING", "Source migration protection changed during preflight cleanup"));
+                        return;
+                    }
+                    migrationSelection(cmd.getVmUuid(), false, reason, started);
+                    completion.success();
+                });
+            }
+        });
+    }
+
+    private void migrationSelection(String vm, boolean direct, String reason, long started) {
+        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+        String detail = String.format("VM[%s] migration method=%s, direct eligibility elapsed=%d ms%s", vm,
+                direct ? "cold-page-direct" : "ordinary", elapsed, reason == null ? "" : ", reason=" + reason);
+        logger.info(detail);
+        try { org.zstack.core.progress.ProgressReportService.taskProgress("%s", detail); }
+        catch (RuntimeException unavailable) { logger.debug("Migration selection remains in the management-node log", unavailable); }
+    }
+
+    private void prepareDirectTarget(MemoryMigrationVO hold, Completion completion) {
+        manager.call(hold.targetHostUuid, "state", command(hold, hold.targetHostUuid), response -> {
+            String pool = inventoryComplete(response) ? stateString(response, "poolGeneration", "pool_generation") : null;
+            VmIdentity target = vmIdentity(response, hold.vmUuid);
+            if (pool == null || !target.authoritative || target.present) {
+                hold.status = "Unknown"; hold.reason = "Destination pool or VM absence cannot be confirmed"; record(hold);
+                completion.fail(error("MEMORY_RESULT_UNKNOWN", hold.reason)); return;
+            }
+            // Persist the destination intent before sending acquire: a lost response
+            // must still be recoverable after a management-node restart.
+            hold.targetPoolGeneration = pool; record(hold);
+            holdSide(hold, Side.TARGET, "acquire", 1, acquired -> {
+                if (!acquired) {
+                    completion.fail(error("MEMORY_MIGRATION_HOLD_PENDING", "Destination active operations were not confirmed held")); return;
+                }
+                directPreflight(hold, Side.SOURCE, null, source -> directPreflight(hold, Side.TARGET, source, targetState -> {
+                    if (source == null || targetState == null || !Objects.equals(source.get("compressor"), targetState.get("compressor"))) {
+                        hold.status = "Unknown";
+                        if (hold.reason == null) { hold.reason = "Cold-page direct compressors differ"; }
+                        record(hold);
+                        completion.fail(error("MEMORY_INVALID_REQUEST", hold.reason)); return;
+                    }
+                    Map<String, Object> prepared = new LinkedHashMap<>();
+                    prepared.put("operationUuid", hold.operationUuid);
+                    prepared.put("source", source); prepared.put("destination", targetState);
+                    hold.swapDirectState = new Gson().toJson(prepared); record(hold);
+                    // The first target hold quiesces native writeback. Grant its
+                    // temporary quota only after the source estimate is durable.
+                    holdSide(hold, Side.TARGET, "acquire", 1, budgetReady -> {
+                        if (budgetReady) { completion.success(); }
+                        else { completion.fail(error("MEMORY_MIGRATION_HOLD_PENDING", "Destination writeback budget was not confirmed")); }
+                    });
+                }));
+            });
+        });
+    }
+
+    private void directPreflight(MemoryMigrationVO hold, Side side, Map<?, ?> sourceInfo, Consumer<Map<?, ?>> completion) {
+        boolean source = side == Side.SOURCE;
+        if (!source && sourceInfo == null) { completion.accept(null); return; }
+        String host = source ? hold.sourceHostUuid : hold.targetHostUuid;
+        Map<String, Object> query = command(hold, host);
+        if (!source) {
+            query.put("swapDirectMemoryBytes", sourceInfo.get("memoryBytes"));
+            query.put("swapDirectColdBytes", sourceInfo.get("coldBytes"));
+        }
+        query.put("swapDirectPreflight", true); query.put("swapDirectSource", source);
+        query.put("poolGeneration", source ? hold.poolGeneration : hold.targetPoolGeneration);
+        query.put("expectedInstanceGeneration", source ? hold.sourceInstanceGeneration : null);
+        manager.call(host, "state", query, response -> {
+            Object raw = response != null && response.isSuccess() && response.state != null
+                    ? response.state.get("swapDirect") : null;
+            Map<?, ?> info = raw instanceof Map ? (Map<?, ?>) raw : null;
+            boolean ready = info != null && Boolean.TRUE.equals(info.get("supported"))
+                    && info.get("protocol") instanceof Number && ((Number) info.get("protocol")).intValue() == 1
+                    && host.equals(info.get("hostUuid"))
+                    && Objects.equals(query.get("poolGeneration"), info.get("poolGeneration"));
+            if (!ready) {
+                hold.reason = side + " cold-page preflight: " + (info != null && info.get("reasonCode") != null
+                        ? info.get("reasonCode") : MemoryOptimizationManager.failure(response));
+            }
+            completion.accept(ready ? info : null);
+        });
+    }
+
+    /** Only a persisted, fully held operation may reach the hypervisor command. */
+    public Map<String, Object> directMigrationCommand(String vm, String source, String target) {
+        MemoryMigrationVO hold = repository.transaction(em -> em.find(MemoryMigrationVO.class, vm));
+        if (hold == null || !hold.swapDirect || "Released".equals(hold.status)) { return null; }
+        if (!"Held".equals(hold.status) || !"Held".equals(hold.sourceHoldStatus) || !"Held".equals(hold.targetHoldStatus)
+                || !source.equals(hold.sourceHostUuid) || !target.equals(hold.targetHostUuid) || hold.swapDirectState == null) {
+            throw new MemoryOperationException("MEMORY_MIGRATION_HOLD_PENDING", "Cold-page direct migration is not prepared on both Hosts");
+        }
+        return new Gson().fromJson(hold.swapDirectState, Map.class);
+    }
+
+    public void recordDirectMigrationResult(String vm, Map<String, Object> request, Map<String, Object> result, boolean source) {
+        if (request == null || result == null) { return; }
+        try {
+            repository.transaction(em -> {
+                MemoryMigrationVO hold = em.find(MemoryMigrationVO.class, vm, LockModeType.PESSIMISTIC_WRITE);
+                if (hold == null || !hold.swapDirect || !hold.operationUuid.equals(request.get("operationUuid"))) { return null; }
+                Map<String, Object> recorded = new Gson().fromJson(hold.swapDirectState, Map.class);
+                if (recorded == null) { recorded = new LinkedHashMap<>(); }
+                recorded.put(source ? "sourceResult" : "destinationResult", result);
+                hold.swapDirectState = new Gson().toJson(recorded); em.merge(hold); em.flush(); return null;
+            });
+            if (source && Boolean.TRUE.equals(result.get("x-swap-direct.managed"))) {
+                org.zstack.core.progress.ProgressReportService.taskProgress(
+                        "Cold-page migration: compressed objects %s, compressed payload bytes %s, backing pages sent %s, cached pages sent %s",
+                        result.get("x-swap-direct.compressed-objects-sent"), result.get("x-swap-direct.compressed-bytes-sent"),
+                        result.get("x-swap-direct.backing-pages-sent"), result.get("x-swap-direct.cached-pages-sent"));
+            }
+        } catch (RuntimeException failure) {
+            // Accounting must not turn a completed hypervisor migration into a
+            // failed VM placement callback or prevent its hold reconciliation.
+            logger.warn(String.format("Cannot record cold-page migration counters for VM[%s]", vm), failure);
+        }
     }
 
     private Map<String, Object> command(MemoryMigrationVO hold) {
@@ -137,23 +353,49 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     private static final int HOLD_ATTEMPTS = 6;
 
     private void hold(MemoryMigrationVO hold, String action, Consumer<Boolean> completion) {
-        hold(hold, action, 1, completion);
+        holdSide(hold, Side.SOURCE, action, 1, source -> {
+            if (!hold.swapDirect) { completion.accept(source); return; }
+            holdSide(hold, Side.TARGET, action, 1, target -> completion.accept(source && target));
+        });
     }
 
-    private void hold(MemoryMigrationVO hold, String action, int attempt, Consumer<Boolean> completion) {
-        Map<String, Object> command = command(hold);
-        command.put("holdAction", action); command.put("poolGeneration", hold.poolGeneration);
-        manager.call(hold.sourceHostUuid, "migration-hold", command, response -> {
+    private void holdSide(MemoryMigrationVO hold, Side side, String action, int attempt, Consumer<Boolean> completion) {
+        boolean source = side == Side.SOURCE;
+        String host = source ? hold.sourceHostUuid : hold.targetHostUuid;
+        String pool = source ? hold.poolGeneration : hold.targetPoolGeneration;
+        String status = source ? hold.sourceHoldStatus : hold.targetHoldStatus;
+        if ("release".equals(action) && ("Released".equals(status) || pool == null || !hostExists(host))) {
+            heldResult(hold, side, action, true); completion.accept(true); return;
+        }
+        Map<String, Object> command = command(hold, host);
+        command.put("holdAction", action); command.put("poolGeneration", pool);
+        if (!source && "acquire".equals(action) && hold.swapDirectState != null) {
+            Map<?, ?> prepared = new Gson().fromJson(hold.swapDirectState, Map.class);
+            Map<?, ?> sourceState = (Map<?, ?>) prepared.get("source");
+            Object pages = sourceState == null ? null : sourceState.get("backingPages");
+            if (pages != null) { command.put("writebackPages", pages); }
+        }
+        manager.call(host, "migration-hold", command, response -> {
             if (response != null && response.isSuccess() && "Converging".equals(response.status) && attempt < HOLD_ATTEMPTS) {
-                manager.later(() -> hold(hold, action, attempt + 1, completion),
+                manager.later(() -> holdSide(hold, side, action, attempt + 1, completion),
                         response.retryAfterSeconds == null ? 5 : Math.max(1, response.retryAfterSeconds));
                 return;
             }
             boolean confirmed = MemoryResultRules.succeeded(hold.operationUuid, response);
-            hold.status = confirmed ? ("acquire".equals(action) ? "Held" : "Released") : "Unknown";
-            hold.reason = confirmed ? null : "Migration hold result must be reconciled";
-            record(hold); completion.accept(confirmed);
+            heldResult(hold, side, action, confirmed); completion.accept(confirmed);
         });
+    }
+
+    private void heldResult(MemoryMigrationVO hold, Side side, String action, boolean confirmed) {
+        String status = confirmed ? ("acquire".equals(action) ? "Held" : "Released") : "Unknown";
+        if (side == Side.SOURCE) { hold.sourceHoldStatus = status; } else { hold.targetHoldStatus = status; }
+        hold.status = status;
+        if (hold.swapDirect) {
+            if ("Unknown".equals(hold.sourceHoldStatus) || "Unknown".equals(hold.targetHoldStatus)) { hold.status = "Unknown"; }
+            else if (!Objects.equals(hold.sourceHoldStatus, hold.targetHoldStatus)) { hold.status = "Preparing"; }
+        }
+        hold.reason = "Unknown".equals(hold.status) ? "Migration hold result must be reconciled on both Hosts" : null;
+        record(hold);
     }
 
     @Override public void beforeMigrateVm(VmInstanceInventory vm, String target) { }
@@ -217,10 +459,11 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
      * ZRAM service, is needed only to bind it; a target without a service-owned pool
      * has nothing to bind, even when its service is not running. A running service
      * whose pool could not be read may still own one, so it proves nothing.
+     * Swap-direct always requires the target instance generation.
      */
     private boolean targetExpected(MemoryMigrationVO hold, VmIdentity target) {
-        return target.present && (target.generation != null || target.featureAbsent
-                || !target.poolUnread && !managedZram(hold.targetHostUuid));
+        return target.present && (target.generation != null || !hold.swapDirect
+                && (target.featureAbsent || !target.poolUnread && !managedZram(hold.targetHostUuid)));
     }
 
     /** What a Host's VM inventory proves about one VM: nothing, its absence or its presence. */
@@ -258,7 +501,14 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     private void inspectMigrationIdentities(MemoryMigrationVO hold, BiConsumer<VmIdentity, VmIdentity> completion) {
         manager.call(hold.sourceHostUuid, "state", command(hold, hold.sourceHostUuid), source -> {
             VmIdentity sourceIdentity = vmIdentity(source, hold.vmUuid);
-            manager.call(hold.targetHostUuid, "state", command(hold, hold.targetHostUuid), target -> {
+            Map<String, Object> query = command(hold, hold.targetHostUuid);
+            if (hold.swapDirect) { query.put("swapDirectResult", true); }
+            manager.call(hold.targetHostUuid, "state", query, target -> {
+                if (hold.swapDirectState != null && target != null && target.state != null
+                        && target.state.get("swapDirectResult") instanceof Map) {
+                    recordDirectMigrationResult(hold.vmUuid, command(hold),
+                            (Map<String, Object>) target.state.get("swapDirectResult"), false);
+                }
                 completion.accept(sourceIdentity, vmIdentity(target, hold.vmUuid));
             });
         });
@@ -268,6 +518,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         boolean target = side == Side.TARGET;
         Map<String, Object> command = command(hold, target ? hold.targetHostUuid : hold.sourceHostUuid);
         command.put("action", "bind"); command.put("scope", "VM");
+        try { command.put("participation", "deny".equals(repository.vmReclaimMode(hold.vmUuid)) ? "deny" : "allow"); }
+        catch (RuntimeException e) { completion.accept(false); return; }
         command.put("expectedInstanceGeneration", target && hold.targetInstanceGeneration != null
                 ? hold.targetInstanceGeneration : hold.sourceInstanceGeneration);
         String host = target ? hold.targetHostUuid : hold.sourceHostUuid;
@@ -305,7 +557,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 || !Boolean.TRUE.equals(response.state.get("inventoryComplete"))
                 || !(response.state.get("vms") instanceof Map)) { return; }
         Map<?, ?> vms = (Map<?, ?>) response.state.get("vms");
-        Map<String, Map<String, Object>> candidates = new LinkedHashMap<>();
+        Set<String> candidates = new LinkedHashSet<>();
         for (Map.Entry<?, ?> item : vms.entrySet()) {
             if (!(item.getKey() instanceof String) || !(item.getValue() instanceof Map)) { continue; }
             String uuid = (String) item.getKey();
@@ -313,23 +565,19 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             if (generation == null) { continue; }
             Map<?, ?> vm = (Map<?, ?>) item.getValue();
             // The service reports its binding as binding_generation and binding_mode.
-            if (generation.equals(vm.get("binding_generation")) && "auto".equals(vm.get("binding_mode"))) { continue; }
-            Map<String, Object> command = new LinkedHashMap<>();
-            command.put("hostUuid", host); command.put("operationUuid", UUID.randomUUID().toString().replace("-", ""));
-            command.put("resourceUuid", uuid); command.put("scope", "VM"); command.put("action", "bind");
-            command.put("expectedInstanceGeneration", generation);
-            candidates.put(uuid, command);
+            String mode;
+            try { mode = repository.vmReclaimMode(uuid); }
+            catch (RuntimeException e) { logger.warn("VM memory configuration is unknown: " + uuid, e); continue; }
+            if (generation.equals(vm.get("binding_generation")) && mode.equals(vm.get("binding_mode"))) { continue; }
+            candidates.add(uuid);
         }
-        List<String> batch = new ArrayList<>(bindingCursor.next(host, candidates.keySet(),
+        List<String> batch = new ArrayList<>(bindingCursor.next(host, candidates,
                 MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.VM_BIND_BATCH_SIZE, 32)));
         Round round = new Round(String.format("Host[%s] VM memory optimization bindings", host), batch.size());
         for (String uuid : batch) {
-            Map<String, Object> command = candidates.get(uuid);
-            String operation = (String) command.get("operationUuid");
-            // Advance even on a failure; the next authoritative sample binds it again.
-            manager.call(host, "vm-efficiency", command, reply -> round.finished(uuid,
-                    MemoryResultRules.succeeded(operation, reply) ? null : String.format("%s (operation %s)",
-                            reply == null ? "AGENT_UNREACHABLE" : reply.reasonCode, operation)));
+            // Route to the VM owner and reread placement/generation/config inside its lifecycle queue.
+            manager.reconcileVmConfiguration(uuid, reply -> round.finished(uuid,
+                    reply != null && reply.isSuccess() ? null : MemoryOptimizationManager.failure(reply)));
         }
     }
 
@@ -512,6 +760,10 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             command.put("hostUuid", host); command.put("operationUuid", operation);
             command.put("resourceUuid", inv.getUuid()); command.put("scope", "VM");
             command.put("action", action); command.put("expectedInstanceGeneration", generation);
+            if ("bind".equals(action)) {
+                try { command.put("participation", "deny".equals(repository.vmReclaimMode(inv.getUuid())) ? "deny" : "allow"); }
+                catch (RuntimeException e) { round.finished(inv.getUuid(), "VM_CONFIGURATION_UNKNOWN"); return; }
+            }
             String expected = generation;
             manager.call(host, "vm-efficiency", command, reply -> {
                 boolean succeeded = MemoryResultRules.succeeded(operation, reply);
@@ -726,14 +978,14 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
 
     /** No pool generation means the source acquire was never sent; otherwise the source service releases it. */
     private void releaseRecoveredHold(MemoryMigrationVO hold, Completion completion) {
-        if (hold.poolGeneration == null || !hostExists(hold.sourceHostUuid)) {
+        if (!hold.swapDirect && (hold.poolGeneration == null || !hostExists(hold.sourceHostUuid))) {
             hold.status = "Released"; hold.reason = "Released by operator recovery"; record(hold);
             completion.success();
             return;
         }
         hold(hold, "release", released -> {
             if (released) { completion.success(); }
-            else { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Source migration hold release remains unknown")); }
+            else { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold release remains unknown")); }
         });
     }
 
