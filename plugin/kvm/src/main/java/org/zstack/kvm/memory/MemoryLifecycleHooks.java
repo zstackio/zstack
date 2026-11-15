@@ -215,11 +215,12 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     /**
      * The migrated instance is on the target. Its generation, given by the target's
      * ZRAM service, is needed only to bind it; a target without a service-owned pool
-     * has nothing to bind, even when its service is not running.
+     * has nothing to bind, even when its service is not running. A running service
+     * whose pool could not be read may still own one, so it proves nothing.
      */
     private boolean targetExpected(MemoryMigrationVO hold, VmIdentity target) {
         return target.present && (target.generation != null || target.featureAbsent
-                || !managedZram(hold.targetHostUuid));
+                || !target.poolUnread && !managedZram(hold.targetHostUuid));
     }
 
     /** What a Host's VM inventory proves about one VM: nothing, its absence or its presence. */
@@ -241,11 +242,16 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         final String generation;
         /** The inventory says the Host has no ZRAM to bind the VM to. */
         final boolean featureAbsent;
+        /** The Host's ZRAM service is running but the Agent could not read its pool. */
+        final boolean poolUnread;
         VmIdentity(Presence presence, String generation, MemoryAgentResponse inventory) {
             this.authoritative = presence != Presence.UNKNOWN;
             this.present = presence == Presence.PRESENT;
             this.generation = generation;
             this.featureAbsent = inventory != null && targetHasNoZram(inventory);
+            Object zram = inventory == null ? null : inventory.state.get("zram");
+            this.poolUnread = zram instanceof Map && "active".equals(((Map<?, ?>) zram).get("serviceState"))
+                    && !(((Map<?, ?>) zram).get("pool") instanceof Map);
         }
     }
 

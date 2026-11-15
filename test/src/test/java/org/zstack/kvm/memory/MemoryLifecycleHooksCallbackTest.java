@@ -536,6 +536,36 @@ public class MemoryLifecycleHooksCallbackTest {
         assertNotNull("the source binding is revoked", manager.revokeCommand);
     }
 
+    @Test public void aTargetWhoseRunningServiceCannotBeReadKeepsTheHold() throws Exception {
+        FakeRepository repository = heldMigration();
+        // The target's last observation could not read its running service, so it recorded no pool.
+        repository.hostsWithoutPool.add("host-b");
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command,
+                                Consumer<MemoryAgentResponse> callback) {
+                if ("state".equals(action) && "host-b".equals(host)) {
+                    MemoryAgentResponse answer = response(host, null);
+                    ((Map<String, Object>) answer.state.get("vms")).put("vm-1",
+                            Collections.singletonMap("identityReason", "VM_IDENTITY_UNAVAILABLE"));
+                    answer.state.put("managed", true);
+                    answer.state.put("zram", Collections.singletonMap("serviceState", "active"));
+                    Map<String, Object> capabilities = new HashMap<>(); answer.state.put("capabilities", capabilities);
+                    capabilities.put("service", false); capabilities.put("zram", false);
+                    capabilities.put("zramReasonCode", "SERVICE_RECLAIM_CAPABILITY_UNKNOWN");
+                    callback.accept(answer);
+                } else { super.call(host, action, command, callback); }
+            }
+        };
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        VmInstanceInventory vm = new VmInstanceInventory(); vm.setUuid("vm-1");
+        hooks.afterMigrateVm(vm, "host-a", new AtomicDone());
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertEquals("Unknown", repository.hold.status);
+        assertNull(manager.bindCommand);
+        assertNull("the source binding stays until the target instance is known", manager.revokeCommand);
+    }
+
     @Test public void existingVmBindingsSkipAlreadyBoundInstances() throws Exception {
         MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
         FakeManager manager = new FakeManager();
