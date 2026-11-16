@@ -91,6 +91,22 @@ public class MemoryRepositoryRulesTest {
         assertEquals(600000, MemoryRepository.retryDelay(40));
     }
 
+    @Test public void aDrainedHostWithoutAPoolHeldPausedHasNotDrifted() {
+        Map<String, Object> desired = Collections.singletonMap("control", "drained");
+        Map<String, Object> observed = new LinkedHashMap<>();
+        observed.put("control", "paused");
+        observed.put("zram", Collections.singletonMap("status",
+                Collections.singletonMap("host_zram", Collections.singletonMap("pool_generation", ""))));
+        assertFalse("a Host without a pool is held paused; there is nothing to drain",
+                MemoryRepository.drifted(desired, observed));
+        observed.put("zram", Collections.singletonMap("status",
+                Collections.singletonMap("host_zram", Collections.singletonMap("pool_generation", "pool"))));
+        assertTrue("a paused Host with a pool has not drained it", MemoryRepository.drifted(desired, observed));
+        observed.put("control", "active");
+        observed.remove("zram");
+        assertTrue(MemoryRepository.drifted(desired, observed));
+    }
+
     @Test public void anUnreadableStoredConfigurationIsShownAndPlannedAgain() {
         assertEquals(Collections.emptyMap(), MemoryRepository.storedDesired(new MemoryStateVO()));
         stored.setDesired("{broken");
