@@ -118,7 +118,7 @@ public class VmRestoreFlow implements Flow {
                 vm.refreshVO();
                 if (originallyRunning) {
                     if (vm.self.getState() == VmInstanceState.Running) {
-                        vm.changeVmStateInDb(VmInstanceStateEvent.rebooting, () -> vm.self.setHostUuid(hostUuid));
+                        vm.changeVmStateInDb(VmInstanceStateEvent.restoring, () -> vm.self.setHostUuid(hostUuid));
                     }
                 } else {
                     vm.changeVmStateInDb(VmInstanceStateEvent.stopped);

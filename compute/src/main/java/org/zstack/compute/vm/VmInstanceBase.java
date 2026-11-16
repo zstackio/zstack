@@ -1825,9 +1825,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
-                        ? VmInstanceState.Stopped : self.getState();
-                final ErrorCode allowed = validateOperationByState(msg, state, SysErrors.OPERATION_ERROR);
+                final ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
                     completion.fail(allowed);
                     chain.next();
@@ -2279,9 +2277,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void attachNic(final Message msg, final List<String> l3Uuids, final Map outerFlowData,
                            final ReturnValueCompletion<VmNicInventory> completion) {
         refreshVO();
-        VmInstanceState state = msg instanceof VmAttachNicMsg && !((VmAttachNicMsg) msg).isQueuedInVm()
-                && self.getState() == VmInstanceState.Rebooting ? VmInstanceState.Stopped : self.getState();
-        ErrorCode allowed = validateOperationByState(msg, state, SysErrors.OPERATION_ERROR);
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (allowed != null) {
             completion.fail(allowed);
             return;
@@ -7163,9 +7159,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
-                ? VmInstanceState.Stopped : self.getState();
-        ErrorCode allowed = validateOperationByState(msg, state, VmErrors.DETACH_VOLUME_ERROR);
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.DETACH_VOLUME_ERROR);
         if (allowed != null) {
             completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10284, "Detaching volume is not allowed when VM[uuid=%s] is in state[%s]",
                     self.getUuid(), self.getState()));
@@ -7294,9 +7288,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
-        VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
-                ? VmInstanceState.Stopped : self.getState();
-        ErrorCode err = validateOperationByState(msg, state, VmErrors.ATTACH_VOLUME_ERROR);
+        ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
         if (err != null) {
             throw new OperationFailureException(err);
         }
@@ -8583,7 +8575,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
                 if (rollbackError != null && VmInstanceState.Running.toString().equals(original.getState())
                         && data.containsKey(VmReserveResourceForRestoreFlow.class.getName())) {
-                    if (refreshVO().getState() != VmInstanceState.Rebooting) {
+                    if (refreshVO().getState() != VmInstanceState.Restoring) {
                         if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Unknown) {
                             for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
                                 ext.failedToRecoverVmAfterRestore(msg);
@@ -8599,7 +8591,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     bus.send(cmsg, new CloudBusCallBack(completion) {
                         @Override
                         public void run(MessageReply reply) {
-                            if (refreshVO().getState() != VmInstanceState.Rebooting) {
+                            if (refreshVO().getState() != VmInstanceState.Restoring) {
                                 if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Unknown) {
                                     for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
                                         ext.failedToRecoverVmAfterRestore(msg);
@@ -9124,9 +9116,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
-                        ? VmInstanceState.Stopped : self.getState();
-                ErrorCode allowed = validateOperationByState(msg, state, SysErrors.OPERATION_ERROR);
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
                     reply.setError(allowed);
                     bus.reply(msg, reply);

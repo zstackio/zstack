@@ -634,7 +634,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     .findValue();
             if (vmState != null
                     && vmState != VmInstanceState.Starting  // some configs are set while vm is starting
-                    && vmState != VmInstanceState.Rebooting
+                    && vmState != VmInstanceState.Restoring
                     && !VmInstanceState.offlineStates.contains(vmState)) {
                 throw new GlobalConfigException("Can not change vm.cpuMode while VM is living.");
             }
