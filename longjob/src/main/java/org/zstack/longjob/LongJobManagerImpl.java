@@ -28,7 +28,6 @@ import org.zstack.header.core.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
@@ -220,7 +219,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public void run(SyncTaskChain chain) {
-                final APIDeleteAccountEvent evt = new APIDeleteAccountEvent(msg.getId());
+                final APIDeleteLongJobEvent evt = new APIDeleteLongJobEvent(msg.getId());
                 LongJobVO vo = dbf.findByUuid(msg.getUuid(), LongJobVO.class);
                 dbf.remove(vo);
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been deleted", vo.getUuid(), vo.getName()));
