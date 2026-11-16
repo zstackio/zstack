@@ -7480,6 +7480,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         setFlowMarshaller(chain);
 
         String lastHostUuid = self.getHostUuid();
+        final boolean userVfBond = inv.getVmNics().stream().anyMatch(nic -> VmSystemTags.USER_VM_VF_BOND.hasTag(nic.getUuid()));
+        final String migrationCommitted = "user-vf-bond-migration-committed";
         chain.setName(String.format("do-migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.then(new NoRollbackFlow() {
@@ -7498,6 +7500,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 .set(VmInstanceVO_.hostUuid, host.getUuid())
                                 .update();
                         self = dbf.reload(self);
+                        if (userVfBond) {
+                            // The VM is already on the destination. A guest/VF
+                            // reconnect error must not release its host/storage.
+                            data.put(migrationCommitted, true);
+                            chain.noRollback(true);
+                        }
                         trigger.next();
                     }
                 });
@@ -7509,17 +7517,23 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(final Map data) {
-                VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
-                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid(), new NoErrorCompletion(completion) {
-                    @Override
-                    public void done() {
-                        extEmitter.finalizeMigrateVm(vm, lastHostUuid, completion);
-                    }
-                });
+                completeVmMigration(lastHostUuid, completion);
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                if (Boolean.TRUE.equals(data.get(migrationCommitted))) {
+                    logger.warn(String.format("vm[uuid:%s] migrated to host[%s], but post migration failed: %s; preserve destination resources",
+                            self.getUuid(), self.getHostUuid(), errCode));
+                    completeVmMigration(lastHostUuid, new Completion(completion) {
+                        @Override public void success() { completion.fail(errCode); }
+                        @Override public void fail(ErrorCode cleanupError) {
+                            logger.warn(String.format("vm[uuid:%s] migration finalization also failed: %s", self.getUuid(), cleanupError));
+                            completion.fail(errCode);
+                        }
+                    });
+                    return;
+                }
                 String destHostUuid = spec.getDestHost().getUuid().equals(lastHostUuid) ? null : spec.getDestHost().getUuid();
                 extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode, new NoErrorCompletion(completion) {
                     @Override
@@ -7540,6 +7554,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
             }
         }).start();
+    }
+
+    private void completeVmMigration(String sourceHostUuid, Completion completion) {
+        VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
+        extEmitter.afterMigrateVm(vm, sourceHostUuid, new NoErrorCompletion(completion) {
+            @Override public void done() {
+                extEmitter.finalizeMigrateVm(vm, sourceHostUuid, completion);
+            }
+        });
     }
 
     protected void handle(CancelMigrateVmMsg msg) {
