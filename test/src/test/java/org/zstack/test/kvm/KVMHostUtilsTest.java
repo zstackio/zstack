@@ -2,12 +2,19 @@ package org.zstack.test.kvm;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.kvm.KVMHostUtils;
+import org.zstack.kvm.KVMHostVO;
+import org.zstack.tag.PatternedSystemTag;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class KVMHostUtilsTest {
 
@@ -168,6 +175,30 @@ public class KVMHostUtilsTest {
                 KVMHostUtils.unionIps("192.168.1.10", "192.168.1.10",
                         "169.254.64.1,10.0.0.7", null,
                         Collections.singleton("169.254.64.1")));
+    }
+
+    @Test
+    public void getValidHostExtraIpsFiltersInvalidAddresses() {
+        KVMHostVO host = new KVMHostVO();
+        host.setUuid("suspect");
+        host.setManagementIp("fd54::1");
+        PatternedSystemTag originalTag = HostSystemTags.EXTRA_IPS;
+        String oldMnVip = CoreGlobalProperty.MN_VIP;
+        try {
+            PatternedSystemTag tag = mock(PatternedSystemTag.class);
+            HostSystemTags.EXTRA_IPS = tag;
+            CoreGlobalProperty.MN_VIP = "FD54:0:0:0:0:0:0:2";
+            Assert.assertTrue(KVMHostUtils.getValidHostExtraIps(host).isEmpty());
+            when(tag.getTokenByResourceUuid(host.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN)).thenReturn(
+                    "10.10.0.11,172.17.0.1,172.17.0.2,0.0.0.1,127.0.0.2,169.254.64.1,224.0.0.1,255.255.255.255,"
+                            + "192.168.122.1,192.168.122.2,10.88.0.1,10.88.0.2,"
+                            + "FD54:0:0:0:0:0:0:1,fd54::2, fd54::3 ,FD54:0:0:0:0:0:0:3,::1,::,fe80::1,ff02::1,invalid");
+            Assert.assertEquals(Arrays.asList("10.10.0.11", "172.17.0.2", "192.168.122.2", "10.88.0.2", "fd54::3"),
+                    KVMHostUtils.getValidHostExtraIps(host));
+        } finally {
+            HostSystemTags.EXTRA_IPS = originalTag;
+            CoreGlobalProperty.MN_VIP = oldMnVip;
+        }
     }
 
     @Test

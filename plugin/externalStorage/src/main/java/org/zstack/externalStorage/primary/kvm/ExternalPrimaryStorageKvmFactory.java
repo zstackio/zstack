@@ -1,8 +1,10 @@
 package org.zstack.externalStorage.primary.kvm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -34,6 +36,7 @@ import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -495,7 +498,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
 
             List<ActiveVolumeClient> clients = nodeSvc.getActiveClients(vol.getInstallPath(), vol.getProtocol());
             clients.forEach(client -> {
-                if (!client.getManagerIp().equals(host.getManagementIp()) && !client.isInBlacklist()) {
+                if (!client.isInBlacklist() && !isClientIpOnHost(client.getManagerIp(), host)) {
                     // hard code for zbs, zbs not support deactive and blacklist yet
                     if (vol.getProtocol().equals(ExternalStorageConstant.CBD_PROTOCOL)) {
                         throw new OperationFailureException(operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10001, "find active clients for volume[uuid:%s, installPath %s, client:%s]",
@@ -533,6 +536,24 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 }
             });
         }
+    }
+
+    private boolean isClientIpOnHost(String clientIp, HostInventory host) {
+        if (StringUtils.isBlank(clientIp)) {
+            return false;
+        }
+
+        String normalizedIp = IPv6NetworkUtils.normalizeHost(clientIp.trim());
+        if (normalizedIp.equals(IPv6NetworkUtils.normalizeHost(host.getManagementIp()))) {
+            return true;
+        }
+
+        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                host.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+        return extraIps != null && Arrays.stream(extraIps.split(","))
+                .map(String::trim)
+                .map(IPv6NetworkUtils::normalizeHost)
+                .anyMatch(normalizedIp::equals);
     }
 
     @Override

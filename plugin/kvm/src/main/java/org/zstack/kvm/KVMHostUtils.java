@@ -21,10 +21,12 @@ import org.zstack.utils.TagUtils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
 import javax.persistence.Tuple;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,6 +103,33 @@ public class KVMHostUtils {
         }
 
         return String.join(",", filterIps(ips, mnVip, excludedInternalIps));
+    }
+
+    public static List<String> getValidHostExtraIps(KVMHostVO host) {
+        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                host.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+        if (extraIps == null) {
+            return Collections.emptyList();
+        }
+
+        Set<String> ips = new LinkedHashSet<>();
+        for (String address : extraIps.split(",")) {
+            String ip = address.trim();
+            if (NetworkUtils.isIpv4Address(ip)
+                    && NetworkUtils.isIpv4InRange(ip, "1.0.0.0", "223.255.255.255")
+                    && NetworkUtils.isUnicastIPAddress(ip)) {
+                ips.add(ip);
+            } else if (IPv6NetworkUtils.isValidManagementIpv6Address(ip)) {
+                ips.add(IPv6NetworkUtils.getIpv6AddressCanonicalString(ip));
+            }
+        }
+
+        ips.remove("172.17.0.1");     // Docker
+        ips.remove("192.168.122.1");  // libvirt
+        ips.remove("10.88.0.1");      // Podman
+        ips.remove(IPv6NetworkUtils.normalizeHost(host.getManagementIp()));
+        ips.remove(IPv6NetworkUtils.normalizeHost(CoreGlobalProperty.MN_VIP));
+        return new ArrayList<>(ips);
     }
 
     // Single source of truth for TLS cert SAN IPs; shared by buildIpList (check)

@@ -59,6 +59,8 @@ class ZbsVhostVolumeCase extends SubCase {
     private static final String HOST_MANAGEMENT_IP = "127.0.0.1"
     private static final String HOST_EXTRA_IP_1 = "127.0.0.99"
     private static final String HOST_EXTRA_IP_2 = "127.0.0.11"
+    private static final String HOST_STORAGE_IP = "10.10.0.11"
+    private static final String HOST_NON_STORAGE_IP = "172.17.0.1"
     private static final String UNKNOWN_CLIENT_IP = "127.0.0.9"
     private static final String SECOND_HOST_MANAGEMENT_IP = "127.0.0.20"
     private static final int VHOST_CLIENT_PORT = 9001
@@ -124,7 +126,8 @@ class ZbsVhostVolumeCase extends SubCase {
                         username = "root"
                         password = "password"
                         systemTags = [HostSystemTags.EXTRA_IPS.instantiateTag([
-                                (HostSystemTags.EXTRA_IPS_TOKEN): "${HOST_EXTRA_IP_1},${HOST_EXTRA_IP_2}".toString()
+                                (HostSystemTags.EXTRA_IPS_TOKEN):
+                                        "${HOST_EXTRA_IP_1},${HOST_EXTRA_IP_2},${HOST_STORAGE_IP},${HOST_NON_STORAGE_IP}".toString()
                         ])]
                     }
 
@@ -178,6 +181,7 @@ class ZbsVhostVolumeCase extends SubCase {
             testCreateDataVolumeWithExplicitProtocol()
             testCreateDataVolumeWithProtocolSystemTag()
             testVolumeProtocolSystemTagConsumedIntoVolume()
+            testStartVmWithClientIpOnSameHost()
             testUnknownVolumeProtocolSystemTagRejected()
             testUnknownRootVolumeProtocolSystemTagRejected()
             testVhostVmStartActivationChain()
@@ -549,6 +553,66 @@ class ZbsVhostVolumeCase extends SubCase {
                 "volumeProtocol tag must be stripped after consume, still present on ${vol.uuid}"
 
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vol.uuid).hardDelete()
+    }
+
+    void testStartVmWithClientIpOnSameHost() {
+        AtomicBoolean getClientsCalled = new AtomicBoolean(false)
+        AtomicReference<String> clientIp = new AtomicReference<>(HOST_STORAGE_IP)
+        env.simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            getClientsCalled.set(true)
+            def rsp = new ZbsStorageController.GetVolumeClientsRsp()
+            rsp.clients = [new ZbsStorageController.ClientInfo(clientIp.get(), VHOST_CLIENT_PORT)]
+            return rsp
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+        env.message(UploadImageToRemoteTargetMsg.class) { UploadImageToRemoteTargetMsg msg, CloudBus b ->
+            b.reply(msg, new UploadImageToRemoteTargetReply())
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "cbd-storage-network-client-vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = ps.uuid
+            rootVolumeSystemTags = [VolumeSystemTags.VOLUME_PROTOCOL.instantiateTag(
+                    [(VolumeSystemTags.VOLUME_PROTOCOL_TOKEN): VolumeProtocol.CBD.toString()])]
+        } as VmInstanceInventory
+
+        assert getClientsCalled.get() : "VM start did not query active ZBS clients"
+        assert vm.state == VmInstanceState.Running.toString() :
+                "same-host storage-network client blocked VM start: state=${vm.state}"
+
+        for (String ip : [HOST_MANAGEMENT_IP, HOST_NON_STORAGE_IP]) {
+            stopVmInstance { uuid = vm.uuid }
+            clientIp.set(ip)
+            getClientsCalled.set(false)
+            vm = startVmInstance { uuid = vm.uuid } as VmInstanceInventory
+            assert getClientsCalled.get()
+            assert vm.state == VmInstanceState.Running.toString()
+        }
+
+        stopVmInstance { uuid = vm.uuid }
+        clientIp.set(UNKNOWN_CLIENT_IP)
+        expectApiFailure({
+            startVmInstance { uuid = vm.uuid }
+        }) {
+            assert JSONObjectUtil.toJsonString(delegate).contains("find active clients for volume")
+        }
+
+        env.simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) {
+            return new ZbsStorageController.GetVolumeClientsRsp()
+        }
+        destroyVmInstance { uuid = vm.uuid }
+        expungeVmInstance { uuid = vm.uuid }
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
     }
 
     void testUnknownVolumeProtocolSystemTagRejected() {
