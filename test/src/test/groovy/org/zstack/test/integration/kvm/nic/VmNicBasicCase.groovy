@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.nic
 
+import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.Q
 import org.zstack.header.network.l3.L3NetworkStateEvent
@@ -9,6 +10,12 @@ import org.zstack.header.network.service.NetworkServiceProviderVO
 import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
+import org.zstack.header.vm.devices.DeviceAddress
+import org.zstack.header.vm.devices.VirtualDeviceInfo
+import org.zstack.header.vm.devices.VmInstanceDeviceManager
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMSystemTags
 import org.zstack.network.l3.IpRangeHelper
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatNetworkSystemTags
@@ -25,6 +32,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -56,6 +64,7 @@ class VmNicBasicCase extends SubCase {
             testDetachVmNic()
             testDeleteVmNic()
             testStaticIpLifecycleAndConcurrency()
+            testSameMacMultiNicPciAddressMapping()
         }
     }
 
@@ -420,6 +429,109 @@ class VmNicBasicCase extends SubCase {
         deleteInstanceOffering {
             uuid = offering.uuid
         }
+    }
+
+    void testSameMacMultiNicPciAddressMapping() {
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        VmInstanceDeviceManager vidManager = bean(VmInstanceDeviceManager.class)
+
+        String sharedMac = vm.vmNics[0].mac
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        changeVmNicState {
+            vmNicUuid = vm.vmNics[0].uuid
+            state = "disable"
+        }
+        vm = attachL3NetworkToVm {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = pubL3.uuid
+            systemTags = ["customMac::${pubL3.uuid}::${sharedMac}".toString()]
+        }
+        List<VmNicInventory> sortedNics = vm.vmNics.sort { it.deviceId }
+        assert sortedNics.size() == 2
+        assert sortedNics[0].mac == sharedMac
+        assert sortedNics[1].mac == sharedMac
+
+        KVMAgentCommands.StartVmCmd capturedCmd = null
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { KVMAgentCommands.StartVmResponse rsp, HttpEntity<String> e ->
+            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            if (cmd.vmInstanceUuid == vm.uuid) {
+                capturedCmd = cmd
+                DeviceAddress addr0 = new DeviceAddress(type: "pci", domain: "0x0000", bus: "0x00", slot: "0x03", function: "0x0")
+                DeviceAddress addr1 = new DeviceAddress(type: "pci", domain: "0x0000", bus: "0x00", slot: "0x04", function: "0x0")
+                KVMAgentCommands.VmNicInfo info1 = new KVMAgentCommands.VmNicInfo(
+                        macAddress: sharedMac,
+                        nicInternalName: sortedNics[1].internalName,
+                        deviceAddress: addr1
+                )
+                KVMAgentCommands.VmNicInfo info0 = new KVMAgentCommands.VmNicInfo(
+                        macAddress: sharedMac,
+                        nicInternalName: sortedNics[0].internalName,
+                        deviceAddress: addr0
+                )
+                rsp.nicInfos = [info1, info0]
+                VirtualDeviceInfo balloon = new VirtualDeviceInfo()
+                balloon.deviceAddress = new DeviceAddress(type: "pci", domain: "0x0000", bus: "0x00", slot: "0x07", function: "0x0")
+                rsp.memBalloonInfo = balloon
+                rsp.virtualDeviceInfoList = []
+            }
+            return rsp
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+
+        DeviceAddress saved0 = vidManager.getVmDeviceAddress(sortedNics[0].uuid, vm.uuid)
+        DeviceAddress saved1 = vidManager.getVmDeviceAddress(sortedNics[1].uuid, vm.uuid)
+        assert saved0 != null && saved0.slot == "0x03"
+        assert saved1 != null && saved1.slot == "0x04"
+
+        String tag0 = KVMSystemTags.VMNIC_PCI_ADDRESS.getTokenByResourceUuid(sortedNics[0].uuid, KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN)
+        String tag1 = KVMSystemTags.VMNIC_PCI_ADDRESS.getTokenByResourceUuid(sortedNics[1].uuid, KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN)
+        assert tag0 != null && tag0.contains("0x03")
+        assert tag1 != null && tag1.contains("0x04")
+
+        // Also verify gray-upgrade fallback when old kvmagent omits nicInternalName
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { KVMAgentCommands.StartVmResponse rsp, HttpEntity<String> e ->
+            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            if (cmd.vmInstanceUuid == vm.uuid) {
+                capturedCmd = cmd
+                DeviceAddress addr0 = new DeviceAddress(type: "pci", domain: "0x0000", bus: "0x00", slot: "0x05", function: "0x0")
+                DeviceAddress addr1 = new DeviceAddress(type: "pci", domain: "0x0000", bus: "0x00", slot: "0x06", function: "0x0")
+                KVMAgentCommands.VmNicInfo info0 = new KVMAgentCommands.VmNicInfo(
+                        macAddress: sharedMac,
+                        deviceAddress: addr0
+                )
+                KVMAgentCommands.VmNicInfo info1 = new KVMAgentCommands.VmNicInfo(
+                        macAddress: sharedMac,
+                        deviceAddress: addr1
+                )
+                rsp.nicInfos = [info0, info1]
+                VirtualDeviceInfo balloon = new VirtualDeviceInfo()
+                balloon.deviceAddress = new DeviceAddress(type: "pci", domain: "0x0000", bus: "0x00", slot: "0x07", function: "0x0")
+                rsp.memBalloonInfo = balloon
+                rsp.virtualDeviceInfoList = []
+            }
+            return rsp
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+        assert capturedCmd != null
+        KVMAgentCommands.NicTO to0 = capturedCmd.nics.find { it.nicInternalName == sortedNics[0].internalName }
+        KVMAgentCommands.NicTO to1 = capturedCmd.nics.find { it.nicInternalName == sortedNics[1].internalName }
+        assert to0 != null && to0.deviceAddress != null && to0.deviceAddress.slot == "0x03"
+        assert to1 != null && to1.deviceAddress != null && to1.deviceAddress.slot == "0x04"
+
+        DeviceAddress graySaved0 = vidManager.getVmDeviceAddress(sortedNics[0].uuid, vm.uuid)
+        DeviceAddress graySaved1 = vidManager.getVmDeviceAddress(sortedNics[1].uuid, vm.uuid)
+        assert graySaved0 != null && graySaved0.slot == "0x05"
+        assert graySaved1 != null && graySaved1.slot == "0x06"
     }
 
     @Override
