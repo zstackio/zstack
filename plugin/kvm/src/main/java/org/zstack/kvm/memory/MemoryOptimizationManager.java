@@ -515,7 +515,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             }
         });
         sendUnsentReplies(now);
-        Map<String, MemoryTaskVO> tasks = repository.tasks(new ArrayList<>(waiters.keySet()));
+        // An operation that starts waiting after the read is answered by the next scan, not as missing.
+        List<String> read = new ArrayList<>(waiters.keySet());
+        Map<String, MemoryTaskVO> tasks = repository.tasks(read);
         Set<String> connected = new HashSet<>(repository.connectedHosts());
         // A converging task has no reason until it finishes; the Host state records why it is still converging.
         Map<String, String> reasons = new HashMap<>();
@@ -524,7 +526,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         for (MemoryStateVO state : repository.allStates(expired)) {
             if (state.getReason() != null) { reasons.put(state.getHostUuid(), state.getReason()); }
         }
-        for (String uuid : new ArrayList<>(waiters.keySet())) {
+        for (String uuid : read) {
             MemoryTaskVO task = tasks.get(uuid);
             Waiter waiting = waiters.get(uuid);
             if (waiting == null || waiting.unsent != null) { continue; }

@@ -114,10 +114,13 @@ public class MemoryClusterOperationTest {
             return new Outcome(status, response == null ? null : response.reasonCode, generation);
         }
         boolean failingTaskReads;
+        /** What happens after a scan read the operations' tasks. */
+        Runnable afterTaskRead = () -> { };
         @Override public Map<String, MemoryTaskVO> tasks(Collection<String> uuids) {
             if (failingTaskReads) { throw new RuntimeException("database unavailable"); }
             Map<String, MemoryTaskVO> result = new HashMap<>();
             for (String uuid : uuids) { if (tasks.containsKey(uuid)) { result.put(uuid, tasks.get(uuid)); } }
+            afterTaskRead.run();
             return result;
         }
         @Override public String startTask(String host, String action, String actor, long generation) {
@@ -790,6 +793,34 @@ public class MemoryClusterOperationTest {
         tick.invoke(manager);
         assertEquals("the public state is still refreshed", Arrays.asList("host1", "host2"), repository.refreshed);
         assertTrue(repository.plans.isEmpty());
+    }
+
+    @Test public void anOperationSubmittedDuringAScanIsAnsweredByALaterScan() throws Exception {
+        setup();
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("resume"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        msg.setTimeout(7200000L);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, msg);
+        Field field = MemoryOptimizationManager.class.getDeclaredField("waiters"); field.setAccessible(true);
+        @SuppressWarnings("unchecked") Map<String, Object> waiters = (Map<String, Object>) field.get(manager);
+        Class<?> type = waiters.values().iterator().next().getClass();
+        java.lang.reflect.Constructor<?> make = type.getDeclaredConstructor(String.class, long.class, Consumer.class, String.class);
+        make.setAccessible(true);
+        List<String> later = new ArrayList<>();
+        // Another operation of the node is planned and starts waiting after this scan read the tasks.
+        repository.afterTaskRead = () -> {
+            repository.afterTaskRead = () -> { };
+            String task = repository.plan("host2", "paused", "pause", "user",
+                    MemoryRepository.License.VALID, MemoryRepository.Origin.OPERATOR).task;
+            try {
+                waiters.put(task, make.newInstance("host2", System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1),
+                        (Consumer<String>) later::add, null));
+            } catch (ReflectiveOperationException e) { throw new RuntimeException(e); }
+        };
+        completeWaiters();
+        assertTrue("its task was not read by this scan; it is not missing", later.isEmpty());
+        assertEquals("both operations still wait for their Hosts", 2, waiters.size());
     }
 
     @Test public void anExpiredWaiterIsAnsweredWhileItsStatusCannotBeRead() throws Exception {
