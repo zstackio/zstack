@@ -93,6 +93,7 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -3840,6 +3841,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    private boolean isStaticIpOccupiedByAnotherNic(String l3NetworkUuid, String canonicalIp, String selfNicUuid) {
+        List<UsedIpVO> existingVos = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid)
+                .eq(UsedIpVO_.ip, canonicalIp)
+                .list();
+        return existingVos.stream().anyMatch(v -> !Objects.equals(v.getVmNicUuid(), selfNicUuid));
+    }
+
     private void setNoIpamStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-vm-ip-l3-%s-vm-%s", msg.getL3NetworkUuid(), self.getUuid()));
@@ -3880,9 +3889,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                             nicVO.setNetmask(null);
                         }
                         if (msg.getIp6() != null) {
+                            String canonicalIp6 = IpRangeHelper.toCanonicalIp(msg.getIp6());
+                            if (isStaticIpOccupiedByAnotherNic(nicVO.getL3NetworkUuid(), canonicalIp6, nicVO.getUuid())) {
+                                trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10363,
+                                        "IPv6 address[%s] has already been allocated on L3 network[uuid:%s]",
+                                        canonicalIp6, nicVO.getL3NetworkUuid()));
+                                return;
+                            }
                             UsedIpVO vo = new UsedIpVO();
-                            vo.setUuid(Platform.getUuid());
-                            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp6()));
+                            vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(nicVO.getL3NetworkUuid(), canonicalIp6));
+                            vo.setIp(canonicalIp6);
                             vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp6()+"/"+msg.getIpv6Prefix()));
                             vo.setGateway(msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
                             vo.setIpVersion(IPv6Constants.IPv6);
@@ -3899,10 +3915,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                         // Ip and ip6 set at same time means dual stack network, nic will set UsedIpUuid with ipv4
                         if (msg.getIp() != null) {
+                            String canonicalIp = IpRangeHelper.toCanonicalIp(msg.getIp());
                             UsedIpVO vo = new UsedIpVO();
-                            vo.setUuid(Platform.getUuid());
+                            vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(nicVO.getL3NetworkUuid(), canonicalIp));
                             if (NetworkUtils.isIpv4Address(msg.getIp())) {
-                                vo.setIp(msg.getIp());
+                                if (isStaticIpOccupiedByAnotherNic(nicVO.getL3NetworkUuid(), canonicalIp, nicVO.getUuid())) {
+                                    trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10364,
+                                            "IPv4 address[%s] has already been allocated on L3 network[uuid:%s]",
+                                            canonicalIp, nicVO.getL3NetworkUuid()));
+                                    return;
+                                }
+                                vo.setIp(canonicalIp);
                                 vo.setNetmask(msg.getNetmask());
                                 vo.setGateway(msg.getGateway().isEmpty() ? "" : msg.getGateway());
                                 vo.setIpVersion(IPv6Constants.IPv4);
@@ -3918,12 +3941,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 voNewList.add(vo);
                                 voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList()));
                             } else {
-                                vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp()));
+                                if (isStaticIpOccupiedByAnotherNic(nicVO.getL3NetworkUuid(), canonicalIp, nicVO.getUuid())) {
+                                    trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10365,
+                                            "IPv6 address[%s] has already been allocated on L3 network[uuid:%s]",
+                                            canonicalIp, nicVO.getL3NetworkUuid()));
+                                    return;
+                                }
+                                vo.setIp(canonicalIp);
                                 vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp()+"/"+msg.getIpv6Prefix()));
                                 vo.setGateway(msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
                                 vo.setIpVersion(IPv6Constants.IPv6);
                                 vo.setVmNicUuid(nicVO.getUuid());
                                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                                vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
                                 vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                 nicVO.setUsedIpUuid(vo.getUuid());
                                 nicVO.setIp(vo.getIp());
@@ -3939,9 +3969,35 @@ public class VmInstanceBase extends AbstractVmInstance {
                         for (UsedIpVO vo : voNewList) {
                             newIpMap.put(vo.getIpVersion(), toUsedIpInventory(vo));
                         }
-                        dbf.persistCollection(voNewList);
-                        dbf.update(nicVO);
-                        dbf.removeCollection(voRemoveList, UsedIpVO.class);
+                        try {
+                            new SQLBatch() {
+                                @Override
+                                protected void scripts() {
+                                    for (UsedIpVO vo : voRemoveList) {
+                                        remove(vo);
+                                    }
+                                    flush();
+                                    for (UsedIpVO vo : voNewList) {
+                                        persist(vo);
+                                    }
+                                    flush();
+                                    sql(VmNicVO.class).eq(VmNicVO_.uuid, nicVO.getUuid())
+                                            .set(VmNicVO_.usedIpUuid, nicVO.getUsedIpUuid())
+                                            .set(VmNicVO_.ip, nicVO.getIp())
+                                            .set(VmNicVO_.netmask, nicVO.getNetmask())
+                                            .set(VmNicVO_.gateway, nicVO.getGateway())
+                                            .update();
+                                }
+                            }.execute();
+                        } catch (RuntimeException e) {
+                            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
+                                trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10366,
+                                        "static IP on L3 network[uuid:%s] has already been allocated",
+                                        nicVO.getL3NetworkUuid()));
+                                return;
+                            }
+                            throw e;
+                        }
                         notifyVmIpChanged(nicVO.getUuid(), oldIpMap, newIpMap);
                         trigger.next();
                     }
@@ -6955,10 +7011,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                             trigger.next();
                             return;
                         }
-                        if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
-                            self.setDefaultL3NetworkUuid(destL3.getUuid());
-                        }
-                        self = dbf.updateAndRefresh(self);
                         VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
                         final Map<String, NicIpAddressInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
                         List<UsedIpVO> voNewList = new ArrayList<>();
@@ -6972,9 +7024,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                             nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                         } else {
                             if (nicIpAddressInfo.ipv6Address != null && !nicIpAddressInfo.ipv6Address.isEmpty()) {
+                                String canonicalIp6 = IpRangeHelper.toCanonicalIp(nicIpAddressInfo.ipv6Address);
+                                if (isStaticIpOccupiedByAnotherNic(msg.getDestL3NetworkUuid(), canonicalIp6, nicVO.getUuid())) {
+                                    trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10367,
+                                            "IPv6 address[%s] has already been allocated on L3 network[uuid:%s]",
+                                            canonicalIp6, msg.getDestL3NetworkUuid()));
+                                    return;
+                                }
                                 UsedIpVO vo = new UsedIpVO();
-                                vo.setUuid(Platform.getUuid());
-                                vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address));
+                                vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(msg.getDestL3NetworkUuid(), canonicalIp6));
+                                vo.setIp(canonicalIp6);
                                 vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicIpAddressInfo.ipv6Address + "/" + nicIpAddressInfo.ipv6Prefix));
                                 vo.setGateway(nicIpAddressInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Gateway));
                                 vo.setIpVersion(IPv6Constants.IPv6);
@@ -6983,18 +7042,24 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
                                 vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                 nicVO.setUsedIpUuid(vo.getUuid());
-                                nicVO.setIp(nicIpAddressInfo.ipv4Address);
-                                nicVO.setGateway(nicIpAddressInfo.ipv4Gateway);
-                                nicVO.setNetmask(nicIpAddressInfo.ipv4Netmask);
+                                nicVO.setIp(vo.getIp());
+                                nicVO.setGateway(vo.getGateway());
+                                nicVO.setNetmask(vo.getNetmask());
                                 nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                                 voNewList.add(vo);
                             }
                             if (nicIpAddressInfo.ipv4Address != null && !nicIpAddressInfo.ipv4Address.isEmpty()) {
-                                UsedIpVO vo = new UsedIpVO();
-                                vo.setUuid(Platform.getUuid());
                                 if (NetworkUtils.isIpv4Address(nicIpAddressInfo.ipv4Address)) {
-                                    vo.setIpInLong(NetworkUtils.ipv4StringToLong(nicIpAddressInfo.ipv4Address));
-                                    vo.setIp(nicIpAddressInfo.ipv4Address);
+                                    String canonicalIp4 = IpRangeHelper.toCanonicalIp(nicIpAddressInfo.ipv4Address);
+                                    if (isStaticIpOccupiedByAnotherNic(msg.getDestL3NetworkUuid(), canonicalIp4, nicVO.getUuid())) {
+                                        trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10368,
+                                                "IPv4 address[%s] has already been allocated on L3 network[uuid:%s]",
+                                                canonicalIp4, msg.getDestL3NetworkUuid()));
+                                        return;
+                                    }
+                                    UsedIpVO vo = new UsedIpVO();
+                                    vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(msg.getDestL3NetworkUuid(), canonicalIp4));
+                                    vo.setIp(canonicalIp4);
                                     vo.setNetmask(nicIpAddressInfo.ipv4Netmask);
                                     vo.setGateway(nicIpAddressInfo.ipv4Gateway);
                                     vo.setIpVersion(IPv6Constants.IPv4);
@@ -7004,17 +7069,56 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                                     vo.setIpRangeUuid(new StaticIpOperator().getIpRangeUuid(vo.getL3NetworkUuid(), vo.getIp()));
                                     nicVO.setUsedIpUuid(vo.getUuid());
-                                    nicVO.setIp(nicIpAddressInfo.ipv4Address);
-                                    nicVO.setGateway(nicIpAddressInfo.ipv4Gateway);
-                                    nicVO.setNetmask(nicIpAddressInfo.ipv4Netmask);
+                                    nicVO.setIp(vo.getIp());
+                                    nicVO.setGateway(vo.getGateway());
+                                    nicVO.setNetmask(vo.getNetmask());
                                     nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                                     voNewList.add(vo);
                                 }
                             }
                         }
-                        dbf.persistCollection(voNewList);
-                        dbf.updateAndRefresh(nicVO);
-                        dbf.removeCollection(voOldList, UsedIpVO.class);
+                        final String targetNicUuid = nicVO.getUuid();
+                        final String targetUsedIpUuid = nicVO.getUsedIpUuid();
+                        final String targetIp = nicVO.getIp();
+                        final String targetNetmask = nicVO.getNetmask();
+                        final String targetGateway = nicVO.getGateway();
+                        final String targetL3Uuid = nicVO.getL3NetworkUuid();
+                        try {
+                            nicVO = new SQLBatchWithReturn<VmNicVO>() {
+                                @Override
+                                protected VmNicVO scripts() {
+                                    for (UsedIpVO vo : voOldList) {
+                                        remove(vo);
+                                    }
+                                    flush();
+                                    for (UsedIpVO vo : voNewList) {
+                                        persist(vo);
+                                    }
+                                    flush();
+                                    sql(VmNicVO.class).eq(VmNicVO_.uuid, targetNicUuid)
+                                            .set(VmNicVO_.usedIpUuid, targetUsedIpUuid)
+                                            .set(VmNicVO_.ip, targetIp)
+                                            .set(VmNicVO_.netmask, targetNetmask)
+                                            .set(VmNicVO_.gateway, targetGateway)
+                                            .set(VmNicVO_.l3NetworkUuid, targetL3Uuid)
+                                            .update();
+                                    databaseFacade.getEntityManager().clear();
+                                    return findByUuid(targetNicUuid, VmNicVO.class);
+                                }
+                            }.execute();
+                        } catch (RuntimeException e) {
+                            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
+                                trigger.fail(argerr(ORG_ZSTACK_COMPUTE_VM_10369,
+                                        "static IP on L3 network[uuid:%s] has already been allocated",
+                                        msg.getDestL3NetworkUuid()));
+                                return;
+                            }
+                            throw e;
+                        }
+                        if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+                            self.setDefaultL3NetworkUuid(destL3.getUuid());
+                            self = dbf.updateAndRefresh(self);
+                        }
                         data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
                         data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
                         trigger.next();
