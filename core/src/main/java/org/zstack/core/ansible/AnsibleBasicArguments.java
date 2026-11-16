@@ -1,6 +1,7 @@
 package org.zstack.core.ansible;
 
 import com.google.gson.annotations.SerializedName;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.header.log.NoLogging;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -98,7 +99,7 @@ public class AnsibleBasicArguments implements Serializable {
         LinkedHashMap<String, Object> rehashedObject = JSONObjectUtil.rehashObject(this, LinkedHashMap.class);
 
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("object after rehashed: %s", JSONObjectUtil.toJsonString(rehashedObject)));
+            logger.trace(String.format("object after rehashed: %s", LogSafeGson.toJson(this)));
         }
 
         return rehashedObject;
