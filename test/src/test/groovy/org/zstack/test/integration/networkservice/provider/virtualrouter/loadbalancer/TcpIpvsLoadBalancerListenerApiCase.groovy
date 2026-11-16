@@ -4,6 +4,8 @@ import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.appliancevm.ApplianceVmVO_
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.tag.SystemTagVO
+import org.zstack.header.tag.SystemTagVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerAclStatus
 import org.zstack.network.service.lb.LoadBalancerAclType
@@ -215,6 +217,8 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             testTcpIpvsDefaultForwardMode()
             testTcpIpvsForwardModeCannotBeChanged()
             testTcpIpvsCreateValidation()
+            testTcpIpvsCreateNumericTagRanges()
+            testOtherListenersKeepNumericTagValidation()
             testTcpIpvsTcpProxyProtocolValidation()
             testTcpIpvsHealthCheckParameterValidation()
             testTcpHaproxyBackendRefreshPayload()
@@ -592,6 +596,101 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             action.tcpProxyProtocol = LoadBalancerConstants.DisableLbSupportTcpProxyProtocol
         }
         assert !LoadBalancerSystemTags.TCP_PROXYPROTOCOL.hasTag(listener.uuid, LoadBalancerListenerVO.class)
+    }
+
+    void testTcpIpvsCreateNumericTagRanges() {
+        def ranges = [
+                ["maxConnection", 0L, 10000000L],
+                ["healthCheckInterval", 1L, 2147483647L],
+                ["healthyThreshold", 1L, 2147483647L],
+                ["unhealthyThreshold", 1L, 2147483647L]
+        ]
+        int port = 11300
+        ranges.each { List range ->
+            String parameter = range[0]
+            long min = range[1]
+            long max = range[2]
+            [-1L, min - 1, max + 1, Long.MAX_VALUE, "9223372036854775808", "not-a-number"].unique().each { value ->
+                String listenerUuid = UUID.randomUUID().toString().replace("-", "")
+                String tag = "${parameter}::${value}".toString()
+                def result = assertCreateTcpIpvsListenerError(port++) { CreateLoadBalancerListenerAction action ->
+                    action.resourceUuid = listenerUuid
+                    action.systemTags = [tag]
+                }
+                assert result.error.details.contains(tag)
+                if (value == -1L || value == min - 1 || (parameter != "maxConnection" && value == max + 1)) {
+                    assert result.error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10195"
+                    assert result.error.details.contains("[${min}, ${max}]".toString())
+                }
+                assert !Q.New(LoadBalancerListenerVO.class)
+                        .eq(LoadBalancerListenerVO_.uuid, listenerUuid).isExists()
+                assert !Q.New(SystemTagVO.class)
+                        .eq(SystemTagVO_.resourceUuid, listenerUuid).isExists()
+            }
+
+            [min, max].each { long value ->
+                String tag = "${parameter}::${value}".toString()
+                LoadBalancerListenerInventory listener = createLoadBalancerListener {
+                    delegate.name = "tcp-ipvs-numeric-boundary-${port}"
+                    delegate.loadBalancerUuid = lb.uuid
+                    delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+                    delegate.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+                    delegate.loadBalancerPort = port++
+                    delegate.instancePort = 8080
+                    delegate.systemTags = [tag]
+                }
+                try {
+                    assert Q.New(SystemTagVO.class)
+                            .eq(SystemTagVO_.resourceUuid, listener.uuid)
+                            .eq(SystemTagVO_.tag, tag).isExists()
+                } finally {
+                    deleteLoadBalancerListener { uuid = listener.uuid }
+                }
+            }
+        }
+    }
+
+    void testOtherListenersKeepNumericTagValidation() {
+        int port = 11400
+        // Legacy values remain accepted outside TCP IPVS; this fix must not broaden validation.
+        [
+                [LoadBalancerConstants.LB_PROTOCOL_TCP, null],
+                [LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.DATA_PLANE_HAPROXY],
+                [LoadBalancerConstants.LB_PROTOCOL_UDP, null],
+                [LoadBalancerConstants.LB_PROTOCOL_HTTP, null],
+                [LoadBalancerConstants.LB_PROTOCOL_HTTPS, null]
+        ].each { List listenerType ->
+            ["maxConnection::-1", "healthCheckInterval::0", "healthyThreshold::0", "unhealthyThreshold::0"].each { String tag ->
+                LoadBalancerListenerInventory listener = createLoadBalancerListener {
+                    delegate.name = "legacy-numeric-tag-${port}"
+                    delegate.loadBalancerUuid = lb.uuid
+                    delegate.protocol = listenerType[0]
+                    delegate.dataPlane = listenerType[1]
+                    delegate.loadBalancerPort = port++
+                    delegate.instancePort = 8080
+                    delegate.systemTags = [tag]
+                }
+                try {
+                    assert Q.New(SystemTagVO.class)
+                            .eq(SystemTagVO_.resourceUuid, listener.uuid)
+                            .eq(SystemTagVO_.tag, tag).isExists()
+                } finally {
+                    deleteLoadBalancerListener { uuid = listener.uuid }
+                }
+            }
+
+            // The pre-existing maximum-connection upper limit still applies to all listeners.
+            CreateLoadBalancerListenerAction action = new CreateLoadBalancerListenerAction()
+            action.name = "legacy-max-connection-limit-${port}"
+            action.loadBalancerUuid = lb.uuid
+            action.protocol = listenerType[0]
+            action.dataPlane = listenerType[1]
+            action.loadBalancerPort = port++
+            action.instancePort = 8080
+            action.systemTags = ["maxConnection::10000001"]
+            action.sessionId = adminSession()
+            assert action.call().error != null
+        }
     }
 
     void testTcpIpvsHealthCheckParameterValidation() {

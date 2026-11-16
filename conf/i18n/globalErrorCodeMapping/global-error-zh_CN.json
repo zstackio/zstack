@@ -3234,6 +3234,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_SYSTEM_10001": "移除系统主题[uuid:%s]在系统警报[uuid:%s]中是被禁止的",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_CONFIGMANAGER_10005": "无法找到SLB实例的公共网卡",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10194": "修改后端服务器状态时，无法在服务器组[uuid:%s]中找到所有请求的服务器IP",
+  "ORG_ZSTACK_NETWORK_SERVICE_LB_10195": "TCP IPVS监听器系统标签[%s]无效，数值必须在范围[%s, %s]内",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_CONFIGMANAGER_10006": "无法将SLB组[uuid:%s]的配置版本从%d更新为%d，该组已变更或被删除",
   "ORG_ZSTACK_MEVOCO_10046": "obj 不是 instanceof NicQos!",
   "ORG_ZSTACK_ZWATCH_ALARM_SYSTEM_10000": "报警[uuid:%s]是一个系统报警，无法删除",

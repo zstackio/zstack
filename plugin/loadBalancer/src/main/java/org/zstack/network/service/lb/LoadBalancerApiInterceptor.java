@@ -1366,6 +1366,38 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10087, "invalid max connection[%s], %s is larger than upper threshold %d", tag, s, LoadBalancerConstants.MAX_CONNECTION_LIMIT));
                     }
                 }
+
+                // Match change-API ranges only for new TCP IPVS listeners; preserve other data planes.
+                if (isTcpIpvsListener(msg.getProtocol(), dataPlane)) {
+                    String value;
+                    long min;
+                    long max;
+                    if (LoadBalancerSystemTags.MAX_CONNECTION.isMatch(tag)) {
+                        value = LoadBalancerSystemTags.MAX_CONNECTION.getTokenByTag(tag, LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
+                        min = MAXIMUM_CONNECTION_MIN;
+                        max = MAXIMUM_CONNECTION_MAX;
+                    } else if (LoadBalancerSystemTags.HEALTH_INTERVAL.isMatch(tag)) {
+                        value = LoadBalancerSystemTags.HEALTH_INTERVAL.getTokenByTag(tag, LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN);
+                        min = HEALTH_CHECK_INTERVAL_MIN;
+                        max = HEALTH_CHECK_INTERVAL_MAX;
+                    } else if (LoadBalancerSystemTags.HEALTHY_THRESHOLD.isMatch(tag)) {
+                        value = LoadBalancerSystemTags.HEALTHY_THRESHOLD.getTokenByTag(tag, LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN);
+                        min = HEALTH_CHECK_THRESHOLD_MIN;
+                        max = HEALTH_CHECK_THRESHOLD_MAX;
+                    } else if (LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.isMatch(tag)) {
+                        value = LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.getTokenByTag(tag, LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN);
+                        min = UNHEALTH_CHECK_THRESHOLD_MIN;
+                        max = UNHEALTH_CHECK_THRESHOLD_MAX;
+                    } else {
+                        continue;
+                    }
+
+                    long number = Long.parseLong(value);
+                    if (number < min || number > max) {
+                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10195,
+                                "invalid tcp ipvs listener system tag[%s], value must be in the range [%d, %d]", tag, min, max));
+                    }
+                }
             } catch (OperationFailureException oe) {
                 ApiMessageInterceptionException ae = new ApiMessageInterceptionException(oe.getErrorCode());
                 ae.initCause(oe);
