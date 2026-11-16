@@ -10,6 +10,7 @@ import org.zstack.configuration.OfferingUserConfigUtils
 import org.zstack.core.ansible.AnsibleAgentRestartCase
 import org.zstack.storage.ceph.backup.CephUploadCancelRecoveryCase
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
+import org.zstack.test.unittest.compute.VmDataVolumeTemplateQuotaCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.kvm.KvmAgentRestartGlobalConfigCase
 import org.zstack.test.unittest.kvm.KVMHostSshCredentialTimeoutCase
@@ -43,6 +44,7 @@ import java.util.stream.Collectors
         HypervisorMetadataTimeoutCase.class,
         ShellTimeoutCase.class,
         MigrateVmFinalizeCompletionCase.class,
+        VmDataVolumeTemplateQuotaCase.class,
         CephUploadCancelRecoveryCase.class,
         NetworkUtilsCase.class,
         ZnsProxyAnsibleDeployerTest.class,
