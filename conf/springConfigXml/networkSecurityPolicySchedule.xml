@@ -39,6 +39,7 @@
           class="org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleScanTask">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

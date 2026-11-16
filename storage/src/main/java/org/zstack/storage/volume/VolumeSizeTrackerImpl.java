@@ -16,6 +16,7 @@ import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.NopeWhileDoneCompletion;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -25,7 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
+public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component, ManagementNodeReadyExtensionPoint {
     private final static CLogger logger = Utils.getLogger(VolumeSizeTrackerImpl.class);
 
     private final Set<String> volumeUuids = Collections.synchronizedSet(new HashSet<>());
@@ -83,6 +84,10 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
 
     private void setupTracker() {
         VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.installUpdateExtension(this::startIntervalTracker);
+    }
+
+    @Override
+    public void managementNodeReady() {
         startIntervalTracker(null, VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL);
     }
 
