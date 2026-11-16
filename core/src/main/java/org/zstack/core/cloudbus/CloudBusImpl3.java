@@ -1477,22 +1477,37 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     @AsyncThread
     public void handleHttpRequest(HttpEntity<String> e, HttpServletResponse rsp) {
+        Message msg;
         try {
-            Message msg = CloudBusGson.fromJson(e.getBody());
+            msg = CloudBusGson.fromJson(e.getBody());
             Map raw = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class);
             try {
                 restoreFromSchema(msg, raw);
             } catch (ClassNotFoundException e1) {
                 throw new CloudRuntimeException(e1);
             }
+        } catch (Throwable t) {
+            // Parser exception messages can contain values from the request body.
+            logger.warn(String.format("unable to parse message from HTTP, exception type: %s", t.getClass().getName()));
+            return;
+        }
 
+        try {
             if (msg instanceof APIMessage && msg instanceof NetworkOperationMessage) {
                 ((NetworkOperationMessage) msg).setNetworkOperation(new NetworkOperationContext());
             }
             new MessageSender(msg).localSend();
             rsp.setStatus(HttpStatus.OK.value());
         } catch (Throwable t) {
-            logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s", e.getBody()), t);
+            String safeBody;
+            try {
+                safeBody = CloudBusGson.toLogSafeJson(msg);
+            } catch (Throwable ignored) {
+                // A malformed embedded command must not replace the delivery failure.
+                safeBody = "<unavailable>";
+            }
+            logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s",
+                    safeBody), t);
         }
     }
 
