@@ -3234,6 +3234,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_SYSTEM_10001": "Removing a system topic from a system alarm is forbidden. Please provide valid topic and alarm UUIDs.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_CONFIGMANAGER_10005": "Cannot find public network interface of SLB instance",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10194": "cannot find all requested server IPs in server group[uuid:%s] when applying backend server state",
+  "ORG_ZSTACK_NETWORK_SERVICE_LB_10195": "invalid tcp ipvs listener system tag[%s], value must be in the range [%s, %s]",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_CONFIGMANAGER_10006": "cannot commit configuration version of SLB group[uuid:%s] from %d to %d, the group has changed or been deleted",
   "ORG_ZSTACK_MEVOCO_10046": "obj is not an instance of NicQos! Please ensure that the object type matches the expected type.",
   "ORG_ZSTACK_ZWATCH_ALARM_SYSTEM_10000": "alarm[uuid:%s] is a system-generated alert which cannot be deleted",
