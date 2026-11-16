@@ -123,6 +123,7 @@ abstract class Test extends ApiHelper implements Retry {
             expon()
             xinfini()
             zbs()
+            physicalServer()
             eip()
             portForwarding()
             smp()

@@ -1,0 +1,88 @@
+package org.zstack.physicalserver;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.physicalserver.PhysicalServerCpuSet;
+import org.zstack.header.physicalserver.RoleServiceManifest;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import static org.zstack.core.Platform.argerr;
+
+public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private PhysicalServerManagerImpl manager;
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIUpdatePhysicalServerResourceAssignmentMsg) {
+            validate((APIUpdatePhysicalServerResourceAssignmentMsg) msg);
+        } else if (msg instanceof APIRestartPhysicalServerManagedServicesMsg) {
+            validate((APIRestartPhysicalServerManagedServicesMsg) msg);
+        }
+
+        if (msg instanceof PhysicalServerMessage) {
+            bus.makeTargetServiceIdByResourceUuid(
+                    msg, PhysicalServerConstant.SERVICE_ID, ((PhysicalServerMessage) msg).getServerUuid());
+        } else if (msg instanceof APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg) {
+            msg.setServiceId(bus.makeLocalServiceId(PhysicalServerConstant.SERVICE_ID));
+        }
+        return msg;
+    }
+
+    private void validate(APIRestartPhysicalServerManagedServicesMsg msg) {
+        List<String> serviceNames = msg.getServiceNames();
+        if (msg.getRoleType() == null || manager.getFactory(msg.getRoleType()).roleServices().getSliceName() == null) {
+            throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
+                    "RoleType[%s] does not support resource assignment", msg.getRoleType()));
+        }
+        if (serviceNames.size() > PhysicalServerConstant.MAX_SERVICES_PER_REQUEST) {
+            throw new ApiMessageInterceptionException(argerr(
+                    PhysicalServerConstant.ERROR_CODE, "At most %s services can be restarted in one request",
+                    PhysicalServerConstant.MAX_SERVICES_PER_REQUEST));
+        }
+        Set<String> unique = new HashSet<>();
+        for (String serviceName : serviceNames) {
+            if (serviceName == null || !serviceName.matches(RoleServiceManifest.SERVICE_NAME_PATTERN)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        PhysicalServerConstant.ERROR_CODE, "Service name[%s] must match pattern[%s]",
+                        serviceName, RoleServiceManifest.SERVICE_NAME_PATTERN));
+            }
+            if (!unique.add(serviceName)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        PhysicalServerConstant.ERROR_CODE, "Service name[%s] is duplicated", serviceName));
+            }
+        }
+    }
+
+    private void validate(APIUpdatePhysicalServerResourceAssignmentMsg msg) {
+        String sliceName = manager.getFactory(msg.getRoleType()).roleServices().getSliceName();
+        if (sliceName == null) {
+            throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
+                    "RoleType[%s] does not support resource assignment", msg.getRoleType()));
+        }
+
+        if (msg.getCpuSet() == null && msg.getMemory() == null) {
+            throw new ApiMessageInterceptionException(argerr(
+                    PhysicalServerConstant.ERROR_CODE, "CpuSet or memory must be specified"));
+        }
+
+        if (msg.getMemory() != null) {
+            if (msg.getMemory() < 0 || msg.getMemory() % RoleServiceManifest.MEMORY_GRANULARITY != 0) {
+                throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
+                        "Memory[%s] must be zero or a positive multiple of 1 MiB", msg.getMemory()));
+            }
+        }
+
+        if (msg.getCpuSet() == null) {
+            return;
+        }
+        msg.setCpuSet(PhysicalServerCpuSet.normalize(msg.getCpuSet()));
+    }
+
+}

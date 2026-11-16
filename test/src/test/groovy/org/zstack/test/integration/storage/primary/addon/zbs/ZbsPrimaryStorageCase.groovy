@@ -230,6 +230,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsReconnectAfterMaximumPingFailures()
             testGetBackingChainNormalizesCbdParentUri()
             testBatchStatsNormalizesCbdInstallPath()
+            testMdsPhysicalServerSerialPersistsAcrossReconnect()
             testReimageCacheMatchesAllocatedSpace()
         }
     }
@@ -300,6 +301,40 @@ class ZbsPrimaryStorageCase extends SubCase {
                 clusterUuid = cluster.uuid
             }
         }
+    }
+
+    void testMdsPhysicalServerSerialPersistsAcrossReconnect() {
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) {
+            ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp, HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+                rsp.physicalServerSerialNumber = "PS-SN-${cmd.addr}"
+                return rsp
+        }
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        def firstReconnectMdsInfos = mdsInfos()
+        assert firstReconnectMdsInfos && firstReconnectMdsInfos.every {
+            it.physicalServerSerialNumber == "ps-sn-${it.addr}"
+        }
+
+        env.cleanAfterSimulatorHandlers()
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        def secondReconnectMdsInfos = mdsInfos()
+        assert secondReconnectMdsInfos && secondReconnectMdsInfos.every {
+            it.physicalServerSerialNumber == "ps-sn-${it.addr}"
+        }
+    }
+
+    private List<org.zstack.storage.zbs.MdsInfo> mdsInfos() {
+        String serialized = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        return JSONObjectUtil.toObject(serialized, AddonInfo.class).mdsInfos
     }
 
     void testDuplicateMdsAddressesAcrossPrimaryStorages() {
@@ -469,17 +504,21 @@ class ZbsPrimaryStorageCase extends SubCase {
     }
 
     void testUpdateExternalPrimaryStorage() {
-        expect(AssertionError.class) {
-            updateExternalPrimaryStorage {
-                uuid = ps.uuid
-                config = "{\"mdsUrls\":[],\"logicalPoolName\":\"lpool1\"}"
-            }
+        List<String> mdsUrls = ["root:password@127.0.1.1", "root:password@127.0.1.2", "root:password@127.0.1.3"]
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = JSONObjectUtil.toJsonString([
+                    mdsUrls: mdsUrls + [mdsUrls[0], "root:other@127.0.1.1:2222"], logicalPoolName: "lpool1"])
         }
+        String deduplicated = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.config)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+        assert JSONObjectUtil.toObject(deduplicated, Config.class).mdsUrls == mdsUrls :
+                "config must retain the first URL for each MDS IP in request order: actual=${deduplicated}"
 
         expect(AssertionError.class) {
             updateExternalPrimaryStorage {
                 uuid = ps.uuid
-                config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.1\"],\"logicalPoolName\":\"lpool1\"}"
+                config = "{\"mdsUrls\":[],\"logicalPoolName\":\"lpool1\"}"
             }
         }
 

@@ -36,4 +36,12 @@ public class ManagementNodeInventory  {
         return this.heartBeat;
     }
 
+    public java.lang.String serverUuid;
+    public void setServerUuid(java.lang.String serverUuid) {
+        this.serverUuid = serverUuid;
+    }
+    public java.lang.String getServerUuid() {
+        return this.serverUuid;
+    }
+
 }

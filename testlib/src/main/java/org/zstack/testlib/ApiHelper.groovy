@@ -75,20 +75,20 @@ abstract class ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-        
+
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-    
+
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-        
+
             return out
         } else {
             return errorOut(a.call())
@@ -35210,6 +35210,88 @@ abstract class ApiHelper {
     }
 
 
+    def queryPhysicalServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryPhysicalServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryPhysicalServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getPhysicalServerManagedServices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPhysicalServerManagedServicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetPhysicalServerManagedServicesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryPhysicalServerResourceAssignment(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryPhysicalServerResourceAssignmentAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryPhysicalServerResourceAssignmentAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryPhysicalSwitch(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryPhysicalSwitchAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryPhysicalSwitchAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -39428,6 +39510,33 @@ abstract class ApiHelper {
     }
 
 
+    def refreshPhysicalServerResourceAssignmentsFromProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def refreshPluginDrivers(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RefreshPluginDriversAction.class) Closure c) {
         def a = new org.zstack.sdk.RefreshPluginDriversAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -40636,6 +40745,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def restartPhysicalServerManagedServices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RestartPhysicalServerManagedServicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.RestartPhysicalServerManagedServicesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -47980,6 +48116,32 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updatePhysicalServerResourceAssignment(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdatePhysicalServerResourceAssignmentAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdatePhysicalServerResourceAssignmentAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
