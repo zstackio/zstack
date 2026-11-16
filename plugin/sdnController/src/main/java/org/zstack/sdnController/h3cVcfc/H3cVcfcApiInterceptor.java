@@ -307,7 +307,7 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         if (!msg.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
             return;
         }
-        if (!validateH3cController(msg) && msg.getVendorVersion().equals(SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V1)) {
+        if (!validateH3cController(msg) && SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V1.equals(msg.getVendorVersion())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_H3CVCFC_10024, "Could not add H3C VCFC controller because VDS UUID system tag is required for H3C VCFC V1 controllers"));
         }
     }
