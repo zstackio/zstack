@@ -2361,6 +2361,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
                     }
 
+                    if (msg.getDiskAOs() != null) {
+                        allVolumeSizeAsked += msg.getDiskAOs().stream()
+                                .filter(diskAO -> !diskAO.isBoot() && diskAO.getTemplateUuid() != null)
+                                .mapToLong(diskAO -> {
+                                    TypedQuery<Long> query = dbf.getEntityManager().createQuery(
+                                            "select size from ImageVO where uuid = :uuid", Long.class);
+                                    query.setParameter("uuid", diskAO.getTemplateUuid());
+                                    return query.getSingleResult();
+                                })
+                                .sum();
+                    }
+
                     HashMap<String, Long> diskOfferingCountMap = new HashMap<>();
                     if (!diskOfferingUuids.isEmpty()) {
                         for (String diskOfferingUuid : diskOfferingUuids) {
