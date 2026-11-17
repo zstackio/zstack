@@ -1866,6 +1866,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_IMAGE_10048 = "ORG_ZSTACK_IMAGE_10048";
 
+    public static final String ORG_ZSTACK_IMAGE_10049 = "ORG_ZSTACK_IMAGE_10049";
+
     public static final String ORG_ZSTACK_QUERY_10000 = "ORG_ZSTACK_QUERY_10000";
 
     public static final String ORG_ZSTACK_QUERY_10001 = "ORG_ZSTACK_QUERY_10001";
