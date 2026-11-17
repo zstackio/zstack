@@ -90,6 +90,7 @@ bash $flyway -user=$user -password=$password -url=$url migrate
 eval "rm -f $flyway_sql/*"
 
 cp $base/db/V0.6__schema_buildin_httpserver.sql $flyway_sql
+cp $base/db/upgrade-rest/*.sql $flyway_sql
 
 url="jdbc:mysql://$jdbc_host:$port/zstack_rest"
 bash $flyway -user=$user -password=$password -url=$url clean

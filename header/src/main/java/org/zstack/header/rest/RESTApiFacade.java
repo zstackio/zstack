@@ -7,5 +7,5 @@ public interface RESTApiFacade {
 
     RestAPIResponse call(APIMessage msg);
 
-    RestAPIResponse getResult(String uuid);
+    RestAPIResponse getResult(String uuid, String sessionUuid) throws RestException;
 }
