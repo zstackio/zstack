@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
-public class AuthorizationManager implements GlobalApiMessageInterceptor, Component, ZQLQueryExtensionPoint {
+public class AuthorizationManager implements GlobalApiMessageInterceptor, Component, ZQLQueryExtensionPoint, AdminAuthorization {
     private static final CLogger logger = Utils.getLogger(AuthorizationManager.class);
 
     private Set apiByPassAuthorizationCheck = new HashSet<>();
@@ -113,6 +113,11 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         } catch (ApiMessageInterceptionException e) {
             throw new OperationFailureException(e.getError());
         }
+    }
+
+    @Override
+    public boolean isGlobalAdmin(SessionInventory session) {
+        return findAuthorizationBackend(session).isGlobalAdmin(session);
     }
 
     private AuthorizationBackend findAuthorizationBackend(SessionInventory session) {

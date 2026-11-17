@@ -1,6 +1,7 @@
 package org.zstack.core.rest;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -11,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.db.Q;
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -19,11 +21,19 @@ import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.log.MaskSensitiveInfo;
+import org.zstack.header.identity.APIValidateSessionMsg;
+import org.zstack.header.identity.APIValidateSessionReply;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.AdminAuthorization;
+import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.SessionVO;
+import org.zstack.header.identity.SessionVO_;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTApiFacade;
 import org.zstack.header.rest.RestAPIResponse;
 import org.zstack.header.rest.RestAPIState;
 import org.zstack.header.rest.RestAPIVO;
+import org.zstack.header.rest.RestException;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
@@ -59,6 +69,9 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
 
     @Autowired
     private ThreadFacade thdf;
+
+    @Autowired
+    private AdminAuthorization adminAuthorization;
 
     @Override
     @MessageSafe
@@ -142,6 +155,11 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         vo.setUuid(msg.getId());
         vo.setApiMessageName(msg.getMessageName());
         vo.setState(RestAPIState.Processing);
+        SessionInventory owner = getValidSession(msg.getSession() == null ? null : msg.getSession().getUuid());
+        if (owner != null) {
+            vo.setOwnerAccountUuid(owner.getAccountUuid());
+            vo.setOwnerUserUuid(owner.getUserUuid());
+        }
         EntityManager mgr = getEntityManager();
         EntityTransaction tran = mgr.getTransaction();
         try {
@@ -208,10 +226,19 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
     }
     
     @Override
-    public RestAPIResponse getResult(String uuid) {
+    public RestAPIResponse getResult(String uuid, String sessionUuid) throws RestException {
+        SessionInventory caller = getValidSession(sessionUuid);
+        if (caller == null) {
+            throw new RestException(HttpStatus.SC_UNAUTHORIZED, "a valid session is required to query an API result");
+        }
         RestAPIVO vo = find(uuid);
         if (vo == null) {
             return null;
+        }
+        if ((!caller.getAccountUuid().equals(vo.getOwnerAccountUuid())
+                || !caller.getUserUuid().equals(vo.getOwnerUserUuid()))
+                && !adminAuthorization.isGlobalAdmin(caller)) {
+            throw new RestException(HttpStatus.SC_FORBIDDEN, "the API result belongs to another user or has no verifiable owner");
         }
         RestAPIResponse rsp = new RestAPIResponse();
         rsp.setCreatedDate(vo.getCreateDate());
@@ -220,6 +247,24 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         rsp.setState(vo.getState().toString());
         rsp.setUuid(vo.getUuid());
         return rsp;
+    }
+
+    private SessionInventory getValidSession(String sessionUuid) {
+        if (StringUtils.isBlank(sessionUuid)) {
+            return null;
+        }
+        APIValidateSessionMsg msg = new APIValidateSessionMsg();
+        msg.setSessionUuid(sessionUuid);
+        bus.makeLocalServiceId(msg, AccountConstant.SERVICE_ID);
+        MessageReply reply = bus.call(msg);
+        if (!(reply instanceof APIValidateSessionReply) || !reply.isSuccess()) {
+            throw new CloudRuntimeException("unable to validate the API result session");
+        }
+        if (!((APIValidateSessionReply) reply).isValidSession()) {
+            return null;
+        }
+        SessionVO session = Q.New(SessionVO.class).eq(SessionVO_.uuid, sessionUuid).find();
+        return session == null ? null : SessionInventory.valueOf(session);
     }
 
     private synchronized EntityManager getEntityManager() {
