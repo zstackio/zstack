@@ -547,6 +547,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         def pluginRgty = bean(org.zstack.core.componentloader.PluginRegistry.class)
+        FlatEipBackend flatEipBackend = bean(FlatEipBackend.class)
         List<Tuple2<List<String>, String>> appliedVipEvents = Collections.synchronizedList([])
         AfterApplyFlatEipExtensionPoint dynamicExt = new AfterApplyFlatEipExtensionPoint() {
             @Override
@@ -616,6 +617,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             retryInSecs {
                 assert host1SyncCmds.size() == 1
                 assert appliedVipEvents.size() == 1
+                assert !flatEipBackend.isHostEipSyncInProgress(host1.uuid)
             }
             assert appliedVipEvents[0].first == [eip1.vipUuid]
             assert appliedVipEvents[0].second == host1.uuid
@@ -629,6 +631,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             sendPingHost(host1.uuid)
             retryInSecs {
                 assert host1SyncCmds.size() == 2
+                assert !flatEipBackend.isHostEipSyncInProgress(host1.uuid)
             }
 
             // Once clean & baseline-synced, count = 0 disables periodic sync
@@ -651,6 +654,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             sendPingHost(host1.uuid)
             retryInSecs {
                 assert host1SyncCmds.size() == 1
+                assert !flatEipBackend.isHostEipSyncInProgress(host1.uuid)
             }
             assert appliedVipEvents.isEmpty()
 
@@ -682,6 +686,9 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             detachEip {
                 uuid = eip1.uuid
             }
+            retryInSecs {
+                assert !flatEipBackend.isHostEipSyncInProgress(host1.uuid)
+            }
             assert !((host1SyncCmds[0].eips ?: []).collect { it.eipUuid }.contains(eip1.uuid))
             assert (host1SyncCmds[0].inFlightEipUuids ?: []).contains(eip1.uuid)
 
@@ -704,8 +711,40 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             sendPingHost(host1.uuid)
             retryInSecs {
                 assert host1SyncCmds.size() == 1
+                assert !flatEipBackend.isHostEipSyncInProgress(host1.uuid)
             }
             assert (host1SyncCmds[0].eips ?: []).collect { it.eipUuid } == [eip1.uuid]
+
+            // Malformed revoke reply must still release in-flight tracking and mark host dirty
+            host1SyncCmds.clear()
+            updateGlobalConfig {
+                category = FlatNetwordProviderGlobalConfig.CATRGORY
+                name = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.name
+                value = "0"
+            }
+            env.simulator(FlatEipBackend.DELETE_EIP_PATH) {
+                return [success: ["malformed"]]
+            }
+            expect(AssertionError.class) {
+                detachEip {
+                    uuid = eip1.uuid
+                }
+            }
+            env.simulator(FlatEipBackend.DELETE_EIP_PATH) {
+                return new FlatNetworkServiceConstant.AgentRsp()
+            }
+            sendPingHost(host1.uuid)
+            retryInSecs {
+                assert host1SyncCmds.size() == 1
+                assert !flatEipBackend.isHostEipSyncInProgress(host1.uuid)
+            }
+            assert (host1SyncCmds[0].inFlightEipUuids ?: []).isEmpty()
+            assert (host1SyncCmds[0].eips ?: []).collect { it.eipUuid } == [eip1.uuid]
+            updateGlobalConfig {
+                category = FlatNetwordProviderGlobalConfig.CATRGORY
+                name = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.name
+                value = "1"
+            }
 
             host2SyncCmds.clear()
             env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp ->

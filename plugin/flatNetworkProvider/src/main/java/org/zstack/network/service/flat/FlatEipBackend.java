@@ -205,6 +205,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         }
     }
 
+    public boolean isHostEipSyncInProgress(String hostUuid) {
+        return hostUuid != null && syncingHosts.contains(hostUuid);
+    }
+
     private static String hostEipKey(String hostUuid, String eipUuid) {
         return hostUuid + ":" + eipUuid;
     }
@@ -218,10 +222,14 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 continue;
             }
             String key = hostEipKey(hostUuid, eip.eipUuid);
+            inFlightEipOperations.compute(key, (k, v) -> {
+                AtomicInteger count = v == null ? new AtomicInteger(0) : v;
+                count.incrementAndGet();
+                return count;
+            });
             if (clearRevoked) {
                 recentlyRevokedEips.remove(key);
             }
-            inFlightEipOperations.computeIfAbsent(key, k -> new AtomicInteger(0)).incrementAndGet();
         }
     }
 
@@ -907,8 +915,18 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     return;
                 }
 
-                KVMHostAsyncHttpCallReply ar = reply.castReply();
-                AgentRsp rsp = ar.toResponse(AgentRsp.class);
+                AgentRsp rsp;
+                try {
+                    KVMHostAsyncHttpCallReply ar = reply.castReply();
+                    rsp = ar.toResponse(AgentRsp.class);
+                    if (rsp == null) {
+                        throw new CloudRuntimeException("empty response when batch deleting flat EIPs");
+                    }
+                } catch (RuntimeException e) {
+                    endInFlightEips(hostUuid, eips, false);
+                    markHostEipDirty(hostUuid);
+                    throw e;
+                }
                 if (!rsp.success) {
                     endInFlightEips(hostUuid, eips, false);
                     markHostEipDirty(hostUuid);
@@ -1185,8 +1203,18 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     return;
                 }
 
-                KVMHostAsyncHttpCallReply ar = reply.castReply();
-                AgentRsp rsp = ar.toResponse(AgentRsp.class);
+                AgentRsp rsp;
+                try {
+                    KVMHostAsyncHttpCallReply ar = reply.castReply();
+                    rsp = ar.toResponse(AgentRsp.class);
+                    if (rsp == null) {
+                        throw new CloudRuntimeException("empty response when revoking flat EIP");
+                    }
+                } catch (RuntimeException e) {
+                    endInFlightEips(targetHostUuid, singleEip, false);
+                    markHostEipDirty(targetHostUuid);
+                    throw e;
+                }
                 if (!rsp.success) {
                     endInFlightEips(targetHostUuid, singleEip, false);
                     markHostEipDirty(targetHostUuid);
@@ -1310,21 +1338,35 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         });
     }
 
+    private static class SyncEipDbSnapshot {
+        final List<EipTO> expectedEips;
+        final Set<String> inFlightEipUuids;
+
+        SyncEipDbSnapshot(List<EipTO> expectedEips, Set<String> inFlightEipUuids) {
+            this.expectedEips = expectedEips;
+            this.inFlightEipUuids = inFlightEipUuids;
+        }
+    }
+
+    private Set<String> getActiveBackendOpEipUuids(String hostUuid) {
+        String hostPrefix = hostUuid + ":";
+        return inFlightEipOperations.keySet().stream()
+                .filter(k -> k.startsWith(hostPrefix))
+                .map(k -> k.substring(hostPrefix.length()))
+                .collect(Collectors.toSet());
+    }
+
     private SyncEipCmd buildSyncEipCmd(String hostUuid) {
         long now = System.currentTimeMillis();
         recentlyRevokedEips.entrySet().removeIf(e -> e.getValue() <= now);
 
-        String hostPrefix = hostUuid + ":";
-        Set<String> activeBackendOpUuids = inFlightEipOperations.keySet().stream()
-                .filter(k -> k.startsWith(hostPrefix))
-                .map(k -> k.substring(hostPrefix.length()))
-                .collect(Collectors.toSet());
-        List<EipTO> dbExpected = getExpectedEipsOnHost(hostUuid);
-        Set<String> inFlightUuids = new HashSet<>(getInFlightEipUuidsFromDb());
-        inFlightUuids.addAll(activeBackendOpUuids);
+        Set<String> inFlightUuids = new HashSet<>(getActiveBackendOpEipUuids(hostUuid));
+        SyncEipDbSnapshot dbSnapshot = loadSyncEipDbSnapshot(hostUuid);
+        inFlightUuids.addAll(dbSnapshot.inFlightEipUuids);
+        inFlightUuids.addAll(getActiveBackendOpEipUuids(hostUuid));
 
         SyncEipCmd cmd = new SyncEipCmd();
-        cmd.eips = dbExpected.stream()
+        cmd.eips = dbSnapshot.expectedEips.stream()
                 .filter(to -> to != null && to.eipUuid != null
                         && !inFlightUuids.contains(to.eipUuid)
                         && !recentlyRevokedEips.containsKey(hostEipKey(hostUuid, to.eipUuid)))
@@ -1335,38 +1377,55 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Transactional(readOnly = true)
-    private List<EipTO> getExpectedEipsOnHost(String hostUuid) {
-        String sql = "select nic from VmNicVO nic, EipVO eip, VmInstanceVO vm" +
+    private SyncEipDbSnapshot loadSyncEipDbSnapshot(String hostUuid) {
+        String sql = "select eip.uuid, nic, vm.hostUuid, vm.state" +
+                " from EipVO eip, VmNicVO nic, VmInstanceVO vm" +
                 " where eip.vmNicUuid = nic.uuid" +
                 " and nic.vmInstanceUuid = vm.uuid" +
-                " and vm.hostUuid = :huuid" +
                 " and vm.type = :vtype" +
-                " and vm.state in (:states)" +
-                " group by nic.uuid";
-        TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-        nq.setParameter("huuid", hostUuid);
-        nq.setParameter("vtype", VmInstanceConstant.USER_VM_TYPE);
-        nq.setParameter("states", EXPECTED_EIP_VM_STATES);
-        List<VmNicVO> nics = nq.getResultList();
-        if (nics.isEmpty()) {
-            return Collections.emptyList();
+                " and ((vm.hostUuid = :huuid and vm.state in (:expectedStates))" +
+                " or vm.state in (:inFlightStates))";
+        List<Tuple> rows = SQL.New(sql, Tuple.class)
+                .param("huuid", hostUuid)
+                .param("vtype", VmInstanceConstant.USER_VM_TYPE)
+                .param("expectedStates", EXPECTED_EIP_VM_STATES)
+                .param("inFlightStates", IN_FLIGHT_EIP_VM_STATES)
+                .list();
+
+        Map<String, VmNicVO> expectedNicsByUuid = new LinkedHashMap<>();
+        Set<String> expectedSnapshotEipUuids = new HashSet<>();
+        Set<String> inFlightUuids = new HashSet<>();
+        for (Tuple row : rows) {
+            String eipUuid = row.get(0, String.class);
+            VmNicVO nic = row.get(1, VmNicVO.class);
+            String vmHostUuid = row.get(2, String.class);
+            VmInstanceState vmState = row.get(3, VmInstanceState.class);
+            if (IN_FLIGHT_EIP_VM_STATES.contains(vmState)) {
+                if (eipUuid != null) {
+                    inFlightUuids.add(eipUuid);
+                }
+            } else if (hostUuid.equals(vmHostUuid) && EXPECTED_EIP_VM_STATES.contains(vmState)) {
+                if (eipUuid != null) {
+                    expectedSnapshotEipUuids.add(eipUuid);
+                }
+                if (nic != null && nic.getUuid() != null) {
+                    expectedNicsByUuid.putIfAbsent(nic.getUuid(), nic);
+                }
+            }
         }
 
-        List<EipTO> tos = getEipsByNics(nics);
-        return tos == null ? Collections.emptyList() : tos;
-    }
+        if (expectedNicsByUuid.isEmpty()) {
+            return new SyncEipDbSnapshot(Collections.emptyList(), inFlightUuids);
+        }
 
-    @Transactional(readOnly = true)
-    private Set<String> getInFlightEipUuidsFromDb() {
-        String sql = "select distinct eip.uuid from EipVO eip, VmNicVO nic, VmInstanceVO vm" +
-                " where eip.vmNicUuid = nic.uuid" +
-                " and nic.vmInstanceUuid = vm.uuid" +
-                " and vm.type = :vtype" +
-                " and vm.state in (:states)";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("vtype", VmInstanceConstant.USER_VM_TYPE);
-        q.setParameter("states", IN_FLIGHT_EIP_VM_STATES);
-        return new HashSet<>(q.getResultList());
+        List<EipTO> tos = getEipsByNics(new ArrayList<>(expectedNicsByUuid.values()));
+        if (tos == null) {
+            return new SyncEipDbSnapshot(Collections.emptyList(), inFlightUuids);
+        }
+        List<EipTO> filteredExpected = tos.stream()
+                .filter(to -> to != null && expectedSnapshotEipUuids.contains(to.eipUuid))
+                .collect(Collectors.toList());
+        return new SyncEipDbSnapshot(filteredExpected, inFlightUuids);
     }
 
     @Override
