@@ -336,6 +336,12 @@ class VmNicBasicCase extends SubCase {
         assert afterAddOtherIpr != null
         assert afterAddOtherIpr.ipRangeUuid == null
 
+        addReservedIpRange {
+            l3NetworkUuid = noDhcpL3.uuid
+            startIp = "192.168.210.48"
+            endIp = "192.168.210.52"
+        }
+
         deleteIpRange {
             uuid = iprOther.uuid
         }
@@ -354,6 +360,9 @@ class VmNicBasicCase extends SubCase {
         UsedIpVO afterReAddIpr = dbFindByUuid(expectedUsedIpUuid, UsedIpVO.class)
         assert afterReAddIpr != null
         assert afterReAddIpr.ipRangeUuid == ipr2.uuid
+        assert afterReAddIpr.vmNicUuid == winnerVm.vmNics[0].uuid
+        assert dbFindByUuid(IpRangeHelper.makeDeterministicUsedIpUuid(noDhcpL3.uuid, "192.168.210.48"), UsedIpVO.class) != null
+        assert dbFindByUuid(IpRangeHelper.makeDeterministicUsedIpUuid(noDhcpL3.uuid, "192.168.210.52"), UsedIpVO.class) != null
 
         expect(AssertionError.class) {
             attachNetworkServiceToL3Network {
@@ -369,6 +378,21 @@ class VmNicBasicCase extends SubCase {
         attachNetworkServiceToL3Network {
             l3NetworkUuid = noDhcpL3.uuid
             networkServices = [(flatProviderUuid): ["DHCP"]]
+        }
+
+        addIpv6Range {
+            name = "ipr6-210"
+            l3NetworkUuid = noDhcpL3.uuid
+            startIp = "2001:db8:210::10"
+            endIp = "2001:db8:210::100"
+            gateway = "2001:db8:210::1"
+            prefixLen = 64
+            addressMode = "Stateful-DHCP"
+        }
+
+        changeL3NetworkDhcpIpAddress {
+            l3NetworkUuid = noDhcpL3.uuid
+            dhcpv6ServerIp = "2001:db8:210:0:0:0:0:5"
         }
 
         expect(AssertionError.class) {
