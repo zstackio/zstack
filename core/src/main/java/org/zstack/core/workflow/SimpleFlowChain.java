@@ -240,7 +240,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 stat.addStatistic(btime - stime);
 
                 printDebugLog(String.format("[FlowChain(%s):%s, flow:%s] takes %sms to complete",
-                        id, name, cname, stat.getTotalTime()));
+                        id, name, cname, btime - stime));
             }
 
             String fname = getFlowNameWithoutLocation(flow);
