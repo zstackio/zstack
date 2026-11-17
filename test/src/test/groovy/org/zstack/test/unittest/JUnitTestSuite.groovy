@@ -33,6 +33,8 @@ import java.util.stream.Collectors
  * Created by lining on 2018/3/18.
  */
 
+import org.zstack.test.unittest.compute.VmAllocationFailureAggregationCase
+
 import org.zstack.test.unittest.image.ImageArchitectureFilterCase
 
 @RunWith(Suite.class)
@@ -57,7 +59,8 @@ import org.zstack.test.unittest.image.ImageArchitectureFilterCase
         SizeUnitUtilsCase.class,
         SystemTagUtilsCase.class,
         TestLongJobInventorySecurity.class,
-        ImageArchitectureFilterCase.class
+        ImageArchitectureFilterCase.class,
+        VmAllocationFailureAggregationCase.class
     ])
 class JUnitTestSuite {
 
