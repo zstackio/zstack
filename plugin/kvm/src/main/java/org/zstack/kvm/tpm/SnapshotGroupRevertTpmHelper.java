@@ -17,6 +17,8 @@ import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
+import org.zstack.header.vm.additions.VmHostFileContentVO;
+import org.zstack.header.vm.additions.VmHostFileContentVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.vm.devices.VmDevicesSpec;
@@ -93,12 +95,23 @@ public class SnapshotGroupRevertTpmHelper {
                     "volume snapshot group[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
                     snapshotGroupUuid));
         }
-        if ((snapshotGroupHasTpm || SecureBootRecordHelper.secureBootOfSnapshotGroup(snapshotGroupUuid))
-                && nvRamBackupFile == null) {
+        boolean requiresNvRam = snapshotGroupHasTpm || SecureBootRecordHelper.secureBootOfSnapshotGroup(snapshotGroupUuid);
+        if (requiresNvRam && nvRamBackupFile == null) {
             throw new OperationFailureException(operr(
                     ORG_ZSTACK_KVM_10163,
                     "volume snapshot group[uuid:%s] has no saved NVRAM state, cannot restore its firmware state",
                     snapshotGroupUuid));
+        }
+
+        if (nvRamBackupFile != null && (tpmBackupFile != null || requiresNvRam)) {
+            VmHostFileContentVO content = Q.New(VmHostFileContentVO.class)
+                    .eq(VmHostFileContentVO_.uuid, nvRamBackupFile.getUuid()).find();
+            if (content == null) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163, "%s",
+                        String.format("volume snapshot group[uuid:%s] has no saved NvRam content for backup file[uuid:%s], "
+                                        + "cannot restore its firmware state",
+                                snapshotGroupUuid, nvRamBackupFile.getUuid())));
+            }
         }
 
         if (tpmBackupFile == null && nvRamBackupFile == null) {
