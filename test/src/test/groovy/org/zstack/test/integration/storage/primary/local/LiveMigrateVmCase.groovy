@@ -4,13 +4,16 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.image.ImagePlatform
 import org.zstack.header.vm.VmCanonicalEvents
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMSecurityGroupBackend
@@ -22,6 +25,8 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
+
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10051
 
 /**
  * Created by miao on 17-5-7.
@@ -49,12 +54,49 @@ class LiveMigrateVmCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testMigrateNonLinuxVmOnLocalStorageReturnsCause()
             testLiveMigrateVmFailure()
             testLiveMigrateVmWithDataVolume()
             testPausedVmStateAfterMigrate()
             testVmStateChangedEventAfterMigrateFailure()
         }
     }
+
+    void testMigrateNonLinuxVmOnLocalStorageReturnsCause() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        KVMHostInventory host1 = env.inventoryByName("kvm")
+        KVMHostInventory host2 = env.inventoryByName("kvm1")
+        String srcHostUuid = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
+                .select(VmInstanceVO_.hostUuid).findValue()
+        String dstHostUuid = srcHostUuid == host1.uuid ? host2.uuid : host1.uuid
+        String originPlatform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
+                .select(VmInstanceVO_.platform).findValue()
+
+        try {
+            SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
+                    .set(VmInstanceVO_.platform, ImagePlatform.Windows.toString())
+                    .update()
+            expectApiFailure({
+                migrateVm {
+                    vmInstanceUuid = vm.uuid
+                    hostUuid = dstHostUuid
+                }
+            }) {
+                assert delegate.code != null
+                assert delegate.globalErrorCode == ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10051
+                assert delegate.details.contains(vm.uuid)
+            }
+        } finally {
+            SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
+                    .set(VmInstanceVO_.platform, originPlatform)
+                    .update()
+        }
+
+        VmInstanceVO currentVm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).find()
+        assert currentVm.hostUuid == srcHostUuid
+        assert currentVm.state == VmInstanceState.Running
+    }
+
     void testLiveMigrateVmFailure() {
         dbf = bean(DatabaseFacade.class)
         VmInstanceInventory vm1 = (VmInstanceInventory) env.inventoryByName("vm")
