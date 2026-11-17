@@ -2521,7 +2521,7 @@
   "ORG_ZSTACK_COMPUTE_VM_10293": "no method to determine image size for %s, please report exception.",
   "ORG_ZSTACK_STORAGE_VOLUME_10035": "Only support detached volumes, use SetVmBootVolumeMsg instead.",
   "ORG_ZSTACK_ZWATCH_PROMETHEUS_10000": "Host[uuid:%s] not found in the cloud database",
-  "ORG_ZSTACK_STORAGE_VOLUME_10038": "hypervisor[%s] restricts a single VM to a maximum of %s data volumes; this VM [uuid:%s] has %s data volumes attached.",
+  "ORG_ZSTACK_STORAGE_VOLUME_10038": "hypervisor[%s] restricts a single VM to a maximum of %s data volumes; %s data volumes are already attached to this VM [uuid:%s].",
   "ORG_ZSTACK_STORAGE_VOLUME_10032": "cannot find image cache [Image UUID: %s] for volume reinitialization",
   "ORG_ZSTACK_STORAGE_VOLUME_10031": "shared volume[uuid: %s] has been attached to non-stopped vm instances[uuids: %s]",
   "ORG_ZSTACK_STORAGE_VOLUME_10034": "volume[uuid%s] should be attached to an instance.",
