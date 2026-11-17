@@ -69,6 +69,10 @@ class FlatnetworkSimualtor implements Simulator {
             return new FlatNetworkServiceConstant.AgentRsp()
         }
 
+        spec.simulator(FlatEipBackend.SYNC_EIP_PATH) {
+            return new FlatEipBackend.SyncEipRsp()
+        }
+
         spec.simulator(FlatUserdataBackend.APPLY_USER_DATA) {
             return new FlatUserdataBackend.ApplyUserdataRsp()
         }

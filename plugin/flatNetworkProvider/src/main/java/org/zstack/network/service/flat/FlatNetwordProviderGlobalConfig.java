@@ -13,4 +13,7 @@ public class FlatNetwordProviderGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig ALLOW_DEFAULT_DNS = new GlobalConfig(CATRGORY, "allow.default.dns");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig EIP_SYNC_ON_HOST_PING_COUNT = new GlobalConfig(CATRGORY, "eip.syncOnHostPing.count");
 }

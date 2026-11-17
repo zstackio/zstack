@@ -2,23 +2,31 @@ package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
-import org.zstack.core.componentloader.PluginRegistry
-import org.zstack.header.rest.RESTFacade
-import org.zstack.header.rest.RESTConstant
-import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint
-import org.zstack.header.core.workflow.Flow
 import org.springframework.web.util.UriComponentsBuilder
+import org.zstack.core.componentloader.PluginRegistry
+import org.zstack.core.workflow.FlowChainBuilder
+import org.zstack.header.core.workflow.Flow
+import org.zstack.header.core.workflow.FlowErrorHandler
 import org.zstack.header.core.workflow.FlowTrigger
 import org.zstack.header.core.workflow.NoRollbackFlow
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.host.CheckVmStateOnHypervisorMsg
 import org.zstack.header.host.CheckVmStateOnHypervisorReply
+import org.zstack.header.host.HostConstant
+import org.zstack.header.host.PingHostMsg
+import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.rest.RESTConstant
+import org.zstack.header.rest.RESTFacade
+import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct
 import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatEipBackend
+import org.zstack.network.service.flat.FlatNetwordProviderGlobalConfig
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.vip.StopVipMsg
@@ -179,6 +187,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             testMigrateVmWithEipZSTAC86874()
             testFailedMigrationEipUsesActualVmLocationZSTAC86874()
             testAbnormalLifecycleMovesAndRollsBackEipsZSTAC86874()
+            testPingHostSyncsFlatEipAfterRollbackFailureZSTAC91420()
         }
     }
 
@@ -491,6 +500,243 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         def cmd = new KVMAgentCommands.ReportVmStateCmd(vmUuid: vmUuid, hostUuid: hostUuid, vmState: state)
         rest.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd),
                 [(RESTConstant.COMMAND_PATH): KVMConstant.KVM_REPORT_VM_STATE], String.class)
+    }
+
+    private void sendPingHost(String targetHostUuid) {
+        CloudBus bus = bean(CloudBus.class)
+        PingHostMsg pmsg = new PingHostMsg()
+        pmsg.hostUuid = targetHostUuid
+        bus.makeTargetServiceIdByResourceUuid(pmsg, HostConstant.SERVICE_ID, targetHostUuid)
+        assert bus.call(pmsg).success
+    }
+
+    void testPingHostSyncsFlatEipAfterRollbackFailureZSTAC91420() {
+        def eip = queryEip { conditions = ["name=eip"] }[0] as EipInventory
+        def eip1 = queryEip { conditions = ["name=eip-1"] }[0] as EipInventory
+        def eip2 = queryEip { conditions = ["name=eip-2"] }[0] as EipInventory
+        def vm = queryVmInstance { conditions = ["name=vm"] }[0] as VmInstanceInventory
+        def vm1 = queryVmInstance { conditions = ["name=vm-1"] }[0] as VmInstanceInventory
+        def vm2 = queryVmInstance { conditions = ["name=vm-2"] }[0] as VmInstanceInventory
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+
+        if (vm.state == VmInstanceState.Running.toString()) {
+            stopVmInstance {
+                uuid = vm.uuid
+            }
+        }
+        if (vm2.state == VmInstanceState.Running.toString()) {
+            stopVmInstance {
+                uuid = vm2.uuid
+            }
+        }
+        if (vm1.state == VmInstanceState.Running.toString()) {
+            stopVmInstance {
+                uuid = vm1.uuid
+            }
+        }
+        startVmInstance {
+            uuid = vm1.uuid
+            hostUuid = host1.uuid
+        }
+
+        updateGlobalConfig {
+            category = FlatNetwordProviderGlobalConfig.CATRGORY
+            name = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.name
+            value = "0"
+        }
+
+        def pluginRgty = bean(org.zstack.core.componentloader.PluginRegistry.class)
+        List<Tuple2<List<String>, String>> appliedVipEvents = Collections.synchronizedList([])
+        AfterApplyFlatEipExtensionPoint dynamicExt = new AfterApplyFlatEipExtensionPoint() {
+            @Override
+            void AfterApplyFlatEip(List<String> vipUuids, String hUuid) {
+                appliedVipEvents.add(new Tuple2<>(new ArrayList<>(vipUuids), hUuid))
+            }
+        }
+        pluginRgty.defineDynamicExtension(AfterApplyFlatEipExtensionPoint.class, dynamicExt)
+
+        try {
+            List<FlatEipBackend.SyncEipCmd> host1SyncCmds = Collections.synchronizedList([])
+            List<FlatEipBackend.SyncEipCmd> host2SyncCmds = Collections.synchronizedList([])
+            int host1SyncAttempt = 0
+            env.simulator(FlatEipBackend.SYNC_EIP_PATH) { HttpEntity<String> entity ->
+                String hUuid = entity.getHeaders().getFirst(org.zstack.header.Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+                FlatEipBackend.SyncEipCmd body = json(entity.getBody(), FlatEipBackend.SyncEipCmd.class)
+                def rsp = new FlatEipBackend.SyncEipRsp()
+                if (hUuid == host1.uuid) {
+                    host1SyncCmds.add(body)
+                    host1SyncAttempt++
+                    if (host1SyncAttempt == 1) {
+                        rsp.success = false
+                        rsp.error = "partial sync error on purpose"
+                        rsp.appliedVipUuids = [eip1.vipUuid]
+                    }
+                } else if (hUuid == host2.uuid) {
+                    host2SyncCmds.add(body)
+                }
+                return rsp
+            }
+
+            env.simulator(KVMConstant.KVM_START_VM_PATH) {
+                def rsp = new KVMAgentCommands.StartVmResponse()
+                rsp.setError("start vm timeout on purpose")
+                return rsp
+            }
+            env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+                rsp.success = false
+                rsp.error = "delete eip failed during rollback without GC on purpose"
+                return rsp
+            }
+
+            expect(AssertionError.class) {
+                startVmInstance {
+                    uuid = vm.uuid
+                    hostUuid = host1.uuid
+                }
+            }
+
+            assert queryGCJob {
+                conditions = [
+                        "context~=%${eip.uuid}%".toString(),
+                        "runnerClass=org.zstack.network.service.flat.FlatEipGC",
+                ]
+            }.isEmpty()
+
+            VmInstanceVO stoppedVo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            assert stoppedVo.state == VmInstanceState.Stopped
+            assert stoppedVo.hostUuid == null
+            EipInventory reloadedEip = queryEip { conditions = ["uuid=${eip.uuid}"] }[0]
+            assert reloadedEip.vmNicUuid == vm.vmNics[0].uuid
+
+            // Even with periodic count = 0, dirty host1 still syncs immediately on ping;
+            // 1st dirty-triggered sync fails partially: notifies extension AND re-marks host1 dirty
+            appliedVipEvents.clear()
+            sendPingHost(host1.uuid)
+            retryInSecs {
+                assert host1SyncCmds.size() == 1
+                assert appliedVipEvents.size() == 1
+            }
+            assert appliedVipEvents[0].first == [eip1.vipUuid]
+            assert appliedVipEvents[0].second == host1.uuid
+            List<String> syncedExpectedUuids = (host1SyncCmds[0].eips ?: []).collect { it.eipUuid }
+            assert syncedExpectedUuids == [eip1.uuid]
+            assert !syncedExpectedUuids.contains(eip.uuid)
+            assert !syncedExpectedUuids.contains(eip2.uuid)
+            assert (host1SyncCmds[0].inFlightEipUuids ?: []).isEmpty()
+
+            // Next single ping immediately retries sync because failed sync re-marked host1 dirty
+            sendPingHost(host1.uuid)
+            retryInSecs {
+                assert host1SyncCmds.size() == 2
+            }
+
+            // Once clean & baseline-synced, count = 0 disables periodic sync
+            host1SyncCmds.clear()
+            appliedVipEvents.clear()
+            sendPingHost(host1.uuid)
+            sendPingHost(host1.uuid)
+            assert host1SyncCmds.isEmpty()
+
+            updateGlobalConfig {
+                category = FlatNetwordProviderGlobalConfig.CATRGORY
+                name = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.name
+                value = "3"
+            }
+
+            sendPingHost(host1.uuid)
+            sendPingHost(host1.uuid)
+            assert host1SyncCmds.isEmpty()
+
+            sendPingHost(host1.uuid)
+            retryInSecs {
+                assert host1SyncCmds.size() == 1
+            }
+            assert appliedVipEvents.isEmpty()
+
+            // Concurrent detachEip excludes revoking EIP from expected and reports it in inFlightEipUuids
+            host1SyncCmds.clear()
+            env.cleanSimulatorAndMessageHandlers()
+            env.simulator(FlatEipBackend.SYNC_EIP_PATH) { HttpEntity<String> entity ->
+                String hUuid = entity.getHeaders().getFirst(org.zstack.header.Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+                FlatEipBackend.SyncEipCmd body = json(entity.getBody(), FlatEipBackend.SyncEipCmd.class)
+                if (hUuid == host1.uuid) {
+                    host1SyncCmds.add(body)
+                } else if (hUuid == host2.uuid) {
+                    host2SyncCmds.add(body)
+                }
+                return new FlatEipBackend.SyncEipRsp()
+            }
+            updateGlobalConfig {
+                category = FlatNetwordProviderGlobalConfig.CATRGORY
+                name = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.name
+                value = "1"
+            }
+            env.afterSimulator(FlatEipBackend.DELETE_EIP_PATH) { rsp ->
+                sendPingHost(host1.uuid)
+                retryInSecs {
+                    assert !host1SyncCmds.isEmpty()
+                }
+                return rsp
+            }
+            detachEip {
+                uuid = eip1.uuid
+            }
+            assert !((host1SyncCmds[0].eips ?: []).collect { it.eipUuid }.contains(eip1.uuid))
+            assert (host1SyncCmds[0].inFlightEipUuids ?: []).contains(eip1.uuid)
+
+            env.cleanSimulatorAndMessageHandlers()
+            host1SyncCmds.clear()
+            env.simulator(FlatEipBackend.SYNC_EIP_PATH) { HttpEntity<String> entity ->
+                String hUuid = entity.getHeaders().getFirst(org.zstack.header.Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+                FlatEipBackend.SyncEipCmd body = json(entity.getBody(), FlatEipBackend.SyncEipCmd.class)
+                if (hUuid == host1.uuid) {
+                    host1SyncCmds.add(body)
+                } else if (hUuid == host2.uuid) {
+                    host2SyncCmds.add(body)
+                }
+                return new FlatEipBackend.SyncEipRsp()
+            }
+            attachEip {
+                eipUuid = eip1.uuid
+                vmNicUuid = vm1.vmNics[0].uuid
+            }
+            sendPingHost(host1.uuid)
+            retryInSecs {
+                assert host1SyncCmds.size() == 1
+            }
+            assert (host1SyncCmds[0].eips ?: []).collect { it.eipUuid } == [eip1.uuid]
+
+            host2SyncCmds.clear()
+            env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp ->
+                sendPingHost(host2.uuid)
+                retryInSecs {
+                    assert !host2SyncCmds.isEmpty()
+                }
+                return rsp
+            }
+
+            migrateVm {
+                vmInstanceUuid = vm1.uuid
+                hostUuid = host2.uuid
+            }
+            assert (host2SyncCmds[0].inFlightEipUuids ?: []).contains(eip1.uuid)
+            List<String> destExpectedDuringMigrate = (host2SyncCmds[0].eips ?: []).collect { it.eipUuid }
+            assert !destExpectedDuringMigrate.contains(eip1.uuid)
+
+            migrateVm {
+                vmInstanceUuid = vm1.uuid
+                hostUuid = host1.uuid
+            }
+            updateGlobalConfig {
+                category = FlatNetwordProviderGlobalConfig.CATRGORY
+                name = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.name
+                value = "10"
+            }
+        } finally {
+            pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class).remove(dynamicExt)
+            env.cleanSimulatorAndMessageHandlers()
+        }
     }
 
     @Override
