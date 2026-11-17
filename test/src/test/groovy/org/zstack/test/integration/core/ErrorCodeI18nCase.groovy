@@ -32,6 +32,7 @@ class ErrorCodeI18nCase extends SubCase {
         testMessageGuaranteeFallbackToDetails()
         testMessageGuaranteeFallbackToDescription()
         testMessageGuaranteeOnCauseChain()
+        testDataVolumeLimitMessageArguments()
     }
 
     @Override
@@ -177,6 +178,20 @@ class ErrorCodeI18nCase extends SubCase {
         // both should have message populated
         assert mid.getMessage() == "System Error"
         assert root.getMessage() == "root cause detail"
+    }
+
+    void testDataVolumeLimitMessageArguments() {
+        def i18n = new GlobalErrorCodeI18nServiceImpl()
+        i18n.start()
+        def code = "ORG_ZSTACK_STORAGE_VOLUME_10038"
+        def vmUuid = "e8b4c06ca4a7433b9862b57342135a62"
+        def args = ["KVM", "24", "24", vmUuid] as String[]
+
+        def english = i18n.getLocalizedMessage(code, "en_US", args)
+        assert english.contains("24 data volumes are already attached")
+        assert english.contains("VM [uuid:${vmUuid}]")
+        assert i18n.getLocalizedMessage(code, "pt_BR", args) == english
+        assert i18n.getLocalizedMessage(code, "zh_CN", args).contains("24 个数据卷至 vm[uuid:${vmUuid}]")
     }
 
 }
