@@ -7,12 +7,12 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.longjob.TestLongJobInventorySecurity
 import org.zstack.core.ansible.AnsibleAgentRestartCase
 import org.zstack.storage.ceph.backup.CephUploadCancelRecoveryCase
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.compute.VmDataVolumeTemplateQuotaCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
-import org.zstack.test.unittest.image.ImageArchitectureFilterCase
 import org.zstack.test.unittest.kvm.KvmAgentRestartGlobalConfigCase
 import org.zstack.test.unittest.kvm.KVMHostSshCredentialTimeoutCase
 import org.zstack.test.unittest.kvm.KVMHostCpuModelCheckCase
@@ -33,6 +33,8 @@ import java.util.stream.Collectors
  * Created by lining on 2018/3/18.
  */
 
+import org.zstack.test.unittest.image.ImageArchitectureFilterCase
+
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
         AnsibleAgentRestartCase.class,
@@ -40,7 +42,6 @@ import java.util.stream.Collectors
         SshExecutionTimeoutCase.class,
         SshExecutionDeadlineCase.class,
         MessageTimeoutContextCase.class,
-        ImageArchitectureFilterCase.class,
         KVMHostSshCredentialTimeoutCase.class,
         KVMHostCpuModelCheckCase.class,
         HypervisorMetadataTimeoutCase.class,
@@ -54,7 +55,9 @@ import java.util.stream.Collectors
         ZnsProxyKvmReconnectExtensionTest.class,
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
-        SystemTagUtilsCase.class
+        SystemTagUtilsCase.class,
+        TestLongJobInventorySecurity.class,
+        ImageArchitectureFilterCase.class
     ])
 class JUnitTestSuite {
 
