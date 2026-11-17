@@ -515,6 +515,8 @@ public class KVMAgentCommands {
         private String hvmCpuFlag;
         @GrayVersion(value = "5.0.0")
         private String eptFlag;
+        @GrayVersion(value = "5.6.0")
+        private Map<String, Boolean> kvmModuleParameters;
         @GrayVersion(value = "5.0.0")
         private String cpuArchitecture;
         @GrayVersion(value = "5.0.0")
@@ -597,6 +599,14 @@ public class KVMAgentCommands {
 
         public void setHvmCpuFlag(String hvmCpuFlag) {
             this.hvmCpuFlag = hvmCpuFlag;
+        }
+
+        public Map<String, Boolean> getKvmModuleParameters() {
+            return kvmModuleParameters;
+        }
+
+        public void setKvmModuleParameters(Map<String, Boolean> kvmModuleParameters) {
+            this.kvmModuleParameters = kvmModuleParameters;
         }
 
         public String getEptFlag() {
