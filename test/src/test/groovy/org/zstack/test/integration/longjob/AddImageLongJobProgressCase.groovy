@@ -7,11 +7,15 @@ import org.zstack.core.Platform
 import org.zstack.core.progress.ProgressCommands
 import org.zstack.header.core.progress.ProgressConstants
 import org.zstack.header.core.progress.TaskType
+import org.zstack.header.identity.SessionInventory
 import org.zstack.header.image.APIAddImageMsg
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
+import org.zstack.header.longjob.APIDeleteLongJobEvent
+import org.zstack.header.longjob.APIDeleteLongJobMsg
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
+import org.zstack.header.message.APIEvent
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.rest.RESTFacade
 import org.zstack.sdk.BackupStorageInventory
@@ -21,6 +25,7 @@ import org.zstack.sdk.LongJobInventory
 import org.zstack.sdk.SubmitLongJobAction
 import org.zstack.sdk.TaskProgressInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
+import org.zstack.test.ApiSender
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.FuncTrigger
@@ -167,8 +172,11 @@ class AddImageLongJobProgressCase extends SubCase {
 
         assert invs.size() == num + 1
 
-        deleteLongJob {
-            uuid = jobInv.uuid
-        }
+        def deleteMsg = new APIDeleteLongJobMsg(
+                uuid: jobInv.uuid,
+                session: new SessionInventory(uuid: adminSession()))
+        APIEvent event = new ApiSender().send(deleteMsg, APIEvent.class)
+        assert event instanceof APIDeleteLongJobEvent
+        assert dbFindByUuid(jobInv.uuid, LongJobVO.class) == null
     }
 }
