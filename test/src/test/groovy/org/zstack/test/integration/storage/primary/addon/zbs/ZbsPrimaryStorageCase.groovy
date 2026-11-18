@@ -71,6 +71,7 @@ import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.storage.zbs.ZbsKvmAgentCommands.CheckHostStorageConnectionCmd
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.test.integration.physicalserver.PhysicalServerTest
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -100,6 +101,7 @@ class ZbsPrimaryStorageCase extends SubCase {
 
     @Override
     void clean() {
+        PhysicalServerTest.cleanupPhysicalServerRecords()
         env.delete()
     }
 
