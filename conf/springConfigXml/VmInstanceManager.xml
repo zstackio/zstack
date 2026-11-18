@@ -185,6 +185,7 @@
 
     <bean id="VmInstanceApiInterceptor" class="org.zstack.compute.vm.VmInstanceApiInterceptor">
         <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.identity.APIResourceReferenceExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
