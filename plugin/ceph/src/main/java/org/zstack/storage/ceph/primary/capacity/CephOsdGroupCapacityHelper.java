@@ -30,6 +30,8 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
 
 import javax.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -87,6 +89,64 @@ public class CephOsdGroupCapacityHelper {
             osdg.setTotalPhysicalCapacity(poolVO.getTotalCapacity());
             dbf.getEntityManager().merge(osdg);
         }
+    }
+
+    public Long updateSnapshotsTotalSize(CephCapacity report, List<CephPrimaryStoragePoolVO> managedPools) {
+        Map<String, CephPoolCapacity> reportsByName = report.getPoolCapacities().stream()
+                .collect(Collectors.toMap(CephPoolCapacity::getName, pool -> pool, (first, duplicate) -> first));
+        List<CephPoolCapacity> primaryStoragePools = new ArrayList<>();
+        Map<CephOsdGroupVO, List<CephPoolCapacity>> poolsByGroup = new HashMap<>();
+        for (CephPrimaryStoragePoolVO pool : managedPools) {
+            CephPoolCapacity poolReport = reportsByName.get(pool.getPoolName());
+            primaryStoragePools.add(poolReport);
+            if (pool.getOsdGroup() != null) {
+                poolsByGroup.computeIfAbsent(pool.getOsdGroup(), group -> new ArrayList<>()).add(poolReport);
+            }
+        }
+
+        poolsByGroup.forEach((group, pools) -> {
+            Long size = calculateSnapshotsTotalSizeByOsds(pools);
+            if (size != null && !size.equals(group.getSnapshotsTotalSize())) {
+                dbf.getEntityManager().createNativeQuery("update CephOsdGroupVO set snapshotsTotalSize = :size where uuid = :uuid")
+                        .setParameter("size", size).setParameter("uuid", group.getUuid()).executeUpdate();
+                group.setSnapshotsTotalSize(size);
+            }
+        });
+
+        Long size = calculateSnapshotsTotalSizeByOsds(primaryStoragePools);
+        if (size != null) {
+            dbf.getEntityManager().createNativeQuery("update CephPrimaryStorageVO set snapshotsTotalSize = :size where uuid = :uuid")
+                    .setParameter("size", size).setParameter("uuid", primaryStorageUuid).executeUpdate();
+        }
+        return size;
+    }
+
+    private static Long calculateSnapshotsTotalSizeByOsds(List<CephPoolCapacity> pools) {
+        Map<String, Float> diskUtilizationByOsd = new HashMap<>();
+        Map<String, Long> snapshotBytesByOsd = new HashMap<>();
+        for (CephPoolCapacity pool : pools) {
+            if (pool == null || pool.getRelatedOsds() == null || pool.getDiskUtilization() == null ||
+                    pool.getDiskUtilization() <= 0) {
+                return null;
+            }
+            for (String osd : pool.getRelatedOsds().split(",")) {
+                diskUtilizationByOsd.merge(osd, pool.getDiskUtilization(), Math::min);
+                CephPoolCapacity.OsdCapacity stat = pool.getRelatedOsdCapacity() == null ? null :
+                        pool.getRelatedOsdCapacity().get(osd);
+                if (stat != null && stat.snapshotUsedBytes != null && stat.snapshotUsedBytes >= 0) {
+                    snapshotBytesByOsd.putIfAbsent(osd, stat.snapshotUsedBytes);
+                }
+            }
+        }
+        if (diskUtilizationByOsd.isEmpty() || snapshotBytesByOsd.size() != diskUtilizationByOsd.size()) {
+            return null;
+        }
+
+        long snapshotsTotalSize = 0;
+        for (Map.Entry<String, Long> osd : snapshotBytesByOsd.entrySet()) {
+            snapshotsTotalSize += (long) (osd.getValue() * diskUtilizationByOsd.get(osd.getKey()).doubleValue());
+        }
+        return snapshotsTotalSize;
     }
 
     private String getPoolUuidFromInstallPath(String installPath) {
@@ -228,7 +288,8 @@ public class CephOsdGroupCapacityHelper {
 
         poolNames = poolNames.stream().distinct().collect(Collectors.toList());
 
-        long usedSize = 0;
+        Long snapshotsTotalSize = osdGroup.getSnapshotsTotalSize();
+        long usedSize = snapshotsTotalSize == null ? 0 : snapshotsTotalSize;
 
         List<VolumeStatus> needCountVolumeStates = asList(VolumeStatus.Creating, VolumeStatus.Ready, VolumeStatus.Deleted);
         List<VolumeVO> volumes = Q.New(VolumeVO.class)
@@ -236,7 +297,9 @@ public class CephOsdGroupCapacityHelper {
                 .eq(VolumeVO_.primaryStorageUuid, primaryStorageUuid)
                 .list();
         List<ImageCacheVO> imageCaches = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.primaryStorageUuid, primaryStorageUuid).list();
-        List<VolumeSnapshotVO> snapshots = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageUuid, primaryStorageUuid).list();
+        List<VolumeSnapshotVO> snapshots = snapshotsTotalSize == null
+                ? Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageUuid, primaryStorageUuid).list()
+                : Collections.emptyList();
 
         for (String poolName : poolNames) {
             String installPathPrefix = String.format("ceph://%s", poolName);

@@ -1281,6 +1281,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
+    public Map<String, Long> getSnapshotsTotalSizeByPrimaryStorage(List<String> primaryStorageUuids) {
+        List<Tuple> sizes = dbf.getEntityManager().createQuery(
+                "select ps.uuid, ps.snapshotsTotalSize from CephPrimaryStorageVO ps " +
+                "where ps.uuid in (:uuids) and ps.snapshotsTotalSize is not null", Tuple.class)
+                .setParameter("uuids", primaryStorageUuids).getResultList();
+        return sizes.stream().collect(Collectors.toMap(t -> t.get(0, String.class), t -> t.get(1, Long.class)));
+    }
+
+    @Override
     public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
         new CephOsdGroupCapacityHelper(struct.getPrimaryStorageUuid()).recalculateAvailableCapacity();
     }

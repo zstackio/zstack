@@ -118,6 +118,7 @@ public class PrimaryStorageCapacityRecalculator {
 
                 // calculate all snapshot size
                 {
+                    Map<String, Long> snapshotSizes = new HashMap<>();
                     String sql = "select sum(snapshot.size), snapshot.primaryStorageUuid" +
                             " from VolumeSnapshotVO snapshot" +
                             " where snapshot.primaryStorageUuid in (:psUuids)" +
@@ -132,12 +133,10 @@ public class PrimaryStorageCapacityRecalculator {
                             continue;
                         }
 
-                        long cap = t.get(0, Long.class);
-                        String psUuid = t.get(1, String.class);
-                        Long ncap = psCap.get(psUuid);
-                        ncap = ncap == null ? cap : ncap + cap;
-                        psCap.put(psUuid, ncap);
+                        snapshotSizes.put(t.get(1, String.class), t.get(0, Long.class));
                     }
+                    recalculateCapacityExtensions.values().forEach(ext -> snapshotSizes.putAll(ext.getSnapshotsTotalSizeByPrimaryStorage(psUuids)));
+                    snapshotSizes.forEach((uuid, size) -> psCap.merge(uuid, size, Long::sum));
                 }
             }
         }.run();
@@ -189,9 +188,8 @@ public class PrimaryStorageCapacityRecalculator {
             }
         } else {
             // there are volumes/images on the primary storage, re-calculate the available capacity
-            for (final Map.Entry<String, Long> e : psCap.entrySet()) {
-                final String psUuid = e.getKey();
-                final long used = e.getValue();
+            for (final String psUuid : psUuids) {
+                final long used = psCap.getOrDefault(psUuid, 0L);
 
                 new Runnable() {
                     @Override

@@ -37,6 +37,17 @@ public class CephOsdGroupVO extends StorageCapacityAO {
     @Column
     private long availableCapacity;
 
+    @Column(updatable = false)
+    private Long snapshotsTotalSize;
+
+    public Long getSnapshotsTotalSize() {
+        return snapshotsTotalSize;
+    }
+
+    public void setSnapshotsTotalSize(Long snapshotsTotalSize) {
+        this.snapshotsTotalSize = snapshotsTotalSize;
+    }
+
     @Column
     private Timestamp createDate;
 

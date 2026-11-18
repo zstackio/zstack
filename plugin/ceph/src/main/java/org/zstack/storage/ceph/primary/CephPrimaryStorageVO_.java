@@ -11,6 +11,7 @@ import javax.persistence.metamodel.StaticMetamodel;
 @StaticMetamodel(CephPrimaryStorageVO.class)
 public class CephPrimaryStorageVO_ extends PrimaryStorageVO_ {
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> fsid;
+    public static volatile SingularAttribute<CephPrimaryStorageVO, Long> snapshotsTotalSize;
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> rootVolumePoolName;
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> dataVolumePoolName;
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> imageCachePoolName;

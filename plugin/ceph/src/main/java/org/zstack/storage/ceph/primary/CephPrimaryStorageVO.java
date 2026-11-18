@@ -33,6 +33,13 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @Column
     private String fsid;
 
+    @Column(updatable = false)
+    private Long snapshotsTotalSize;
+
+    public Long getSnapshotsTotalSize() {
+        return snapshotsTotalSize;
+    }
+
     private String userKey;
 
     public String getUserKey() {
@@ -54,6 +61,7 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
         super(other);
         this.mons = other.mons;
         this.fsid = other.fsid;
+        this.snapshotsTotalSize = other.snapshotsTotalSize;
         this.pools = other.pools;
     }
 

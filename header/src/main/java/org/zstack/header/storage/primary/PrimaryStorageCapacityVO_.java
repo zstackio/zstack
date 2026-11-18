@@ -11,6 +11,7 @@ public class PrimaryStorageCapacityVO_ extends StorageCapacityAO_ {
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, String> uuid;
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, Long> totalCapacity;
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, Long> availableCapacity;
+    public static volatile SingularAttribute<PrimaryStorageCapacityVO, Long> systemUsedCapacity;
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, Timestamp> createDate;
     public static volatile SingularAttribute<PrimaryStorageCapacityVO, Timestamp> lastOpDate;
 }
