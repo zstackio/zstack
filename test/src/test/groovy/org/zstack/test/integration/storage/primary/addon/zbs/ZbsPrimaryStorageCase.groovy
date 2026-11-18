@@ -1325,6 +1325,11 @@ class ZbsPrimaryStorageCase extends SubCase {
             reconnectPrimaryStorage {
                 uuid = ps.uuid
             }
+            retryInSecs {
+                assert getUsedCapacity() == 0
+                assert getUsedCapacity("lpool1") == 0
+                assert getUsedCapacity("lpool2") == 0
+            }
             def capacity = Q.New(PrimaryStorageCapacityVO.class).eq(PrimaryStorageCapacityVO_.uuid, ps.uuid).find()
             assert capacity.totalCapacity > 0 : "Fixture total capacity was not restored: ${capacity.totalCapacity}"
             assert capacity.availableCapacity > diskOffering.diskSize :
