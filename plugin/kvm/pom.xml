@@ -11,6 +11,11 @@
     <dependencies>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>physicalServer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>compute</artifactId>
             <version>${project.version}</version>
         </dependency>

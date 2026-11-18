@@ -1,0 +1,192 @@
+package org.zstack.physicalserver;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import javax.persistence.Query;
+import static org.zstack.core.Platform.operr;
+
+public class PhysicalServerAssignmentRepository {
+    private static final CLogger logger = Utils.getLogger(PhysicalServerAssignmentRepository.class);
+
+    @Autowired
+    private DatabaseFacade dbf;
+
+    @Transactional
+    public void ensureDefaults(Collection<String> serverUuids, String roleType, Long memory) {
+        if (serverUuids == null || serverUuids.isEmpty()) {
+            return;
+        }
+        Query insert = dbf.getEntityManager().createNativeQuery(
+                "INSERT IGNORE INTO PhysicalServerResourceAssignmentVO " +
+                        "(uuid, serverUuid, roleType, cpuSet, memory, state, createDate, lastOpDate) " +
+                        "SELECT REPLACE(UUID(), '-', ''), p.uuid, :roleType, '', :memory, :state, NOW(), NOW() " +
+                        "FROM PhysicalServerVO p WHERE p.uuid IN (:serverUuids)");
+        insert.setParameter("serverUuids", serverUuids);
+        insert.setParameter("roleType", roleType);
+        insert.setParameter("memory", memory);
+        insert.setParameter("state", PhysicalServerResourceAssignmentState.Unsynced.name());
+        insert.executeUpdate();
+    }
+
+    public void update(PhysicalServerResourceAssignmentVO current, APIUpdatePhysicalServerResourceAssignmentMsg msg) {
+        String cpuSet = msg.getCpuSet() == null ? current.getCpuSet() : msg.getCpuSet();
+        Long memory = msg.getMemory() == null ? current.getMemory() : msg.getMemory();
+        int updated = SQL.New("update PhysicalServerResourceAssignmentVO a set " +
+                                "a.cpuSet = :cpuSet, a.memory = :memory, a.state = :state " +
+                                "where a.uuid = :uuid")
+                .param("cpuSet", cpuSet)
+                .param("memory", memory)
+                .param("state", PhysicalServerResourceAssignmentState.Unsynced)
+                .param("uuid", current.getUuid()).execute();
+        if (updated == 0) {
+            throw assignmentMissing(msg.getServerUuid(), msg.getRoleType());
+        }
+        logger.info(String.format("physical server resource assignment updated: serverUuid[%s], " +
+                        "roleType[%s], accountUuid[%s], cpuSet[%s -> %s], memory[%s -> %s]",
+                current.getServerUuid(), current.getRoleType(),
+                msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
+                current.getCpuSet(), cpuSet, current.getMemory(), memory));
+        current.setCpuSet(cpuSet);
+        current.setMemory(memory);
+        current.setState(PhysicalServerResourceAssignmentState.Unsynced);
+    }
+
+    public void recordObservation(PhysicalServerResourceAssignmentVO current, PhysicalServerResourceBoundary boundary) {
+        String cpuSet = boundary.getCpuSet() == null ? "" : boundary.getCpuSet();
+        int updated = SQL.New("update PhysicalServerResourceAssignmentVO a set " +
+                                "a.cpuSet = :cpuSet, a.memory = :memory, a.state = :state " +
+                                "where a.uuid = :uuid")
+                .param("cpuSet", cpuSet)
+                .param("memory", boundary.getMemory())
+                .param("state", PhysicalServerResourceAssignmentState.Synced)
+                .param("uuid", current.getUuid()).execute();
+        if (updated == 0) {
+            return;
+        }
+        current.setCpuSet(cpuSet);
+        current.setMemory(boundary.getMemory());
+        current.setState(PhysicalServerResourceAssignmentState.Synced);
+    }
+
+    public void updateCpuSet(PhysicalServerResourceAssignmentVO current, String cpuSet) {
+        if (cpuSet.equals(current.getCpuSet())) {
+            return;
+        }
+        int updated = SQL.New("update PhysicalServerResourceAssignmentVO a set " +
+                                "a.cpuSet = :cpuSet, a.state = :state " +
+                                "where a.uuid = :uuid")
+                .param("cpuSet", cpuSet)
+                .param("state", PhysicalServerResourceAssignmentState.Unsynced)
+                .param("uuid", current.getUuid()).execute();
+        if (updated == 0) {
+            throw assignmentMissing(current.getServerUuid(), current.getRoleType());
+        }
+        current.setCpuSet(cpuSet);
+        current.setState(PhysicalServerResourceAssignmentState.Unsynced);
+    }
+
+    public void updateMemory(PhysicalServerResourceAssignmentVO current, long memory) {
+        int updated = SQL.New("update PhysicalServerResourceAssignmentVO a set a.memory = :memory, a.state = :state " +
+                        "where a.uuid = :uuid")
+                .param("memory", memory).param("state", PhysicalServerResourceAssignmentState.Unsynced)
+                .param("uuid", current.getUuid()).execute();
+        if (updated == 0) {
+            throw assignmentMissing(current.getServerUuid(), current.getRoleType());
+        }
+        current.setMemory(memory);
+        current.setState(PhysicalServerResourceAssignmentState.Unsynced);
+    }
+
+    public boolean markSynced(PhysicalServerResourceAssignmentVO applied) {
+        String memoryPredicate = applied.getMemory() == null ? "a.memory is null" : "a.memory = :memory";
+        SQL sql = SQL.New("update PhysicalServerResourceAssignmentVO a set a.state = :state " +
+                                "where a.uuid = :uuid and a.cpuSet = :cpuSet and " + memoryPredicate)
+                .param("state", PhysicalServerResourceAssignmentState.Synced)
+                .param("uuid", applied.getUuid()).param("cpuSet", applied.getCpuSet());
+        if (applied.getMemory() != null) {
+            sql.param("memory", applied.getMemory());
+        }
+        return sql.execute() == 1;
+    }
+
+    public void markUnsynced(String uuid) {
+        SQL.New("update PhysicalServerResourceAssignmentVO a " + "set a.state = :state where a.uuid = :uuid")
+                .param("state", PhysicalServerResourceAssignmentState.Unsynced).param("uuid", uuid).execute();
+    }
+
+    @Transactional
+    public void markUnsyncedByServerUuids(Collection<String> serverUuids) {
+        if (serverUuids == null || serverUuids.isEmpty()) {
+            return;
+        }
+        Query update = dbf.getEntityManager().createQuery("update PhysicalServerResourceAssignmentVO a " +
+                        "set a.state = :state " + "where a.serverUuid in (:serverUuids)");
+        update.setParameter("state", PhysicalServerResourceAssignmentState.Unsynced);
+        update.setParameter("serverUuids", serverUuids);
+        update.executeUpdate();
+    }
+
+    public boolean delete(String uuid) {
+        boolean deleted = SQL.New("delete from PhysicalServerResourceAssignmentVO a where a.uuid = :uuid")
+                .param("uuid", uuid).execute() == 1;
+        if (deleted) {
+            logger.info(String.format(
+                    "physical server resource assignment deleted after release: assignmentUuid[%s]", uuid));
+        }
+        return deleted;
+    }
+
+    public PhysicalServerResourceAssignmentVO find(String serverUuid, String roleType) {
+        return Q.New(PhysicalServerResourceAssignmentVO.class)
+                .eq(PhysicalServerResourceAssignmentVO_.serverUuid, serverUuid)
+                .eq(PhysicalServerResourceAssignmentVO_.roleType, roleType).find();
+    }
+
+    public List<String> listServerUuids(String lastUuid, int limit) {
+        return Q.New(PhysicalServerResourceAssignmentVO.class).select(PhysicalServerResourceAssignmentVO_.serverUuid)
+                .gt(PhysicalServerResourceAssignmentVO_.serverUuid, lastUuid)
+                .groupBy(PhysicalServerResourceAssignmentVO_.serverUuid)
+                .orderByAsc(PhysicalServerResourceAssignmentVO_.serverUuid).limit(limit).listValues();
+    }
+
+    public List<String> listServerUuids(String role, String lastUuid, int limit) {
+        return Q.New(PhysicalServerResourceAssignmentVO.class).select(PhysicalServerResourceAssignmentVO_.serverUuid)
+                .eq(PhysicalServerResourceAssignmentVO_.roleType, role)
+                .gt(PhysicalServerResourceAssignmentVO_.serverUuid, lastUuid)
+                .orderByAsc(PhysicalServerResourceAssignmentVO_.serverUuid).limit(limit).listValues();
+    }
+
+    public List<PhysicalServerResourceAssignmentVO> listAssignments(Collection<String> serverUuids) {
+        if (serverUuids == null || serverUuids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Q.New(PhysicalServerResourceAssignmentVO.class)
+                .in(PhysicalServerResourceAssignmentVO_.serverUuid, serverUuids).list();
+    }
+
+    public Map<String, PhysicalServerResourceAssignmentVO> mapByRole(String serverUuid) {
+        Map<String, PhysicalServerResourceAssignmentVO> result = new LinkedHashMap<>();
+        for (PhysicalServerResourceAssignmentVO assignment : listAssignments(Collections.singleton(serverUuid))) {
+            result.put(assignment.getRoleType(), assignment);
+        }
+        return result;
+    }
+
+    OperationFailureException assignmentMissing(String serverUuid, String roleType) {
+        return new OperationFailureException(operr(PhysicalServerConstant.ERROR_CODE,
+                "Resource assignment for role[%s] " +
+                        "does not exist on physical server[uuid:%s]", roleType, serverUuid));
+    }
+}

@@ -7,6 +7,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class HostNUMANode {
     public List<String> distance;
     public List<String> cpus;
+    public List<String> onlineCpus;
+    public List<List<String>> coreGroups;
     public Long free;
     public Long size;
     public String nodeID;
@@ -34,6 +36,22 @@ public class HostNUMANode {
 
     public void setCpus(List<String> cpus) {
         this.cpus = cpus;
+    }
+
+    public List<String> getOnlineCpus() {
+        return onlineCpus;
+    }
+
+    public void setOnlineCpus(List<String> onlineCpus) {
+        this.onlineCpus = onlineCpus;
+    }
+
+    public List<List<String>> getCoreGroups() {
+        return coreGroups;
+    }
+
+    public void setCoreGroups(List<List<String>> coreGroups) {
+        this.coreGroups = coreGroups;
     }
 
     public Long getFree() {

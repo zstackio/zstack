@@ -60,9 +60,8 @@ public class ExternalPrimaryStorageInventory extends PrimaryStorageInventory {
     public ExternalPrimaryStorageInventory(ExternalPrimaryStorageVO lvo) {
         super(lvo);
         identity = lvo.getIdentity();
-        config = JSONObjectUtil.toObject(lvo.getConfig(), LinkedHashMap.class);
-        desensitizeConfig(config);
-        addonInfo = JSONObjectUtil.toObject(lvo.getAddonInfo(), LinkedHashMap.class);
+        setConfig(JSONObjectUtil.toObject(lvo.getConfig(), LinkedHashMap.class));
+        setAddonInfo(JSONObjectUtil.toObject(lvo.getAddonInfo(), LinkedHashMap.class));
         outputProtocols = lvo.getOutputProtocols().stream().map(PrimaryStorageOutputProtocolRefVO::getOutputProtocol).collect(Collectors.toList());
         defaultProtocol = lvo.getDefaultProtocol();
     }
@@ -114,6 +113,7 @@ public class ExternalPrimaryStorageInventory extends PrimaryStorageInventory {
 
     public void setConfig(LinkedHashMap config) {
         this.config = config;
+        desensitizeConfig(config);
     }
 
     public List<String> getOutputProtocols() {
@@ -138,5 +138,14 @@ public class ExternalPrimaryStorageInventory extends PrimaryStorageInventory {
 
     public void setAddonInfo(LinkedHashMap addonInfo) {
         this.addonInfo = addonInfo;
+        if (addonInfo == null) return;
+        Object mdsInfos = addonInfo.get("mdsInfos");
+        if (mdsInfos instanceof List) {
+            for (Object mdsInfo : (List) mdsInfos) {
+                if (mdsInfo instanceof Map) {
+                    ((Map) mdsInfo).remove("password");
+                }
+            }
+        }
     }
 }

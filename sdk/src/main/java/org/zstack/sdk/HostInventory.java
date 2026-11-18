@@ -244,6 +244,14 @@ public class HostInventory  {
         return this.architecture;
     }
 
+    public java.lang.String serverUuid;
+    public void setServerUuid(java.lang.String serverUuid) {
+        this.serverUuid = serverUuid;
+    }
+    public java.lang.String getServerUuid() {
+        return this.serverUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

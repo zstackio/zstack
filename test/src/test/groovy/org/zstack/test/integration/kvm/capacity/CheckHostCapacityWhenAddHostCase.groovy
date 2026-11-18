@@ -69,7 +69,7 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
 
         KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(76)
 
-        createVmInstance {
+        def vm = createVmInstance {
             name = "vm"
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
@@ -86,6 +86,36 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
                 clusterUuid = cluster.uuid
             }
         }
+
+        stopVmInstance { uuid = vm.uuid }
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.RESERVED_CPU_CAPACITY.name
+            value = (result.availableCpu - instanceOffering.cpuNum + 1).toString()
+        }
+        def capacity = getCpuMemoryCapacity { clusterUuids = [cluster.uuid] }
+        def candidates = getVmStartingCandidateClustersHosts { uuid = vm.uuid }
+        assert candidates.hosts.empty && capacity.availableCpu == instanceOffering.cpuNum - 1 :
+                "Reserved CPU not reflected: hosts=${candidates.hosts*.uuid}, availableCpu=${capacity.availableCpu}"
+        assert capacity.totalCpu == result.totalCpu : "Reserved CPU must not reduce total CPU"
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.RESERVED_CPU_CAPACITY.name
+            value = (result.availableCpu - instanceOffering.cpuNum).toString()
+        }
+        candidates = getVmStartingCandidateClustersHosts { uuid = vm.uuid }
+        assert candidates.hosts*.uuid == [vm.hostUuid] : "An exact CPU fit must remain a candidate"
+        capacity = getCpuMemoryCapacity { clusterUuids = [cluster.uuid] }
+        assert capacity.availableCpu == instanceOffering.cpuNum : "Capacity must match the exact CPU fit"
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.RESERVED_CPU_CAPACITY.name
+            value = "0"
+        }
+        capacity = getCpuMemoryCapacity { clusterUuids = [cluster.uuid] }
+        assert capacity.availableCpu == result.availableCpu : "Clearing reserved CPU must restore available CPU"
     }
 
     void testCheckCapacityWhenAddHost() {

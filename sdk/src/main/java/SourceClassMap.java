@@ -717,6 +717,10 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceState", "org.zstack.sdk.MdevDeviceState");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus", "org.zstack.sdk.MdevDeviceStatus");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType", "org.zstack.sdk.MdevDeviceType");
+			put("org.zstack.physicalserver.PhysicalServerInventory", "org.zstack.sdk.PhysicalServerInventory");
+			put("org.zstack.physicalserver.PhysicalServerManagedServiceInventory", "org.zstack.sdk.PhysicalServerManagedServiceInventory");
+			put("org.zstack.physicalserver.PhysicalServerResourceAssignmentInventory", "org.zstack.sdk.PhysicalServerResourceAssignmentInventory");
+			put("org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentResult", "org.zstack.sdk.RefreshPhysicalServerResourceAssignmentResult");
 			put("org.zstack.policyRoute.PolicyRouteRuleInventory", "org.zstack.sdk.PolicyRouteRuleInventory");
 			put("org.zstack.policyRoute.PolicyRouteRuleProtocol", "org.zstack.sdk.PolicyRouteRuleProtocol");
 			put("org.zstack.policyRoute.PolicyRouteRuleSetInventory", "org.zstack.sdk.PolicyRouteRuleSetInventory");
@@ -1453,6 +1457,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
 			put("org.zstack.sdk.PendingTaskInfo", "org.zstack.header.core.progress.PendingTaskInfo");
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
+			put("org.zstack.sdk.PhysicalServerInventory", "org.zstack.physicalserver.PhysicalServerInventory");
+			put("org.zstack.sdk.PhysicalServerManagedServiceInventory", "org.zstack.physicalserver.PhysicalServerManagedServiceInventory");
+			put("org.zstack.sdk.PhysicalServerResourceAssignmentInventory", "org.zstack.physicalserver.PhysicalServerResourceAssignmentInventory");
 			put("org.zstack.sdk.PhysicalSwitchInventory", "org.zstack.network.hostNetworkInterface.PhysicalSwitchInventory");
 			put("org.zstack.sdk.PhysicalSwitchPortInventory", "org.zstack.network.hostNetworkInterface.PhysicalSwitchPortInventory");
 			put("org.zstack.sdk.PluginDriverInventory", "org.zstack.header.core.external.plugin.PluginDriverInventory");
@@ -1500,6 +1507,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
 			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");
+			put("org.zstack.sdk.RefreshPhysicalServerResourceAssignmentResult", "org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentResult");
 			put("org.zstack.sdk.RemoteVtepInventory", "org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");

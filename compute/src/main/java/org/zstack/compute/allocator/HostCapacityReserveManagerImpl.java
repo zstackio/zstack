@@ -154,7 +154,11 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         return candidates.parallelStream()
                 .filter(hvo -> {
                     ReservedHostCapacity hc = reserves.get(hvo.getUuid());
-                    if (requiredMemory == 0 || hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() >= ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
+                    if ((requiredCpu == 0
+                            || hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() >= requiredCpu)
+                            && (requiredMemory == 0
+                            || hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity()
+                            >= ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory))) {
                         return true;
                     } else {
                         if (logger.isTraceEnabled()) {

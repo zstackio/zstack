@@ -26,6 +26,9 @@ public class ManagementNodeVO {
     @Column
     private int port;
 
+    @Column
+    private String serverUuid;
+
     public String getHostName() {
         return hostName;
     }
@@ -72,5 +75,13 @@ public class ManagementNodeVO {
 
     public void setHeartBeat(Timestamp heartBeat) {
         this.heartBeat = heartBeat;
+    }
+
+    public String getServerUuid() {
+        return serverUuid;
+    }
+
+    public void setServerUuid(String serverUuid) {
+        this.serverUuid = serverUuid;
     }
 }

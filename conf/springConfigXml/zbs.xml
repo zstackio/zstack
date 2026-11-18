@@ -35,4 +35,31 @@
             <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
+
+    <bean id="ZbsNodeRefContributor" class="org.zstack.storage.zbs.ZbsNodeRefContributorImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.zbs.ZbsNodeRefContributor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZbsAgentResourceUsageProvider"
+          class="org.zstack.storage.zbs.ZbsAgentResourceUsageProvider">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.zbs.ZbsResourceUsageProvider" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZbsResourceAssignmentFactory"
+          class="org.zstack.storage.zbs.ZbsResourceAssignmentFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentFactory" />
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
+    <bean id="ZbsResourceAssignmentCascadeExtension"
+          class="org.zstack.storage.zbs.ZbsResourceAssignmentCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
