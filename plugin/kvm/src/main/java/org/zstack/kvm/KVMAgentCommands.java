@@ -3883,6 +3883,31 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class CheckStorageVmUsageCmd extends AgentCommand {
+        @GrayVersion(value = "5.6.0")
+        private List<String> primaryStorageUuids;
+
+        public List<String> getPrimaryStorageUuids() {
+            return primaryStorageUuids;
+        }
+
+        public void setPrimaryStorageUuids(List<String> primaryStorageUuids) {
+            this.primaryStorageUuids = primaryStorageUuids;
+        }
+    }
+
+    public static class CheckStorageVmUsageRsp extends AgentResponse {
+        private List<String> unusedPrimaryStorageUuids;
+
+        public List<String> getUnusedPrimaryStorageUuids() {
+            return unusedPrimaryStorageUuids;
+        }
+
+        public void setUnusedPrimaryStorageUuids(List<String> unusedPrimaryStorageUuids) {
+            this.unusedPrimaryStorageUuids = unusedPrimaryStorageUuids;
+        }
+    }
+
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
         @GrayVersion(value = "5.0.0")
         private List<VmNicSecurityTO> vmNicTOs;

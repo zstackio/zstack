@@ -16,4 +16,5 @@ public interface XInfiniConstants {
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     int DEFAULT_POLLING_INTERVAL_IN_SECOND = 1;
     int DEFAULT_POLLING_TIMES = 1800;
+    int BDC_FENCED_STATE_POLLING_TIMES = 60;
 }

@@ -17,11 +17,13 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.addon.primary.SetHostStorageNodeBlacklistMsg;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -222,6 +224,58 @@ public class KvmVmActiveVolumeSyncPingTask implements KVMPingAgentNoFailureExten
         });
     }
 
+    private void unblacklistStoragesWithoutVmUsage(HostInventory host, NoErrorCompletion completion) {
+        List<String> blacklistedPsUuids = KVMSystemTags.NODE_BLACKLIST.getTokensOfTagsByResourceUuid(host.getUuid())
+                .stream().map(tokens -> tokens.get(KVMSystemTags.NODE_BLACKLIST_PRIMARY_STORAGE_UUID_TOKEN))
+                .collect(Collectors.toList());
+        if (blacklistedPsUuids.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        KVMAgentCommands.CheckStorageVmUsageCmd cmd = new KVMAgentCommands.CheckStorageVmUsageCmd();
+        cmd.setPrimaryStorageUuids(blacklistedPsUuids);
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setNoStatusCheck(true);
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(KVMConstant.KVM_CHECK_STORAGE_VM_USAGE_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                ErrorableValue<KVMAgentCommands.CheckStorageVmUsageRsp> rsp =
+                        KVMHostAsyncHttpCallReply.unwrap(reply, KVMAgentCommands.CheckStorageVmUsageRsp.class);
+                if (!rsp.isSuccess()) {
+                    logger.warn(String.format("failed to check vm usage of primary storages%s on kvm host[uuid:%s], %s",
+                            blacklistedPsUuids, host.getUuid(), rsp.error));
+                    completion.done();
+                    return;
+                }
+
+                rsp.result.getUnusedPrimaryStorageUuids().forEach(psUuid -> unblacklist(host.getUuid(), psUuid));
+                completion.done();
+            }
+        });
+    }
+
+    private void unblacklist(String hostUuid, String psUuid) {
+        SetHostStorageNodeBlacklistMsg msg = new SetHostStorageNodeBlacklistMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setPrimaryStorageUuid(psUuid);
+        msg.setBlacklist(false);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(null) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to unblacklist host[uuid:%s] on primary storage[uuid:%s]: %s",
+                            hostUuid, psUuid, reply.getError()));
+                }
+            }
+        });
+    }
+
 
     @Override
     public boolean start() {
@@ -252,7 +306,12 @@ public class KvmVmActiveVolumeSyncPingTask implements KVMPingAgentNoFailureExten
                 syncVolume(host, new NoErrorCompletion() {
                     @Override
                     public void done() {
-                        chain.next();
+                        unblacklistStoragesWithoutVmUsage(host, new NoErrorCompletion() {
+                            @Override
+                            public void done() {
+                                chain.next();
+                            }
+                        });
                     }
                 });
             }

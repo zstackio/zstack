@@ -208,6 +208,38 @@ public class XInfiniApiHelper {
         return callErrorOut(req, GetBdcResponse.class).toModule();
     }
 
+    public void blacklistBdc(int id) {
+        setBdcStorageFencedState(id, BdcStorageFencedState.fenced);
+    }
+
+    public void unblacklistBdc(int id) {
+        setBdcStorageFencedState(id, BdcStorageFencedState.unfenced);
+    }
+
+    private void setBdcStorageFencedState(int id, BdcStorageFencedState state) {
+        if (!state.toString().equals(getBdc(id).getSpec().getStorageFencedState())) {
+            UpdateBdcRequest req = new UpdateBdcRequest();
+            req.setId(id);
+            req.setStorageFencedState(state.toString());
+            callErrorOut(req, GetBdcResponse.class);
+        }
+
+        new Retry<Void>() {
+            @Override
+            @RetryCondition(onExceptions = {RetryException.class},
+                    times = XInfiniConstants.BDC_FENCED_STATE_POLLING_TIMES)
+            protected Void call() {
+                BdcModule bdc = getBdc(id);
+                if (!state.toString().equals(bdc.getSpec().getStorageFencedState())
+                        || !state.toString().equals(bdc.getStatus().getStorageFencedState())) {
+                    throw new RetryException(String.format(
+                            "bdc[id:%s] storage fenced state has not reached %s", id, state));
+                }
+                return null;
+            }
+        }.run();
+    }
+
     public BsPolicyModule getBsPolicy(int id) {
         GetBsPolicyRequest req = new GetBsPolicyRequest();
         req.setId(id);
@@ -463,7 +495,18 @@ public class XInfiniApiHelper {
         GetBdcBdevRequest gReq = new GetBdcBdevRequest();
         gReq.setId(rsp.getSpec().getId());
         return retryUtilStateActive(gReq, GetBdcBdevResponse.class,
-                (GetBdcBdevResponse gvp) -> gvp.toModule().getMetadata().getState().getState()).toModule();
+                (GetBdcBdevResponse gvp) -> getBdcBdevStateForActivation(gvp.toModule())).toModule();
+    }
+
+    String getBdcBdevStateForActivation(BdcBdevModule bdev) {
+        String state = bdev.getMetadata().getState().getState();
+        if (MetadataState.deleting.toString().equals(state) || MetadataState.deleted.toString().equals(state)) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_XINFINI_10000,
+                    "cannot activate bdev[id:%s, bdcId:%s, volumeId:%s] in state[%s]; " +
+                            "check old-client usage and wait for deletion to finish before retrying",
+                    bdev.getSpec().getId(), bdev.getSpec().getBdcId(), bdev.getSpec().getBsVolumeId(), state));
+        }
+        return state;
     }
 
     public BdcBdevModule queryBdcBdevByVolumeIdAndBdcId(int volId, int bdcId) {
@@ -485,7 +528,9 @@ public class XInfiniApiHelper {
             return createBdcBdev(bdcId, volId, bdevName, vcfs);
         }
 
-        return rsp.getItems().get(0);
+        BdcBdevModule bdev = rsp.getItems().get(0);
+        getBdcBdevStateForActivation(bdev);
+        return bdev;
     }
 
     public List<BdcBdevModule> queryBdcBdevByVolumeId(int volId) {

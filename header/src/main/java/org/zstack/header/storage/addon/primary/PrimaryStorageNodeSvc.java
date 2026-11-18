@@ -15,6 +15,14 @@ public interface PrimaryStorageNodeSvc {
 
     void blacklist(String installPath, String protocol, HostInventory h);
 
+    default void blacklistNode(HostInventory h) {
+        throw new UnsupportedOperationException("node blacklist is not supported");
+    }
+
+    default void unblacklistNode(HostInventory h) {
+        throw new UnsupportedOperationException("node blacklist is not supported");
+    }
+
     String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable);
     BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable);
 

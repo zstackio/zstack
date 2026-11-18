@@ -4,5 +4,6 @@ public enum MetadataState {
     active,
     creating,
     deleting,
+    deleted,
     reconciling,
 }

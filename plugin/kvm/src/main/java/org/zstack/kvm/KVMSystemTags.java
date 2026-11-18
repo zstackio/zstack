@@ -27,6 +27,10 @@ public class KVMSystemTags {
     public static final String LIBVIRT_PACKAGE_VERSION_TOKEN = "version";
     public static PatternedSystemTag LIBVIRT_PACKAGE_VERSION = new PatternedSystemTag(String.format("libvirt::package::version::{%s}", LIBVIRT_PACKAGE_VERSION_TOKEN), HostVO.class);
 
+    public static final String NODE_BLACKLIST_PRIMARY_STORAGE_UUID_TOKEN = "primaryStorageUuid";
+    public static PatternedSystemTag NODE_BLACKLIST = new PatternedSystemTag(
+            String.format("nodeBlacklist::{%s}", NODE_BLACKLIST_PRIMARY_STORAGE_UUID_TOKEN), HostVO.class);
+
     public static SystemTag FORCE_DEPLOYMENT_ONCE = new SystemTag("force::deployment::once", HostVO.class);
 
     public static final String HVM_CPU_FLAG_TOKEN = "flag";

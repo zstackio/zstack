@@ -354,6 +354,10 @@ class KVMSimulator implements Simulator {
             return new VolumeSyncRsp()
         }
 
+        spec.simulator(KVMConstant.KVM_CHECK_STORAGE_VM_USAGE_PATH) {
+            return new CheckStorageVmUsageRsp(unusedPrimaryStorageUuids: [])
+        }
+
         spec.simulator(KVMConstant.KVM_ATTACH_VOLUME) { HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachDataVolumeCmd.class)
             // assume all data volumes has same deviceType.

@@ -2,11 +2,14 @@ package org.zstack.test.integration.storage.primary.addon.xinfini
 
 import org.springframework.http.HttpEntity
 import javax.servlet.http.HttpServletRequest
+import org.zstack.compute.host.HostTracker
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.MessageCommandRecorder
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.core.thread.ThreadFacade
 import org.zstack.xinfini.XInfiniStorageController
 import org.zstack.xinfini.XInfiniApiHelper
 import org.zstack.xinfini.XInfiniPathHelper
@@ -20,6 +23,8 @@ import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
 import org.zstack.header.host.PingHostMsg
 import org.zstack.header.message.MessageReply
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo
+import org.zstack.header.storage.addon.primary.SetHostStorageNodeBlacklistMsg
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetReply
 import org.zstack.header.storage.backup.UploadImageToRemoteTargetReply
@@ -147,7 +152,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
 
                     kvm {
                         name = "kvm"
-                        managementIp = "localhost"
+                        managementIp = "127.0.0.1"
                         username = "root"
                         password = "password"
                     }
@@ -202,6 +207,8 @@ class XinfiniPrimaryStorageCase extends SubCase {
             simulatorEnv()
             testCreateXinfiniStorage()
             testCreateVm()
+            testRejectDeletingBdevActivation()
+            testNodeBlacklistKeepsActiveClients()
             testPreventSplitBrainOnDeactivateFailure()
             testHandleInactiveVolume()
             testCreateVolumeRollback()
@@ -366,6 +373,226 @@ class XinfiniPrimaryStorageCase extends SubCase {
         deleteVm(vm2.uuid)
     }
 
+    void testRejectDeletingBdevActivation() {
+        String collectionPath = "/afa/v1/bdc-bdevs"
+        String itemPath = "/afa/v1/bdc-bdevs/\\d+"
+        Closure collectionSimulator = env.getSimulator(collectionPath)
+        Closure itemSimulator = env.getSimulator(itemPath)
+        def store = ExternalPrimaryStorageSpec.XinfiniSimulators.bdcBdevs
+        String volumePath = dbFindByUuid(vm.rootVolumeUuid, VolumeVO.class).installPath
+        int volumeId = XInfiniPathHelper.getVolIdFromPath(volumePath)
+        def headerHost = org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(host1.uuid, HostVO.class))
+        def volumeInfo = new BaseVolumeInfo(uuid: vm.rootVolumeUuid, protocol: "Vhost", installPath: volumePath)
+        def original = store.values().find { it.spec.bs_volume_id == volumeId }
+        assert original != null: "the running VM must have a root-volume mapping"
+        String existingState = "active"
+        String firstPollState = null
+        int postCount = 0
+        int pollCount = 0
+        int postedId = -1
+        env.simulator(collectionPath) { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            if (req.method == "POST") {
+                def body = JSONObjectUtil.toObject(e.body, LinkedHashMap.class)
+                if (body.spec.bs_volume_id == volumeId) {
+                    postCount++
+                    if (store.containsKey(original.spec.id)) {
+                        postedId = original.spec.id
+                        return [metadata: [state: [state: existingState]], spec: original.spec, status: original.status]
+                    }
+                }
+            }
+            def rsp = collectionSimulator.call(req, e, spec)
+            if (req.method == "POST" && rsp.spec.bs_volume_id == volumeId) {
+                postedId = rsp.spec.id
+            } else if (req.method == "GET") {
+                rsp.items.findAll { it.spec.bs_volume_id == volumeId }.each { it.metadata.state.state = existingState }
+            }
+            return rsp
+        }
+        env.simulator(itemPath) { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            def rsp = itemSimulator.call(req, e, spec)
+            if (req.method == "GET" && rsp.spec?.id == postedId) {
+                pollCount++
+                rsp.metadata.state.state = pollCount == 1 && firstPollState != null ? firstPollState : "active"
+            }
+            return rsp
+        }
+        try {
+            stopVmInstance { uuid = vm.uuid }
+            ["deleting", "deleted"].each { String state ->
+                store.put(original.spec.id as Integer, original)
+                existingState = state
+                postCount = 0
+                expect(OperationFailureException.class) { controller.getActivePath(volumeInfo, headerHost, false) }
+                def result = new StartVmInstanceAction(uuid: vm.uuid, hostUuid: host1.uuid,
+                        sessionId: adminSession()).call()
+                if (result.error == null) {
+                    stopVmInstance { uuid = vm.uuid }
+                }
+                assert result.error != null: "starting with an existing ${state} mapping must fail before VM start"
+                assert result.error.details.contains(state): "activation error must identify mapping state ${state}"
+                assert postCount == 0: "an existing ${state} mapping must not be recreated: POST=${postCount}"
+                assert dbFindByUuid(vm.uuid, VmInstanceVO.class).state == VmInstanceState.Stopped:
+                        "failed root-volume activation must leave the VM stopped"
+            }
+            existingState = "active"
+            store.put(original.spec.id as Integer, original)
+            postCount = 0
+            assert controller.getActivePath(volumeInfo, headerHost, false) == original.spec.socket_path:
+                    "an active mapping must retain its original socket"
+            startVmInstance { uuid = vm.uuid; hostUuid = host1.uuid }
+            assert postCount == 0: "an active mapping must be reused without a creation POST"
+            stopVmInstance { uuid = vm.uuid }
+
+            ["deleting", "deleted"].each { String state ->
+                firstPollState = state
+                postCount = 0
+                pollCount = 0
+                def result = new StartVmInstanceAction(uuid: vm.uuid, hostUuid: host1.uuid,
+                        sessionId: adminSession()).call()
+                if (result.error == null) {
+                    stopVmInstance { uuid = vm.uuid }
+                }
+                assert result.error != null: "POST acceptance followed by ${state} must not report activation success"
+                assert result.error.details.contains(state): "creation error must identify mapping state ${state}"
+                assert pollCount == 1: "${state} is not an activation wait state: GET=${pollCount}"
+                assert dbFindByUuid(vm.uuid, VmInstanceVO.class).state == VmInstanceState.Stopped:
+                        "failed new mapping activation must leave the VM stopped"
+                store.remove(postedId)
+            }
+            firstPollState = "creating"
+            postCount = 0
+            pollCount = 0
+            startVmInstance { uuid = vm.uuid; hostUuid = host1.uuid }
+            assert postCount == 1: "a retry after removal must create a new mapping"
+            assert pollCount == 2: "a creating mapping must still be allowed to converge to active"
+        } finally {
+            env.simulator(collectionPath, collectionSimulator)
+            env.simulator(itemPath, itemSimulator)
+        }
+    }
+
+    void testNodeBlacklistKeepsActiveClients() {
+        String path = dbFindByUuid(vm.rootVolumeUuid, VolumeVO.class).installPath
+        def host = org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(host1.uuid, HostVO.class))
+        assert controller.reportCapabilities().supportNodeBlacklist:
+                "Xinfini must advertise its node blacklist implementation"
+        assert !controller.reportCapabilities().supportPathBlacklist:
+                "Xinfini must not advertise unsupported path isolation"
+        int originalClients = controller.getActiveClients(path, "Vhost").size()
+        assert originalClients > 0: "the volume must have an old client before fencing"
+
+        String desired = "unfenced"
+        String actual = "unfenced"
+        boolean rejectPatch = true
+        int patches = 0
+        int polls = 0
+        env.simulator("/afa/v1/bdcs/\\d+") { HttpServletRequest req, HttpEntity<String> e, EnvSpec ignored ->
+            if (req.method == "PATCH") {
+                if (rejectPatch) {
+                    return [message: "fencing rejected for test"]
+                }
+                String requested = JSONObjectUtil.toObject(e.body, LinkedHashMap.class).spec.storage_fenced_state
+                assert requested in ["fenced", "unfenced"]: "node state changes must declare the intended fence state"
+                patches++
+                if (desired != requested) {
+                    desired = requested
+                    actual = requested == "fenced" ? "fencing" : "unfencing"
+                    polls = 0
+                }
+            } else if (actual in ["fencing", "unfencing"] && ++polls >= 3) {
+                actual = desired
+            }
+            return [metadata: [state: [state: actual == desired ? "active" : "reconciling"]],
+                    spec: [id: 1, ip: "127.0.0.1", storage_fenced_state: desired],
+                    status: [id: 1, run_state: "Active", storage_fenced_state: actual]]
+        }
+
+        expect(OperationFailureException.class) { controller.blacklistNode(host) }
+
+        Closure setNodeBlacklist = { boolean blacklist ->
+            def msg = new SetHostStorageNodeBlacklistMsg(hostUuid: host.uuid, blacklist: blacklist,
+                    primaryStorageUuid: dbFindByUuid(vm.rootVolumeUuid, VolumeVO.class).primaryStorageUuid)
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.uuid)
+            MessageReply reply = bus.call(msg)
+            assert reply.success: "the main storage plugin must handle node isolation without premium: ${reply.error}"
+        }
+        rejectPatch = false
+        setNodeBlacklist(true)
+        assert actual == "fenced" && desired == "fenced" && polls >= 3:
+                "blacklistNode must wait for both requested and actual fenced state"
+        def clients = controller.getActiveClients(path, "Vhost")
+        assert clients.size() == originalClients: "node fencing must retain existing bdev client records"
+        assert clients.every { !it.inBlacklist }: "node fencing must leave old Vhost clients eligible for deactivate"
+        controller.blacklistNode(host)
+        assert patches == 1: "repeated node blacklist must not patch an already fenced BDC"
+
+        def currentTag = {
+            querySystemTag { conditions = ["resourceUuid=" + host.uuid, "tag=nodeBlacklist::" + ps.uuid] }*.uuid.find()
+        }
+        String originalTag = currentTag()
+        assert originalTag
+        Closure originalVmUsageSimulator = env.getSimulator(KVMConstant.KVM_CHECK_STORAGE_VM_USAGE_PATH)
+        String vmUsage = "busy"
+        env.simulator(KVMConstant.KVM_CHECK_STORAGE_VM_USAGE_PATH) { HttpEntity<String> request ->
+            def cmd = JSONObjectUtil.toObject(request.body, KVMAgentCommands.CheckStorageVmUsageCmd.class)
+            assert cmd.primaryStorageUuids == [ps.uuid]: "only storages in the host blacklist tags need a usage check"
+            def rsp = new KVMAgentCommands.CheckStorageVmUsageRsp()
+            rsp.unusedPrimaryStorageUuids = vmUsage == "busy" ? [] : [ps.uuid]
+            if (vmUsage == "error") {
+                rsp.success = false
+                rsp.error = "vm usage check failed"
+            }
+            return rsp
+        }
+        def threads = bean(ThreadFacade.class)
+        String syncQueue = "sync-volume-state-after-ping-host-${host.uuid}-success"
+        def ping = {
+            def msg = new PingHostMsg(hostUuid: host.uuid)
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.uuid)
+            MessageCommandRecorder.start(PingHostMsg.class)
+            try {
+                assert bus.call(msg).success
+                retryInSecs { assert !threads.isChainTaskRunning(syncQueue) }
+                return MessageCommandRecorder.end()
+            } finally {
+                MessageCommandRecorder.reset()
+            }
+        }
+        def tracker = bean(HostTracker.class)
+        def hostUuids = [host.uuid, host2.uuid]
+        tracker.untrackHost(hostUuids)
+        try {
+            ["busy", "error"].each { mode ->
+                vmUsage = mode
+                def sent = ping()
+                assert sent.contains(KVMAgentCommands.CheckStorageVmUsageCmd.class)
+                assert !sent.contains(SetHostStorageNodeBlacklistMsg.class): "usage ${mode} must keep the fence"
+                assert actual == "fenced" && currentTag() == originalTag && patches == 1:
+                        "vm usage ${mode} must retain the fence"
+            }
+            vmUsage = "unused"
+            assert ping().contains(SetHostStorageNodeBlacklistMsg.class): "unused storage must request unfencing"
+            retryInSecs { assert actual == "unfenced" && !currentTag() && patches == 2 }
+
+            2.times {
+                def sent = ping()
+                assert sent.contains(KVMAgentCommands.VolumeSyncCmd.class): "ping must still sync volumes"
+                assert !sent.contains(KVMAgentCommands.CheckStorageVmUsageCmd.class): "untagged host must skip usage"
+            }
+
+            vmUsage = "busy"
+            setNodeBlacklist(true)
+            assert actual == "fenced" && currentTag() && patches == 3: "a stopped heartbeat must fence the BDC again"
+            setNodeBlacklist(false)
+            assert actual == "unfenced" && !currentTag() && patches == 4:
+                    "an explicit unblacklist request must unfence the tagged BDC"
+        } finally {
+            env.simulator(KVMConstant.KVM_CHECK_STORAGE_VM_USAGE_PATH, originalVmUsageSimulator)
+            tracker.trackHost(hostUuids)
+        }
+    }
+
     // when the old host's storage client cannot be isolated, deactivate must report
     // a failure instead of silently succeeding, otherwise the VM gets started on a
     // new host while the old QEMU still holds the volume (split-brain).
@@ -381,12 +608,22 @@ class XinfiniPrimaryStorageCase extends SubCase {
         // simMode: 0 = default, 1 = delete request fails, 2 = delete accepted but bdev never disappears
         int[] simMode = [0]
         boolean[] bdcInactive = [false]
+        int nodeFenceRequests = 0
+        int confirmedDeletes = 0
+        int deleteRequests = 0
+        boolean nodeFenced = false
 
         env.simulator("/afa/v1/bdcs/\\d+") { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            if (req.method == "PATCH") {
+                nodeFenceRequests++
+                return [message: "ordinary VM startup must not fence a node"]
+            }
             return [
                 metadata: [id: 1, name: "bdc-1", state: [state: "active"]],
-                spec    : [id: 1, name: "bdc-1", ip: "127.0.0.1", port: 9500],
+                spec    : [id: 1, name: "bdc-1", ip: "127.0.0.1", port: 9500,
+                           storage_fenced_state: nodeFenced ? "fenced" : "unfenced"],
                 status  : [id: 1, run_state: bdcInactive[0] ? "Offline" : "Active",
+                           storage_fenced_state: nodeFenced ? "fenced" : "unfenced",
                            installed: true, hostname: "localhost", version: "1.0.0"]
             ]
         }
@@ -396,6 +633,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
             int bdevId = matcher.find() ? Integer.parseInt(matcher.group(1)) : -1
             def store = ExternalPrimaryStorageSpec.XinfiniSimulators.bdcBdevs
             if (req.getMethod() == "DELETE") {
+                deleteRequests++
                 if (simMode[0] == 1) {
                     return [message: "delete bdev failed on purpose"]
                 }
@@ -407,9 +645,11 @@ class XinfiniPrimaryStorageCase extends SubCase {
 
             def stored = store.get(bdevId)
             if (stored == null) {
+                confirmedDeletes++
                 throw new HttpError(404, "not found")
             }
-            return [metadata: [id: stored.spec?.id, name: stored.spec?.name, state: [state: "active"]],
+            String state = simMode[0] == 2 ? "deleting" : "active"
+            return [metadata: [id: stored.spec?.id, name: stored.spec?.name, state: [state: state]],
                     spec: stored.spec, status: stored.status]
         }
 
@@ -441,9 +681,53 @@ class XinfiniPrimaryStorageCase extends SubCase {
         }
         assert errored: "deleteBdcBdev must error out when the bdev is still attached"
 
-        // restore default simulator behaviour for the rest of the suite
         simMode[0] = 0
         bdcInactive[0] = false
+        def store = ExternalPrimaryStorageSpec.XinfiniSimulators.bdcBdevs
+        def oldMapping = store.get(bdev.spec.id)
+        stopVmInstance { uuid = vm.uuid }
+        store.put(bdev.spec.id, oldMapping)
+        Closure startSimulator = env.getPostSimulator(KVMConstant.KVM_START_VM_PATH)
+        int targetStarts = 0
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            String uuid = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class).vmInstanceUuid
+            if (uuid == vm.uuid) {
+                assert confirmedDeletes > 0:
+                        "an unfenced old client must reach DELETE confirmation before target KVM start"
+                targetStarts++
+            }
+            return startSimulator.call(rsp, e)
+        }
+        try {
+            [1, 2].each { int failure ->
+                simMode[0] = failure
+                bdcInactive[0] = failure == 2
+                nodeFenced = failure == 2
+                confirmedDeletes = 0
+                deleteRequests = 0
+                def started = new StartVmInstanceAction(uuid: vm.uuid, hostUuid: host2.uuid, timeout: 180000,
+                        sessionId: adminSession()).call()
+                assert started.error != null && deleteRequests > 0:
+                        "startup must attempt to remove the old mapping; mode=${failure}, nodeFenced=${nodeFenced}"
+                assert nodeFenceRequests == 0 && targetStarts == 0 && confirmedDeletes == 0:
+                        "DELETE failure or persistent deleting must block KVM start without node PATCH"
+                assert dbFindByUuid(vm.uuid, VmInstanceVO.class).state == VmInstanceState.Stopped:
+                        "the VM must remain stopped while its old client cannot be deactivated"
+            }
+            simMode[0] = 0
+            bdcInactive[0] = false
+            nodeFenced = false
+            startVmInstance { uuid = vm.uuid; hostUuid = host2.uuid }
+            assert targetStarts == 1 && confirmedDeletes > 0 && nodeFenceRequests == 0:
+                    "confirmed old-client DELETE must allow startup without node isolation"
+        } finally {
+            simMode[0] = 0
+            bdcInactive[0] = false
+            nodeFenced = false
+            env.afterSimulator(KVMConstant.KVM_START_VM_PATH, startSimulator)
+        }
+        stopVmInstance { uuid = vm.uuid }
+        startVmInstance { uuid = vm.uuid; hostUuid = host1.uuid }
     }
 
     void testHandleInactiveVolume() {
@@ -561,6 +845,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
 
         startVmInstance {
             uuid = vm.uuid
+            hostUuid = host1.uuid
         }
 
         setVmBootOrder {
@@ -671,6 +956,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
 
         startVmInstance {
             uuid = vm.uuid
+            hostUuid = host1.uuid
         }
     }
 
