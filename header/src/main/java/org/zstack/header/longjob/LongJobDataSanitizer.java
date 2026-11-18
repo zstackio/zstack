@@ -9,11 +9,11 @@ import com.google.gson.JsonPrimitive;
 import java.util.Locale;
 import java.util.Map;
 
-final class LongJobDataSanitizer {
+public final class LongJobDataSanitizer {
     private LongJobDataSanitizer() {
     }
 
-    static String sanitize(String data) {
+    public static String sanitize(String data) {
         if (data == null) {
             return null;
         }

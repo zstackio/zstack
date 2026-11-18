@@ -33,6 +33,7 @@ import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO
 import org.zstack.header.storage.addon.primary.AllocateSpaceSpec
+import org.zstack.header.storage.addon.StorageCapacity
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO_
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO
@@ -1448,6 +1449,36 @@ class ZbsPrimaryStorageCase extends SubCase {
                 } else {
                     assertAllocationFails(controller, allocation)
                 }
+            }
+
+            def secondPool = new LogicalPoolInfo(logicalPoolName: "lpool2", physicalPoolName: "pool2",
+                    capacity: 321153662976L)
+            collectPoolCapacity([availablePool, secondPool])
+            [[fullPool], []].each { refreshedPools ->
+                env.afterSimulator(ZbsStorageController.GET_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
+                    def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetCapacityCmd.class)
+                    assert cmd.logicalPoolNames == ["lpool1"]
+                    rsp.logicalPoolInfos = refreshedPools
+                    return rsp
+                }
+                AtomicBoolean completed = new AtomicBoolean(false)
+                controller.getCapacity(["zbs://lpool1"], new ReturnValueCompletion<StorageCapacity>(null) {
+                    @Override
+                    void success(StorageCapacity capacity) {
+                        completed.set(true)
+                    }
+
+                    @Override
+                    void fail(ErrorCode errorCode) {
+                        assert false : "partial capacity refresh failed: ${errorCode}"
+                    }
+                })
+                retryInSecs { assert completed.get() }
+                assert controller.allocateSpace(new AllocateSpaceSpec(size: allocation.size,
+                        requiredUrl: "zbs://lpool2")) == "zbs://lpool2" :
+                        "refreshing lpool1 must retain collected capacity for lpool2"
+                assertAllocationFails(controller, new AllocateSpaceSpec(size: allocation.size,
+                        requiredUrl: "zbs://lpool1"))
             }
 
             collectPoolCapacity([])

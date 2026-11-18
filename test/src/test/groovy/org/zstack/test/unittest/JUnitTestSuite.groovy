@@ -10,6 +10,9 @@ import org.zstack.configuration.OfferingUserConfigUtils
 import org.zstack.core.ansible.AnsibleAgentRestartCase
 import org.zstack.storage.ceph.backup.CephUploadCancelRecoveryCase
 import org.zstack.test.longjob.TestLongJobInventorySecurity
+import org.zstack.test.longjob.TestLongJobAggregateSecurity
+import org.zstack.test.core.rest.TestProtectedRestLogging
+import org.zstack.test.core.errorcode.TestModelDownloadErrorElaboration
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.compute.VmDataVolumeTemplateQuotaCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
@@ -58,7 +61,10 @@ import java.util.stream.Collectors
         SizeUnitUtilsCase.class,
         SystemTagUtilsCase.class,
         VFSMetadataReadWriteTest.class,
-        TestLongJobInventorySecurity.class
+        TestLongJobInventorySecurity.class,
+        TestLongJobAggregateSecurity.class,
+        TestProtectedRestLogging.class,
+        TestModelDownloadErrorElaboration.class
     ])
 class JUnitTestSuite {
 

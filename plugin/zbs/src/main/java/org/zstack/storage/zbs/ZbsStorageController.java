@@ -19,6 +19,7 @@ import org.zstack.core.db.Q;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -65,6 +66,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import javax.persistence.LockModeType;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -988,11 +990,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         httpCall(GET_CAPACITY_PATH, cmd, GetCapacityRsp.class, new ReturnValueCompletion<GetCapacityRsp>(comp) {
             @Override
             public void success(GetCapacityRsp returnValue) {
+                updatePoolCapacities(poolNames, returnValue.getLogicalPoolInfos());
                 reloadDbInfo();
-                addonInfo.setLogicalPoolInfos(returnValue.getLogicalPoolInfos());
-                SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
-                        .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
-                        .update();
 
                 List<LogicalPoolInfo> logicalPoolInfos = getSelfPools();
                 long total = logicalPoolInfos.stream().mapToLong(LogicalPoolInfo::getCapacity).sum();
@@ -1014,6 +1013,31 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 comp.fail(errorCode);
             }
         });
+    }
+
+    private void updatePoolCapacities(List<String> requestedPools, List<LogicalPoolInfo> refreshedPools) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                ExternalPrimaryStorageVO storage = SQL.New(
+                        "select ps from ExternalPrimaryStorageVO ps where ps.uuid = :uuid", ExternalPrimaryStorageVO.class)
+                        .param("uuid", self.getUuid()).lock(LockModeType.PESSIMISTIC_WRITE).find();
+                databaseFacade.getEntityManager().refresh(storage, LockModeType.PESSIMISTIC_WRITE);
+                AddonInfo current = StringUtils.isEmpty(storage.getAddonInfo()) ? new AddonInfo() :
+                        JSONObjectUtil.toObject(storage.getAddonInfo(), AddonInfo.class);
+                Map<String, LogicalPoolInfo> pools = new LinkedHashMap<>();
+                for (LogicalPoolInfo pool : current.getLogicalPoolInfos()) {
+                    if (!requestedPools.contains(pool.getLogicalPoolName())) {
+                        pools.put(pool.getLogicalPoolName(), pool);
+                    }
+                }
+                for (LogicalPoolInfo pool : refreshedPools) {
+                    pools.put(pool.getLogicalPoolName(), pool);
+                }
+                current.setLogicalPoolInfos(new ArrayList<>(pools.values()));
+                storage.setAddonInfo(JSONObjectUtil.toJsonString(current));
+            }
+        }.execute();
     }
 
     @Override

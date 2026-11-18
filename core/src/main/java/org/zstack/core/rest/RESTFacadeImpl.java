@@ -482,13 +482,7 @@ public class RESTFacadeImpl implements RESTFacade {
             MessageCommandRecorder.record(body.getClass());
         }
         String wireBody = JSONObjectUtil.toJsonString(body);
-        String logBody;
-        try {
-            logBody = LogSafeGson.toJson(body);
-        } catch (RuntimeException error) {
-            logger.warn("Cannot render protected REST request body: " + error.getClass().getName());
-            logBody = "[protected request body omitted: safe serialization failed]";
-        }
+        String logBody = "[protected request body omitted]";
         asyncJson(url, wireBody, null, HttpMethod.POST, callback, unit, timeout, logBody, true);
     }
 
@@ -521,7 +515,7 @@ public class RESTFacadeImpl implements RESTFacade {
         asyncJson(url, body, headers, method, callback, unit, timeout, body, false);
     }
 
-    private void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method,
+    protected void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method,
                            final AsyncRESTCallback callback, final TimeUnit unit, final long timeout, String logBody, boolean safeLogging) {
         if (!hasCallbackUrlHeader(headers) && !CoreGlobalProperty.UNIT_TEST_ON) {
             String host = extractRequestHost(url);
