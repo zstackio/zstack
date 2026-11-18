@@ -12,6 +12,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
@@ -32,7 +35,10 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
 import org.zstack.header.host.CheckVmStateOnHypervisorReply;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostDeleteExtensionPoint;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
@@ -46,6 +52,8 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.kvm.KVMHostInventory;
+import org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.*;
@@ -63,11 +71,10 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -78,6 +85,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by xing5 on 2016/4/4.
  */
 public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
+        KVMPingAgentNoFailureExtensionPoint, HostDeleteExtensionPoint,
         VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint,
         FilterVmNicsForEipInVirtualRouterExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint,
         GetEipAttachableL3UuidsForVmNicExtensionPoint, GetL3NetworkForVmNetworkService {
@@ -94,9 +102,41 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
+    private ThreadFacade thdf;
+    @Autowired
     protected NetworkServiceManager nsMgr;
     @Autowired
     protected VmInstanceManager vmMgr;
+
+    private static final List<VmInstanceState> EXPECTED_EIP_VM_STATES = Collections.unmodifiableList(asList(
+            VmInstanceState.Running,
+            VmInstanceState.Paused,
+            VmInstanceState.Pausing,
+            VmInstanceState.Resuming,
+            VmInstanceState.Rebooting,
+            VmInstanceState.VolumeRecovering
+    ));
+
+    private static final List<VmInstanceState> IN_FLIGHT_EIP_VM_STATES = Collections.unmodifiableList(asList(
+            VmInstanceState.Starting,
+            VmInstanceState.Stopping,
+            VmInstanceState.Migrating,
+            VmInstanceState.Destroying,
+            VmInstanceState.Unknown,
+            VmInstanceState.NoState,
+            VmInstanceState.Crashed
+    ));
+
+    public static final int DEFAULT_SYNC_GRACE_SECONDS = 30;
+    private static final long RECENTLY_REVOKED_EIP_GRACE_MILLIS = TimeUnit.SECONDS.toMillis(DEFAULT_SYNC_GRACE_SECONDS);
+    private static final String HOST_EIP_SYNC_SIGNATURE_PREFIX = "flat-eip-sync-host-";
+
+    private final ConcurrentHashMap<String, AtomicInteger> hostPingCounters = new ConcurrentHashMap<>();
+    private final Set<String> dirtyHosts = ConcurrentHashMap.newKeySet();
+    private final Set<String> baselineSyncedHosts = ConcurrentHashMap.newKeySet();
+    private final Set<String> syncingHosts = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<String, AtomicInteger> inFlightEipOperations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> recentlyRevokedEips = new ConcurrentHashMap<>();
 
     public static class EipTO {
         public String eipUuid;
@@ -141,12 +181,86 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public List<EipTO> eips;
     }
 
+    public static class SyncEipCmd extends AgentCmd {
+        public List<EipTO> eips = new ArrayList<>();
+        public List<String> inFlightEipUuids = new ArrayList<>();
+        public int graceSeconds = DEFAULT_SYNC_GRACE_SECONDS;
+    }
+
+    public static class SyncEipRsp extends AgentRsp {
+        public List<String> appliedVipUuids = new ArrayList<>();
+    }
+
     public static final String APPLY_EIP_PATH = "/flatnetworkprovider/eip/apply";
     public static final String DELETE_EIP_PATH = "/flatnetworkprovider/eip/delete";
     public static final String BATCH_APPLY_EIP_PATH = "/flatnetworkprovider/eip/batchapply";
     public static final String BATCH_DELETE_EIP_PATH = "/flatnetworkprovider/eip/batchdelete";
     public static final String BATCH_PREPARE_EIP_PATH = "/flatnetworkprovider/eip/batchprepare";
     public static final String BATCH_ENABLE_EIP_PATH = "/flatnetworkprovider/eip/batchenable";
+    public static final String SYNC_EIP_PATH = "/flatnetworkprovider/eip/sync";
+
+    void markHostEipDirty(String hostUuid) {
+        if (hostUuid != null) {
+            dirtyHosts.add(hostUuid);
+        }
+    }
+
+    public boolean isHostEipSyncInProgress(String hostUuid) {
+        return hostUuid != null && syncingHosts.contains(hostUuid);
+    }
+
+    private static String hostEipKey(String hostUuid, String eipUuid) {
+        return hostUuid + ":" + eipUuid;
+    }
+
+    private void beginInFlightEips(String hostUuid, Collection<EipTO> eips, boolean clearRevoked) {
+        if (hostUuid == null || eips == null) {
+            return;
+        }
+        for (EipTO eip : eips) {
+            if (eip == null || eip.eipUuid == null) {
+                continue;
+            }
+            String key = hostEipKey(hostUuid, eip.eipUuid);
+            inFlightEipOperations.compute(key, (k, v) -> {
+                AtomicInteger count = v == null ? new AtomicInteger(0) : v;
+                count.incrementAndGet();
+                return count;
+            });
+            if (clearRevoked) {
+                recentlyRevokedEips.remove(key);
+            }
+        }
+    }
+
+    private void endInFlightEips(String hostUuid, Collection<EipTO> eips, boolean markRevoked) {
+        if (hostUuid == null || eips == null) {
+            return;
+        }
+        long expireAt = System.currentTimeMillis() + RECENTLY_REVOKED_EIP_GRACE_MILLIS;
+        for (EipTO eip : eips) {
+            if (eip == null || eip.eipUuid == null) {
+                continue;
+            }
+            String key = hostEipKey(hostUuid, eip.eipUuid);
+            if (markRevoked) {
+                recentlyRevokedEips.put(key, expireAt);
+            }
+            inFlightEipOperations.computeIfPresent(key, (k, v) -> v.decrementAndGet() <= 0 ? null : v);
+        }
+    }
+
+    private void sendWithInFlightTracking(KVMHostAsyncHttpCallMsg msg, String hostUuid,
+                                          Collection<EipTO> eips, boolean clearRevoked,
+                                          CloudBusCallBack callback) {
+        beginInFlightEips(hostUuid, eips, clearRevoked);
+        try {
+            bus.send(msg, callback);
+        } catch (Throwable t) {
+            endInFlightEips(hostUuid, eips, false);
+            throw t;
+        }
+    }
 
     @Override
     public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
@@ -720,7 +834,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 EipTO to = new EipTO();
                 VmNicVO nic = nicMap.get(eip.getVmNicUuid());
                 VipVO vip = vipMap.get(eip.getVipUuid());
-                if (nic.getIp() == null) {
+                if (nic == null || vip == null || nic.getIp() == null) {
                     return null;
                 }
                 to.eipUuid = eip.getUuid();
@@ -737,6 +851,9 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         to.vmBridgeName = bridgeNames.get(ip.getL3NetworkUuid());
                     }
                 }
+                if (to.ipVersion == null) {
+                    return null;
+                }
                 to.nicMac = nic.getMac();
                 to.nicUuid = nic.getUuid();
                 to.vip = eip.getVipIp();
@@ -744,10 +861,20 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
                 to.vipUuid = vip.getUuid();
-                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid())
-                        .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
-                to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
+                if (vip.getPrefixLen() != null) {
+                    to.vipPrefixLen = vip.getPrefixLen();
+                } else {
+                    List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid())
+                            .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
+                    if (vipIprs.isEmpty()) {
+                        return null;
+                    }
+                    to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
+                }
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
+                if (to.vmBridgeName == null || to.publicBridgeName == null) {
+                    return null;
+                }
 
                 VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(nic.getType()));
                 to.addfdb = vnicFactory.addFdbForEipNameSpace(VmNicInventory.valueOf(nic));
@@ -771,35 +898,43 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         msg.setPath(BATCH_DELETE_EIP_PATH);
         msg.setNoStatusCheck(noHostStatusCheck);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
+        sendWithInFlightTracking(msg, hostUuid, eips, false, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
+                    endInFlightEips(hostUuid, eips, false);
+                    markHostEipDirty(hostUuid);
 
                     ErrorCode err = reply.getError();
                     if (err.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-
-                        FlatEipGC gc = new FlatEipGC();
-                        gc.eips = eips;
-                        gc.hostUuid = hostUuid;
-                        gc.NAME = String.format("gc-flat-eips-on-hosts-%s", hostUuid);
-                        gc.submit();
-
                         completion.success();
                     } else {
-                        completion.fail(reply.getError());
+                        completion.fail(err);
                     }
 
                     return;
                 }
 
-                KVMHostAsyncHttpCallReply ar = reply.castReply();
-                AgentRsp rsp = ar.toResponse(AgentRsp.class);
+                AgentRsp rsp;
+                try {
+                    KVMHostAsyncHttpCallReply ar = reply.castReply();
+                    rsp = ar.toResponse(AgentRsp.class);
+                    if (rsp == null) {
+                        throw new CloudRuntimeException("empty response when batch deleting flat EIPs");
+                    }
+                } catch (RuntimeException e) {
+                    endInFlightEips(hostUuid, eips, false);
+                    markHostEipDirty(hostUuid);
+                    throw e;
+                }
                 if (!rsp.success) {
+                    endInFlightEips(hostUuid, eips, false);
+                    markHostEipDirty(hostUuid);
                     completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
+                endInFlightEips(hostUuid, eips, true);
                 completion.success();
             }
         });
@@ -819,10 +954,13 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         msg.setHostUuid(hostUuid);
         msg.setPath(path);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
+        boolean clearRevoked = BATCH_ENABLE_EIP_PATH.equals(path) || BATCH_PREPARE_EIP_PATH.equals(path);
+        sendWithInFlightTracking(msg, hostUuid, eips, clearRevoked, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
+                endInFlightEips(hostUuid, eips, false);
                 if (!reply.isSuccess()) {
+                    markHostEipDirty(hostUuid);
                     completion.fail(reply.getError());
                     return;
                 }
@@ -830,8 +968,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(
-                            "operation error, because:%s", rsp.error));
+                    markHostEipDirty(hostUuid);
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
@@ -850,10 +988,12 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         msg.setPath(BATCH_APPLY_EIP_PATH);
         msg.setNoStatusCheck(noHostStatusCheck);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
+        sendWithInFlightTracking(msg, hostUuid, eips, true, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
+                endInFlightEips(hostUuid, eips, false);
                 if (!reply.isSuccess()) {
+                    markHostEipDirty(hostUuid);
                     completion.fail(reply.getError());
                     return;
                 }
@@ -861,6 +1001,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
+                    markHostEipDirty(hostUuid);
                     completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
@@ -897,13 +1038,15 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
+                String hostUuid = context.getInventory().getUuid();
+                markHostEipDirty(hostUuid);
                 List<EipTO> tos = getEipsOnTheHost();
                 if (tos == null) {
                     trigger.next();
                     return;
                 }
 
-                batchApplyEips(tos, context.getInventory().getUuid(), true, new Completion(trigger) {
+                batchApplyEips(tos, hostUuid, true, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -982,6 +1125,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     public void applyEip(EipStruct struct, final Completion completion) {
         ApplyEipCmd cmd = new ApplyEipCmd();
         cmd.eip = eipStructToEipTO(struct);
+        final List<EipTO> singleEip = Collections.singletonList(cmd.eip);
 
         String hostUuid = getHostUuidByVmUuid(cmd.eip.vmUuid);
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -989,10 +1133,12 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         msg.setHostUuid(hostUuid);
         msg.setPath(APPLY_EIP_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-        bus.send(msg, new CloudBusCallBack(completion) {
+        sendWithInFlightTracking(msg, hostUuid, singleEip, true, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
+                endInFlightEips(hostUuid, singleEip, false);
                 if (!reply.isSuccess()) {
+                    markHostEipDirty(hostUuid);
                     completion.fail(reply.getError());
                     return;
                 }
@@ -1000,6 +1146,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
+                    markHostEipDirty(hostUuid);
                     completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
@@ -1027,6 +1174,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
         final DeleteEipCmd cmd = new DeleteEipCmd();
         cmd.eip = eipStructToEipTO(struct);
+        final List<EipTO> singleEip = Collections.singletonList(cmd.eip);
 
         final KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1035,40 +1183,271 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         } else {
             msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
         }
+        final String targetHostUuid = msg.getHostUuid();
         msg.setPath(DELETE_EIP_PATH);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-        bus.send(msg, new CloudBusCallBack(completion) {
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, targetHostUuid);
+        sendWithInFlightTracking(msg, targetHostUuid, singleEip, false, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
+                    endInFlightEips(targetHostUuid, singleEip, false);
+                    markHostEipDirty(targetHostUuid);
 
                     ErrorCode err = reply.getError();
                     if (err.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-
-                        FlatEipGC gc = new FlatEipGC();
-                        gc.eips = list(cmd.eip);
-                        gc.hostUuid = msg.getHostUuid();
-                        gc.NAME = String.format("gc-eips-on-host-%s", msg.getHostUuid());
-                        gc.submit();
-
                         completion.success();
                     } else {
-                        completion.fail(reply.getError());
+                        completion.fail(err);
                     }
 
                     return;
                 }
 
-                KVMHostAsyncHttpCallReply ar = reply.castReply();
-                AgentRsp rsp = ar.toResponse(AgentRsp.class);
+                AgentRsp rsp;
+                try {
+                    KVMHostAsyncHttpCallReply ar = reply.castReply();
+                    rsp = ar.toResponse(AgentRsp.class);
+                    if (rsp == null) {
+                        throw new CloudRuntimeException("empty response when revoking flat EIP");
+                    }
+                } catch (RuntimeException e) {
+                    endInFlightEips(targetHostUuid, singleEip, false);
+                    markHostEipDirty(targetHostUuid);
+                    throw e;
+                }
                 if (!rsp.success) {
+                    endInFlightEips(targetHostUuid, singleEip, false);
+                    markHostEipDirty(targetHostUuid);
                     completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
+                endInFlightEips(targetHostUuid, singleEip, true);
                 completion.success();
             }
         });
+    }
+
+    @Override
+    public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
+        completion.done();
+
+        if (host == null || host.getUuid() == null) {
+            return;
+        }
+
+        String hostUuid = host.getUuid();
+        int syncInterval = FlatNetwordProviderGlobalConfig.EIP_SYNC_ON_HOST_PING_COUNT.value(Integer.class);
+        AtomicInteger counter = hostPingCounters.computeIfAbsent(hostUuid, k -> new AtomicInteger(0));
+        int count = syncInterval > 0 ? counter.incrementAndGet() : 0;
+        boolean needsImmediateSync = dirtyHosts.contains(hostUuid) || !baselineSyncedHosts.contains(hostUuid);
+        if (!needsImmediateSync && (syncInterval <= 0 || count < syncInterval)) {
+            return;
+        }
+
+        if (!syncingHosts.add(hostUuid)) {
+            return;
+        }
+
+        dirtyHosts.remove(hostUuid);
+        counter.set(0);
+        try {
+            submitHostEipSyncTask(hostUuid);
+        } catch (Throwable t) {
+            markHostEipDirty(hostUuid);
+            syncingHosts.remove(hostUuid);
+            throw t;
+        }
+    }
+
+    private void submitHostEipSyncTask(final String hostUuid) {
+        thdf.chainSubmit(new ChainTask(null) {
+            @Override
+            public String getSyncSignature() {
+                return HOST_EIP_SYNC_SIGNATURE_PREFIX + hostUuid;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("sync-flat-eips-on-host-%s", hostUuid);
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                try {
+                    if (!Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).isExists()) {
+                        dirtyHosts.remove(hostUuid);
+                        baselineSyncedHosts.remove(hostUuid);
+                        hostPingCounters.remove(hostUuid);
+                        syncingHosts.remove(hostUuid);
+                        chain.next();
+                        return;
+                    }
+
+                    SyncEipCmd cmd = buildSyncEipCmd(hostUuid);
+                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                    msg.setCommand(cmd);
+                    msg.setHostUuid(hostUuid);
+                    msg.setPath(SYNC_EIP_PATH);
+                    msg.setNoStatusCheck(true);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(msg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            try {
+                                if (!reply.isSuccess()) {
+                                    markHostEipDirty(hostUuid);
+                                    logger.warn(String.format("failed to sync flat EIPs on host[uuid:%s]: %s",
+                                            hostUuid, reply.getError()));
+                                    return;
+                                }
+
+                                KVMHostAsyncHttpCallReply ar = reply.castReply();
+                                SyncEipRsp rsp = ar.toResponse(SyncEipRsp.class);
+                                if (rsp.appliedVipUuids != null && !rsp.appliedVipUuids.isEmpty()) {
+                                    for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
+                                        try {
+                                            ext.AfterApplyFlatEip(rsp.appliedVipUuids, hostUuid);
+                                        } catch (Exception e) {
+                                            logger.warn(String.format("AfterApplyFlatEip failed for vips%s on host[uuid:%s]",
+                                                    rsp.appliedVipUuids, hostUuid), e);
+                                        }
+                                    }
+                                }
+
+                                if (!rsp.success) {
+                                    markHostEipDirty(hostUuid);
+                                    logger.warn(String.format("failed to sync flat EIPs on host[uuid:%s]: %s",
+                                            hostUuid, rsp.error));
+                                } else {
+                                    baselineSyncedHosts.add(hostUuid);
+                                }
+                            } finally {
+                                syncingHosts.remove(hostUuid);
+                                chain.next();
+                            }
+                        }
+                    });
+                } catch (Throwable t) {
+                    markHostEipDirty(hostUuid);
+                    syncingHosts.remove(hostUuid);
+                    logger.warn(String.format("unexpected error when syncing flat EIPs on host[uuid:%s]", hostUuid), t);
+                    chain.next();
+                }
+            }
+        });
+    }
+
+    private static class SyncEipDbSnapshot {
+        final List<EipTO> expectedEips;
+        final Set<String> inFlightEipUuids;
+
+        SyncEipDbSnapshot(List<EipTO> expectedEips, Set<String> inFlightEipUuids) {
+            this.expectedEips = expectedEips;
+            this.inFlightEipUuids = inFlightEipUuids;
+        }
+    }
+
+    private Set<String> getActiveBackendOpEipUuids(String hostUuid) {
+        String hostPrefix = hostUuid + ":";
+        return inFlightEipOperations.keySet().stream()
+                .filter(k -> k.startsWith(hostPrefix))
+                .map(k -> k.substring(hostPrefix.length()))
+                .collect(Collectors.toSet());
+    }
+
+    private SyncEipCmd buildSyncEipCmd(String hostUuid) {
+        long now = System.currentTimeMillis();
+        recentlyRevokedEips.entrySet().removeIf(e -> e.getValue() <= now);
+
+        Set<String> inFlightUuids = new HashSet<>(getActiveBackendOpEipUuids(hostUuid));
+        SyncEipDbSnapshot dbSnapshot = loadSyncEipDbSnapshot(hostUuid);
+        inFlightUuids.addAll(dbSnapshot.inFlightEipUuids);
+        inFlightUuids.addAll(getActiveBackendOpEipUuids(hostUuid));
+
+        SyncEipCmd cmd = new SyncEipCmd();
+        cmd.eips = dbSnapshot.expectedEips.stream()
+                .filter(to -> to != null && to.eipUuid != null
+                        && !inFlightUuids.contains(to.eipUuid)
+                        && !recentlyRevokedEips.containsKey(hostEipKey(hostUuid, to.eipUuid)))
+                .collect(Collectors.toList());
+        cmd.inFlightEipUuids = new ArrayList<>(inFlightUuids);
+        cmd.graceSeconds = DEFAULT_SYNC_GRACE_SECONDS;
+        return cmd;
+    }
+
+    @Transactional(readOnly = true)
+    private SyncEipDbSnapshot loadSyncEipDbSnapshot(String hostUuid) {
+        String sql = "select eip.uuid, nic, vm.hostUuid, vm.state" +
+                " from EipVO eip, VmNicVO nic, VmInstanceVO vm" +
+                " where eip.vmNicUuid = nic.uuid" +
+                " and nic.vmInstanceUuid = vm.uuid" +
+                " and vm.type = :vtype" +
+                " and ((vm.hostUuid = :huuid and vm.state in (:expectedStates))" +
+                " or vm.state in (:inFlightStates))";
+        List<Tuple> rows = SQL.New(sql, Tuple.class)
+                .param("huuid", hostUuid)
+                .param("vtype", VmInstanceConstant.USER_VM_TYPE)
+                .param("expectedStates", EXPECTED_EIP_VM_STATES)
+                .param("inFlightStates", IN_FLIGHT_EIP_VM_STATES)
+                .list();
+
+        Map<String, VmNicVO> expectedNicsByUuid = new LinkedHashMap<>();
+        Set<String> expectedSnapshotEipUuids = new HashSet<>();
+        Set<String> inFlightUuids = new HashSet<>();
+        for (Tuple row : rows) {
+            String eipUuid = row.get(0, String.class);
+            VmNicVO nic = row.get(1, VmNicVO.class);
+            String vmHostUuid = row.get(2, String.class);
+            VmInstanceState vmState = row.get(3, VmInstanceState.class);
+            if (IN_FLIGHT_EIP_VM_STATES.contains(vmState)) {
+                if (eipUuid != null) {
+                    inFlightUuids.add(eipUuid);
+                }
+            } else if (hostUuid.equals(vmHostUuid) && EXPECTED_EIP_VM_STATES.contains(vmState)) {
+                if (eipUuid != null) {
+                    expectedSnapshotEipUuids.add(eipUuid);
+                }
+                if (nic != null && nic.getUuid() != null) {
+                    expectedNicsByUuid.putIfAbsent(nic.getUuid(), nic);
+                }
+            }
+        }
+
+        if (expectedNicsByUuid.isEmpty()) {
+            return new SyncEipDbSnapshot(Collections.emptyList(), inFlightUuids);
+        }
+
+        List<EipTO> tos = getEipsByNics(new ArrayList<>(expectedNicsByUuid.values()));
+        if (tos == null) {
+            return new SyncEipDbSnapshot(Collections.emptyList(), inFlightUuids);
+        }
+        List<EipTO> filteredExpected = tos.stream()
+                .filter(to -> to != null && expectedSnapshotEipUuids.contains(to.eipUuid))
+                .collect(Collectors.toList());
+        return new SyncEipDbSnapshot(filteredExpected, inFlightUuids);
+    }
+
+    @Override
+    public void preDeleteHost(HostInventory inventory) throws HostException {
+    }
+
+    @Override
+    public void beforeDeleteHost(HostInventory inventory) {
+    }
+
+    @Override
+    public void afterDeleteHost(HostInventory inventory) {
+        if (inventory == null || inventory.getUuid() == null) {
+            return;
+        }
+        String hostUuid = inventory.getUuid();
+        String hostPrefix = hostUuid + ":";
+        hostPingCounters.remove(hostUuid);
+        dirtyHosts.remove(hostUuid);
+        baselineSyncedHosts.remove(hostUuid);
+        inFlightEipOperations.keySet().removeIf(k -> k.startsWith(hostPrefix));
+        recentlyRevokedEips.keySet().removeIf(k -> k.startsWith(hostPrefix));
     }
 
     @Override
