@@ -20,6 +20,22 @@ public class HostNUMANode  {
         return this.cpus;
     }
 
+    public java.util.List onlineCpus;
+    public void setOnlineCpus(java.util.List onlineCpus) {
+        this.onlineCpus = onlineCpus;
+    }
+    public java.util.List getOnlineCpus() {
+        return this.onlineCpus;
+    }
+
+    public java.util.List coreGroups;
+    public void setCoreGroups(java.util.List coreGroups) {
+        this.coreGroups = coreGroups;
+    }
+    public java.util.List getCoreGroups() {
+        return this.coreGroups;
+    }
+
     public java.lang.Long free;
     public void setFree(java.lang.Long free) {
         this.free = free;

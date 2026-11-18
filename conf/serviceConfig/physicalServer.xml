@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>physicalServer</id>
+    <interceptor>PhysicalServerApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.physicalserver.APIQueryPhysicalServerMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.physicalserver.APIQueryPhysicalServerResourceAssignmentMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.physicalserver.APIGetPhysicalServerManagedServicesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.physicalserver.APIUpdatePhysicalServerResourceAssignmentMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.physicalserver.APIRestartPhysicalServerManagedServicesMsg</name>
+    </message>
+</service>

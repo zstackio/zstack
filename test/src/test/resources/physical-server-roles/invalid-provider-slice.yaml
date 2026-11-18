@@ -1,0 +1,4 @@
+roleType: INVALID_PROVIDER
+sliceName: invalid-provider.slice
+services:
+  - name: invalid-provider

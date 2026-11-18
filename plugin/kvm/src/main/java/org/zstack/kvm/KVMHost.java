@@ -29,6 +29,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GuestOsHelper;
 import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.Q;
@@ -74,6 +75,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.os.OSArchitecture;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentConfig;
+import org.zstack.header.physicalserver.ResourceConsumerHandle;
+import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -235,6 +239,8 @@ public class KVMHost extends HostBase implements Host {
     private AnsibleFacade asf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private GlobalConfigFacade gcf;
     @Autowired
     private DeviceBootOrderOperator deviceBootOrderOperator;
     @Autowired
@@ -4475,7 +4481,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
                             ErrorCode err = operr(ORG_ZSTACK_KVM_10078, "host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
-                                    vm.getUuid(), cpuChangeTo - oldCpuNum, alignedMemory.get() - oldMemorySize);
+                                    self.getUuid(), cpuChangeTo - oldCpuNum, alignedMemory.get() - oldMemorySize);
                             err.setCause(reply.getError());
                             chain.fail(err);
                         } else {
@@ -6415,6 +6421,24 @@ public class KVMHost extends HostBase implements Host {
                         kvmHostConfigChecker.setRequireKsmCheck(enableKsm);
                         kvmHostConfigChecker.setRequireReservePorts("49152-49215");
                         deployArguments.setIsEnableKsm(enableKsm);
+
+                        boolean resourceAssignmentEnabled = gcf.getConfigValue(
+                                PhysicalServerResourceAssignmentConfig.CATEGORY,
+                                PhysicalServerResourceAssignmentConfig.ENABLED,
+                                Boolean.class);
+                        kvmHostConfigChecker.setRequireResourceAssignment(resourceAssignmentEnabled);
+                        deployArguments.setResourceAssignmentEnabled(Boolean.toString(resourceAssignmentEnabled));
+                        if (resourceAssignmentEnabled) {
+                            RoleServiceManifest computeServices = RoleServiceManifest.load(
+                                    KvmResourceAssignmentFactory.ROLE_SERVICE_MANIFEST_PATH,
+                                    KvmResourceAssignmentFactory.type.toString());
+                            kvmHostConfigChecker.setResourceAssignmentSliceName(computeServices.getSliceName());
+                            deployArguments.setResourceAssignmentSliceName(computeServices.getSliceName());
+                            deployArguments.setResourceAssignmentSystemdUnits(computeServices.handles().stream()
+                                    .filter(handle -> ResourceConsumerHandle.SYSTEMD_UNIT.equals(
+                                            handle.getHandleType()))
+                                    .map(ResourceConsumerHandle::getValue).collect(Collectors.toList()));
+                        }
 
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                             deployArguments.setBridgeDisableIptables("true");

@@ -11,10 +11,11 @@ import java.util.stream.Collectors;
  */
 public class MdsInfo {
     private String username;
-    private String password;
+    private transient String password;
     private int port = 22;
     private String addr;
     private String externalAddr;
+    private String physicalServerSerialNumber;
     private MdsStatus status;
 
     @Override
@@ -72,6 +73,14 @@ public class MdsInfo {
 
     public void setExternalAddr(String externalAddr) {
         this.externalAddr = externalAddr;
+    }
+
+    public String getPhysicalServerSerialNumber() {
+        return physicalServerSerialNumber;
+    }
+
+    public void setPhysicalServerSerialNumber(String physicalServerSerialNumber) {
+        this.physicalServerSerialNumber = physicalServerSerialNumber;
     }
 
     public MdsStatus getStatus() {

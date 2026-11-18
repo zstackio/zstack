@@ -80,6 +80,6 @@ public class HostVO extends HostAO {
         this.setCapacity(vo.getCapacity());
         this.setIpmi(vo.getIpmi());
         this.setHwMonitorStatus(vo.getHwMonitorStatus());
+        this.setServerUuid(vo.getServerUuid());
     }
 }
-

@@ -4,6 +4,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.ansible.AnsibleChecker;
+import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -15,6 +16,11 @@ import java.util.Objects;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class KvmHostConfigChecker implements AnsibleChecker {
     private static final CLogger logger = Utils.getLogger(KvmHostConfigChecker.class);
+    private static final String RESOURCE_ASSIGNMENT_DROP_IN = "/etc/systemd/system/zstack-kvmagent.service.d/" +
+            "50-zstack-resource-assignment.conf";
+    private static final String RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP__";
+    private static final String RESOURCE_ASSIGNMENT_CGROUP_V2 = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP_V2__";
+    private static final int RESOURCE_ASSIGNMENT_QUERY_TIMEOUT_SECONDS = 60;
 
     private String username;
     private String password;
@@ -22,11 +28,15 @@ public class KvmHostConfigChecker implements AnsibleChecker {
     private String targetIp;
     private String requireKsmCheck;
     private String requireReservePorts;
+    private boolean requireResourceAssignment;
+    private String resourceAssignmentSliceName;
     private int sshPort = 22;
 
     @Override
     public boolean needDeploy() {
-        return needDeployKsmCheck() || needDeployReservePorts();
+        return needDeployKsmCheck()
+                || needDeployReservePorts()
+                || needDeployResourceAssignment();
     }
 
     private boolean needDeployKsmCheck() {
@@ -109,6 +119,101 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         }
     }
 
+    private boolean needDeployResourceAssignment() {
+        if (!requireResourceAssignment) {
+            return false;
+        }
+
+        Ssh ssh = new Ssh();
+        ssh.setUsername(username).setPrivateKey(privateKey)
+                .setPassword(password).setPort(sshPort).setHostname(targetIp);
+        ssh.sudoCommand(String.format(
+                "if [ -f /sys/fs/cgroup/cgroup.controllers ]; " +
+                        "then printf '%s\\n'; fi; " +
+                        "if [ -f %s ]; then cat %s; else printf '__ABSENT__'; fi; " +
+                        "printf '\\n%s'; " +
+                        "pid=$(systemctl show --property=MainPID --value " +
+                        "zstack-kvmagent.service 2>/dev/null || true); " +
+                        "if [ -n \"$pid\" ] && [ \"$pid\" != '0' ] && " +
+                        "[ -r \"/proc/$pid/cgroup\" ]; then " +
+                        "cat \"/proc/$pid/cgroup\"; fi",
+                RESOURCE_ASSIGNMENT_CGROUP_V2,
+                RESOURCE_ASSIGNMENT_DROP_IN,
+                RESOURCE_ASSIGNMENT_DROP_IN,
+                RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR));
+        SshResult result = ssh.setTimeout(RESOURCE_ASSIGNMENT_QUERY_TIMEOUT_SECONDS).runAndClose();
+        if (result.getReturnCode() != 0) {
+            logger.warn(String.format(
+                    "failed to inspect KVM Agent resource assignment, " +
+                            "return code: %d, stdout: %s, stderr: %s",
+                    result.getReturnCode(), result.getStdout(),
+                    result.getStderr()));
+            return true;
+        }
+
+        String output = result.getStdout();
+        int separator = output.indexOf(RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR);
+        if (separator < 0) {
+            return true;
+        }
+        String dropIn = output.substring(0, separator).trim();
+        boolean unifiedCgroupV2 = dropIn.startsWith(RESOURCE_ASSIGNMENT_CGROUP_V2);
+        if (unifiedCgroupV2) {
+            dropIn = dropIn.substring(RESOURCE_ASSIGNMENT_CGROUP_V2.length()).trim();
+        }
+        String processCgroup = output.substring(separator + RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR.length()).trim();
+        boolean matches = unifiedCgroupV2
+                ? unifiedResourceAssignmentMatches(dropIn, processCgroup, resourceAssignmentSliceName)
+                : legacyResourceAssignmentMatches(dropIn);
+        if (!matches) {
+            logger.debug(String.format(
+                    "KVM Agent resource assignment does not match, " +
+                            "required[%s], unifiedCgroupV2[%s], " +
+                            "dropIn[%s], processCgroup[%s]",
+                    requireResourceAssignment, unifiedCgroupV2,
+                    dropIn, processCgroup));
+        }
+        return !matches;
+    }
+
+    static boolean unifiedResourceAssignmentMatches(String dropIn, String processCgroup, String sliceName) {
+        String configuredSlice = configuredSlice(dropIn);
+        if (configuredSlice == null) {
+            return false;
+        }
+        if (!configuredSlice.equals(sliceName)) {
+            return true;
+        }
+        boolean inRoleSlice = processCgroup != null && (
+                processCgroup.contains("/" + sliceName + "/") || processCgroup.endsWith("/" + sliceName));
+        return inRoleSlice;
+    }
+
+    static boolean legacyResourceAssignmentMatches(String dropIn) {
+        return configuredSlice(dropIn) != null;
+    }
+
+    private static String configuredSlice(String dropIn) {
+        if (dropIn == null) {
+            return null;
+        }
+        boolean serviceSection = false;
+        String sliceName = null;
+        for (String line : dropIn.split("\\r?\\n")) {
+            String entry = line.trim();
+            if (entry.startsWith("[")) {
+                serviceSection = "[Service]".equals(entry);
+            } else if (serviceSection && entry.contains("=")) {
+                int separator = entry.indexOf('=');
+                if ("Slice".equals(entry.substring(0, separator).trim())) {
+                    sliceName = entry.substring(separator + 1).trim();
+                }
+            }
+        }
+        return sliceName != null && sliceName.matches(RoleServiceManifest.SLICE_NAME_PATTERN)
+                ? sliceName : null;
+    }
+
     @Override
     public void deleteDestFile() {
 
@@ -160,6 +265,18 @@ public class KvmHostConfigChecker implements AnsibleChecker {
 
     public void setRequireReservePorts(String requireReservePorts) {
         this.requireReservePorts = requireReservePorts;
+    }
+
+    public boolean getRequireResourceAssignment() {
+        return requireResourceAssignment;
+    }
+
+    public void setRequireResourceAssignment(boolean requireResourceAssignment) {
+        this.requireResourceAssignment = requireResourceAssignment;
+    }
+
+    public void setResourceAssignmentSliceName(String resourceAssignmentSliceName) {
+        this.resourceAssignmentSliceName = resourceAssignmentSliceName;
     }
 
     public int getSshPort() {

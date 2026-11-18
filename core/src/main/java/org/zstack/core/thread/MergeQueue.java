@@ -42,8 +42,8 @@ public class MergeQueue {
     public void run() {
         DebugUtils.Assert(name != null, "addTask() must be called");
 
-        AtomicInteger current = counter.get(name);
-        if (current != null && current.intValue() > syncLevel) {
+        AtomicInteger count = counter.get(name);
+        if (count != null && count.intValue() > syncLevel) {
             return;
         }
         counter.compute(name, (k, v) -> {

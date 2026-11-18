@@ -17,6 +17,7 @@ public class ManagementNodeInventory {
     private String hostName;
     private Timestamp joinDate;
     private Timestamp heartBeat;
+    private String serverUuid;
 
     public static ManagementNodeInventory valueOf(ManagementNodeVO vo) {
         ManagementNodeInventory inv = new ManagementNodeInventory();
@@ -24,6 +25,7 @@ public class ManagementNodeInventory {
         inv.setHostName(vo.getHostName());
         inv.setJoinDate(vo.getJoinDate());
         inv.setUuid(vo.getUuid());
+        inv.setServerUuid(vo.getServerUuid());
         return inv;
     }
 
@@ -65,5 +67,13 @@ public class ManagementNodeInventory {
 
     public Timestamp getHeartBeat() {
         return heartBeat;
+    }
+
+    public String getServerUuid() {
+        return serverUuid;
+    }
+
+    public void setServerUuid(String serverUuid) {
+        this.serverUuid = serverUuid;
     }
 }

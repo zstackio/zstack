@@ -1,0 +1,76 @@
+roleType: MANAGEMENT
+isolationMode: SHARED
+sliceName: zstack-management.slice
+# Refresh resizes the existing cpuSet to this count; removing the field leaves it unchanged.
+defaultCpuCount: 8
+services:
+  - name: management-node
+    handleType: SYSTEMD_UNIT
+    value: zstack-management-node.service
+    required: true
+    restartable: false
+  - name: mariadb
+    handleType: SYSTEMD_UNIT
+    value: mariadb.service
+    required: false
+    restartable: false
+  - name: prometheus
+    handleType: SYSTEMD_UNIT
+    value: prometheus.service
+    required: false
+    restartable: true
+  - name: pushgateway
+    handleType: SYSTEMD_UNIT
+    value: pushgateway.service
+    required: false
+    restartable: true
+  - name: zstack-ui-nginx
+    handleType: SYSTEMD_UNIT
+    value: zstack-ui-nginx.service
+    required: false
+    restartable: false
+  - name: zops-ui
+    handleType: SYSTEMD_UNIT
+    value: zops-ui.service
+    required: false
+    restartable: false
+  - name: zops
+    handleType: SYSTEMD_UNIT
+    value: zops.service
+    required: false
+    restartable: false
+  - name: vector
+    handleType: SYSTEMD_UNIT
+    value: vector.service
+    required: false
+    restartable: true
+  - name: filebeat
+    handleType: SYSTEMD_UNIT
+    value: filebeat.service
+    required: false
+    restartable: true
+  - name: node-exporter
+    handleType: SYSTEMD_UNIT
+    value: node_exporter.service
+    required: false
+    restartable: true
+  - name: collectd
+    handleType: SYSTEMD_UNIT
+    value: collectd.service
+    required: false
+    restartable: true
+  - name: collectd-exporter
+    handleType: SYSTEMD_UNIT
+    value: collectd_exporter.service
+    required: false
+    restartable: true
+  - name: process-exporter
+    handleType: SYSTEMD_UNIT
+    value: process_exporter.service
+    required: false
+    restartable: true
+  - name: zstack-service-exporter
+    handleType: SYSTEMD_UNIT
+    value: zstack_service_exporter.service
+    required: false
+    restartable: true
