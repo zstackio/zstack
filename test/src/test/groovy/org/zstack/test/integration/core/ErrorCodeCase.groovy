@@ -1,9 +1,13 @@
 package org.zstack.test.integration.core
 
+import org.zstack.core.ansible.AnsibleFacadeImpl
+import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.ErrorCode
 import org.zstack.sdk.ErrorCodeList
 import org.zstack.testlib.SubCase
+import org.zstack.utils.ShellResult
+import org.zstack.utils.ShellUtils
 
 class ErrorCodeCase extends SubCase {
     @Override
@@ -21,6 +25,29 @@ class ErrorCodeCase extends SubCase {
     @Override
     void test() {
         testErrorCodeDeserializer()
+        testAnsibleOutputSurvivesErrorTruncation()
+    }
+
+    void testAnsibleOutputSurvivesErrorTruncation() {
+        String diagnostic = "Management node cannot create Ansible local temporary directory [/root/.ansible/tmp]: inode exhaustion; check df -h and df -i"
+        ShellResult result = new ShellResult(command: "ansible-playbook " + "x" * 5000,
+                retCode: 1, stderr: diagnostic, stdout: "Ansible failed")
+        ShellUtils.ShellException failure
+        try {
+            result.raiseExceptionIfFail()
+            assert false: "the failed Ansible command must raise an error"
+        } catch (ShellUtils.ShellException error) {
+            failure = error
+        }
+        ErrorFacade errf = bean(ErrorFacade.class)
+        assert !errf.stringToOperationError(failure.message).details.contains(diagnostic)
+        String message = AnsibleFacadeImpl.prioritizeAnsibleOutput(failure.message)
+        def error = errf.stringToOperationError(message)
+        assert error.details.contains(diagnostic)
+        assert error.details.contains("Ansible failed")
+        assert message.contains(result.command)
+        assert message.contains("ret code: 1")
+        assert AnsibleFacadeImpl.prioritizeAnsibleOutput("local account expired") == "local account expired"
     }
 
     static void testErrorCodeDeserializer() {
