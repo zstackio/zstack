@@ -1,3 +1,5 @@
+CALL ADD_COLUMN('ModelVO', 'introductionFilePath', 'VARCHAR(2048)', 1, NULL);
+
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerApiCompatibilityVO` (
     `uuid` varchar(32) NOT NULL,
     `controllerUuid` varchar(32) NOT NULL,

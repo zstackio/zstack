@@ -68,6 +68,14 @@ public class DatasetInventory  {
         return this.size;
     }
 
+    public int version;
+    public void setVersion(int version) {
+        this.version = version;
+    }
+    public int getVersion() {
+        return this.version;
+    }
+
     public java.lang.Boolean system;
     public void setSystem(java.lang.Boolean system) {
         this.system = system;

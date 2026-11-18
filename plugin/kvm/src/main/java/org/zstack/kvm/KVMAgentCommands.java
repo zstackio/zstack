@@ -982,7 +982,7 @@ public class KVMAgentCommands {
         private Integer mldVersion;
         @GrayVersion(value = "5.5.28")
         private Boolean enableMulticastQuerier;
-        @GrayVersion(value = "5.6.0")
+        @GrayVersion(value = "5.5.48")
         private Boolean enableMulticastSnooping;
 
         public String getL2NetworkUuid() {

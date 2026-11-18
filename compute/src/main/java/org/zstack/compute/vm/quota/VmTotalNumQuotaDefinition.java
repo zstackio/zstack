@@ -29,13 +29,13 @@ public class VmTotalNumQuotaDefinition implements QuotaDefinition {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.hostUuid is null and vm.lastHostUuid is null and vm.rootVolumeUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
 
         Long used = SQL.New(sql, Long.class)
                 .param("auuid", accountUuid)
                 .param("rtype", VmInstanceVO.class.getSimpleName())
                 .param("states", list(VmInstanceState.Destroyed))
-                .param("vmtype", "baremetal2")
+                .param("vmtypes", VmQuotaConstant.VM_TYPES_NOT_COUNTED)
                 .find();
         return used == null ? 0L : used;
     }

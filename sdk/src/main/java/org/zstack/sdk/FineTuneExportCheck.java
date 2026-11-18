@@ -28,4 +28,20 @@ public class FineTuneExportCheck  {
         return this.message;
     }
 
+    public java.util.List missingKeys;
+    public void setMissingKeys(java.util.List missingKeys) {
+        this.missingKeys = missingKeys;
+    }
+    public java.util.List getMissingKeys() {
+        return this.missingKeys;
+    }
+
+    public java.lang.Integer missingKeyCount;
+    public void setMissingKeyCount(java.lang.Integer missingKeyCount) {
+        this.missingKeyCount = missingKeyCount;
+    }
+    public java.lang.Integer getMissingKeyCount() {
+        return this.missingKeyCount;
+    }
+
 }
