@@ -241,18 +241,33 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             }
 
             private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
-                Class<?> resourceType = param.param.resourceType();
-                if (RBAC.isResourceGlobalReadable(resourceType) || !OwnedByAccount.class.isAssignableFrom(resourceType)) {
+                Class resourceType = param.param.resourceType();
+
+                if (RBAC.isResourceGlobalReadable(resourceType)) {
                     return;
                 }
-                checkResourceAccess(resourceType, getResourceUuids(param));
+                if (!OwnedByAccount.class.isAssignableFrom(resourceType)){
+                    return;
+                }
+
+                List<String> uuids = getResourceUuids(param);
+                if (uuids.isEmpty()) {
+                    return;
+                }
+
+                List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
+                if (!resourceWithNoAccess.isEmpty()) {
+                    throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10009, "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
+                            rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
+                }
+
             }
 
             private void checkResourceAccess(Class<?> resourceType, List<String> uuids) {
                 if (RBAC.isResourceGlobalReadable(resourceType)) {
                     return;
                 }
-                if (!OwnedByAccount.class.isAssignableFrom(resourceType)){
+                if (!OwnedByAccount.class.isAssignableFrom(resourceType)) {
                     return;
                 }
 
