@@ -14,6 +14,12 @@ public class RestAPIVO {
     private String apiMessageName;
 
     @Column
+    private String ownerAccountUuid;
+
+    @Column
+    private String ownerUserUuid;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private RestAPIState state;
 
@@ -44,6 +50,22 @@ public class RestAPIVO {
 
     public String getResult() {
         return result;
+    }
+
+    public String getOwnerAccountUuid() {
+        return ownerAccountUuid;
+    }
+
+    public void setOwnerAccountUuid(String ownerAccountUuid) {
+        this.ownerAccountUuid = ownerAccountUuid;
+    }
+
+    public String getOwnerUserUuid() {
+        return ownerUserUuid;
+    }
+
+    public void setOwnerUserUuid(String ownerUserUuid) {
+        this.ownerUserUuid = ownerUserUuid;
     }
 
     public void setResult(String result) {

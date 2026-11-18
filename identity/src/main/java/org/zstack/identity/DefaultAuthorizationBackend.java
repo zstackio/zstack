@@ -3,6 +3,7 @@ package org.zstack.identity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.identity.rbac.RBAC;
@@ -31,6 +32,11 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
     @Override
     public boolean takeOverAuthorization(SessionInventory session) {
         return true;
+    }
+
+    @Override
+    public boolean isGlobalAdmin(SessionInventory session) {
+        return AccountConstant.isAdminPermission(session);
     }
 
     @Override
