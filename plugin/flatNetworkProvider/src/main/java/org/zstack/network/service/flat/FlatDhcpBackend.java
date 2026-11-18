@@ -41,6 +41,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.SdnControllerUpdateDHCPMsg;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkHelper;
 
 import org.zstack.header.vm.*;
@@ -63,6 +64,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -75,6 +77,7 @@ import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.math.BigInteger;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -355,17 +358,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
 
                 if (msg.getDhcpv6ServerIp() != null) {
+                    String canonicalDhcpv6 = IpRangeHelper.toCanonicalIp(msg.getDhcpv6ServerIp());
                     boolean allocate_ip = false;
                     for (IpRangeVO ipr : ip6Ranges) {
-                        if (IPv6NetworkUtils.isIpv6InRange(msg.getDhcpv6ServerIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                        if (IPv6NetworkUtils.isIpv6InRange(canonicalDhcpv6, ipr.getStartIp(), ipr.getEndIp())) {
                             allocate_ip = true;
                             break;
                         }
                     }
 
-                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, allocate_ip, msg.getDhcpv6ServerIp(), null);
-                    if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpv6ServerIp())) {
+                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, allocate_ip, canonicalDhcpv6, null);
+                    if (dhcpIp == null || !dhcpIp.equals(canonicalDhcpv6)) {
                         trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10024, "change dhcp server ip to [%s], but got [%s]", msg.getDhcpv6ServerIp(), dhcpIp));
+                        return;
                     }
                 }
                 trigger.next();
@@ -378,7 +383,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
 
                 if (msg.getDhcpv6ServerIp() != null) {
-                    deleteDhcpServerIp(msg.getL3NetworkUuid(), msg.getDhcpv6ServerIp());
+                    deleteDhcpServerIp(msg.getL3NetworkUuid(), IpRangeHelper.toCanonicalIp(msg.getDhcpv6ServerIp()));
                 }
 
                 trigger.rollback();
@@ -1042,6 +1047,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             UsedIpInventory ip = r.getIpInventory();
             dhcpServerIp = ip.getIp();
             dhcpServerIpUuid = ip.getUuid();
+        } else if (requiredIp != null) {
+            String canonicalIp = IpRangeHelper.toCanonicalIp(requiredIp);
+            if (Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, l3Uuid)
+                    .eq(UsedIpVO_.ip, canonicalIp)
+                    .isExists()) {
+                logger.warn(String.format("cannot allocate DHCP server IP[%s] on l3Network[uuid:%s] because it is already used",
+                        requiredIp, l3Uuid));
+                return null;
+            }
+            dhcpServerIp = canonicalIp;
         }
 
         SystemTagCreator creator = FlatNetworkSystemTags.getDhcpServerIpTag(ipVersion).newSystemTagCreator(l3Uuid);
@@ -2409,6 +2425,16 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10036, "DHCP server ip [%s] can not be configured to system l3",
                         dhcpServerIp));
             }
+
+            String canonicalDhcpIp = IpRangeHelper.toCanonicalIp(dhcpServerIp);
+            if (Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, inv.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, canonicalDhcpIp)
+                    .isExists()) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10065,
+                        "could not set dhcp server ip, because ip[%s] is already used on l3 network[uuid:%s]",
+                        dhcpServerIp, inv.getL3NetworkUuid()));
+            }
         }
     }
 
@@ -2509,7 +2535,27 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         if (dhcp6Ip != null && !controllerManaged) {
             if (!IPv6NetworkUtils.isIpv6InCidrRange(dhcp6Ip, ipv6Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10042, "could set dhcp v6 server ip, because ip[%s] is not the cidr of l3 [%s]",
-                        dhcpIp, ipv6Ranges.get(0).getNetworkCidr()));
+                        dhcp6Ip, ipv6Ranges.get(0).getNetworkCidr()));
+            }
+        }
+
+        if (dhcpIp != null) {
+            if (Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, IpRangeHelper.toCanonicalIp(dhcpIp))
+                    .isExists()) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10066,
+                        "could not set dhcp server ip, because ip[%s] is used", dhcpIp));
+            }
+        }
+
+        if (dhcp6Ip != null) {
+            if (Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, IpRangeHelper.toCanonicalIp(dhcp6Ip))
+                    .isExists()) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10067,
+                        "could not set dhcp v6 server ip, because ip[%s] is used", dhcp6Ip));
             }
         }
     }
@@ -2574,10 +2620,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         if (msg.getDhcpv6ServerIp() != null) {
-            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getDhcpv6ServerIp())
+            if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, IpRangeHelper.toCanonicalIp(msg.getDhcpv6ServerIp()))
                     .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).isExists()) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10051, "could set dhcp v6 server ip, because ip[%s] is used",
-                        msg.getDhcpServerIp()));
+                        msg.getDhcpv6ServerIp()));
             }
         }
     }
@@ -2596,6 +2642,30 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
      *      $2.3 dhcp server ip is configured and in this range, actions:
      *          a) allocate dhcp server ip in db
      *      */
+    private void persistReservedUsedIpsIdempotently(List<UsedIpVO> usedIpVOS) {
+        if (usedIpVOS.isEmpty()) {
+            return;
+        }
+        try {
+            dbf.persistCollection(usedIpVOS);
+        } catch (RuntimeException e) {
+            if (!ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
+                throw e;
+            }
+            for (UsedIpVO vo : usedIpVOS) {
+                try {
+                    dbf.persist(vo);
+                } catch (RuntimeException singleEx) {
+                    if (!ExceptionDSL.isCausedBy(singleEx, SQLIntegrityConstraintViolationException.class)) {
+                        throw singleEx;
+                    }
+                    logger.debug(String.format("skipping reserved IP[%s] on l3Network[uuid:%s] because UsedIpVO already exists",
+                            vo.getIp(), vo.getL3NetworkUuid()));
+                }
+            }
+        }
+    }
+
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
         L3NetworkVO l3NetworkVO = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
@@ -2603,6 +2673,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         if (ipr.getIpVersion() == IPv6Constants.IPv4) {
             reservedIpRanges = l3NetworkVO.getReservedIpRanges()
                     .stream().filter(r -> r.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+            List<String> existingIpList = reservedIpRanges.isEmpty() ? Collections.emptyList() :
+                    Q.New(UsedIpVO.class)
+                            .select(UsedIpVO_.ip)
+                            .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                            .eq(UsedIpVO_.ipVersion, ipr.getIpVersion())
+                            .listValues();
+            Set<String> existingIps = existingIpList.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
             for (ReservedIpRangeVO reservedIpRange : reservedIpRanges) {
                 List<UsedIpVO> usedIpVOS = new ArrayList<>();
                 if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(),
@@ -2612,9 +2691,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                     for (long i = start; i <= end; i++){
                         String newIp = NetworkUtils.longToIpv4String(i);
-                        if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                        if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())
+                                && existingIps.add(newIp)) {
                             UsedIpVO vo = new UsedIpVO();
-                            vo.setUuid(Platform.getUuid());
+                            vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(ipr.getL3NetworkUuid(), newIp));
                             vo.setIpRangeUuid(ipr.getUuid());
                             vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
                             //vo.setVmNicUuid(nic.getUuid());
@@ -2630,13 +2710,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                         }
                     }
                 }
-                if (!usedIpVOS.isEmpty()) {
-                    dbf.persistCollection(usedIpVOS);
-                }
+                persistReservedUsedIpsIdempotently(usedIpVOS);
             }
         } else {
             List<ReservedIpRangeVO> ipv6ReservedIpRange = l3NetworkVO.getReservedIpRanges()
                     .stream().filter(r -> r.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+            List<String> existingIpList = ipv6ReservedIpRange.isEmpty() ? Collections.emptyList() :
+                    Q.New(UsedIpVO.class)
+                            .select(UsedIpVO_.ip)
+                            .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                            .eq(UsedIpVO_.ipVersion, ipr.getIpVersion())
+                            .listValues();
+            Set<String> existingIps = existingIpList.stream()
+                    .filter(Objects::nonNull)
+                    .map(IpRangeHelper::toCanonicalIp)
+                    .collect(Collectors.toSet());
             for (ReservedIpRangeVO reservedIpRange : ipv6ReservedIpRange) {
                 List<UsedIpVO> usedIpVOS = new ArrayList<>();
                 if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(),
@@ -2646,14 +2734,16 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                     for (BigInteger i = start; i.compareTo(end) <= 0 && ipr != null; i = i.add(BigInteger.ONE)) {
                         String newIp = IPv6NetworkUtils.IPv6AddressToString(i);
-                        if (IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                        String canonicalIp = IpRangeHelper.toCanonicalIp(newIp);
+                        if (IPv6NetworkUtils.isIpv6InRange(canonicalIp, ipr.getStartIp(), ipr.getEndIp())
+                                && existingIps.add(canonicalIp)) {
                             UsedIpVO vo = new UsedIpVO();
-                            vo.setUuid(Platform.getUuid());
+                            vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(ipr.getL3NetworkUuid(), canonicalIp));
                             vo.setIpRangeUuid(ipr.getUuid());
                             vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
                             //vo.setVmNicUuid(nic.getUuid());
                             vo.setIpVersion(ipr.getIpVersion());
-                            vo.setIp(newIp);
+                            vo.setIp(canonicalIp);
                             vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
                             vo.setNetmask(ipr.getNetmask());
                             vo.setGateway(ipr.getGateway());
@@ -2664,9 +2754,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                         }
                     }
                 }
-                if (!usedIpVOS.isEmpty()) {
-                    dbf.persistCollection(usedIpVOS);
-                }
+                persistReservedUsedIpsIdempotently(usedIpVOS);
             }
         }
 
@@ -2852,7 +2940,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             boolean allocate_ip = false;
             if (dhcp6Ip != null) {
                 for (IpRangeVO ipr : ip6Ranges) {
-                    if (NetworkUtils.isInRange(dhcp6Ip, ipr.getStartIp(), ipr.getEndIp())) {
+                    if (IPv6NetworkUtils.isIpv6InRange(dhcp6Ip, ipr.getStartIp(), ipr.getEndIp())) {
                         allocate_ip = true;
                         break;
                     }

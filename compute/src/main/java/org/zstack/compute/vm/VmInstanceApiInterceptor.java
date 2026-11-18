@@ -118,7 +118,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
      * Check whether an IP is already in use (using error code ORG_ZSTACK_COMPUTE_VM_10105).
      */
     private void checkIpOccupied(String ip, String l3NetworkUuid) {
-        if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid).isExists()) {
+        String canonicalIp = IpRangeHelper.toCanonicalIp(ip);
+        if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, canonicalIp).eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid).isExists()) {
             throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10105,
                     "the static IP[%s] has been occupied on the L3 network[uuid:%s]", ip, l3NetworkUuid));
         }
@@ -132,9 +133,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             return;
         }
 
+        List<String> canonicalIps = ips.stream().map(IpRangeHelper::toCanonicalIp).collect(Collectors.toList());
         List<String> occupiedIps = Q.New(UsedIpVO.class)
                 .eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid)
-                .in(UsedIpVO_.ip, ips)
+                .in(UsedIpVO_.ip, canonicalIps)
                 .select(UsedIpVO_.ip)
                 .listValues();
 

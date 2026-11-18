@@ -792,26 +792,34 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public void run(SyncTaskChain chain) {
-                IpAllocatorType strategyType = getIpAllocatorType(msg);
-                IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
-                UsedIpInventory ip = ias.allocateIp(msg);
-                if (ip == null) {
-                    String reason = msg.getRequiredIp() == null ?
-                            String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
-                            String.format("IP[%s] is not available", msg.getRequiredIp());
-                    reply.setError(err(ORG_ZSTACK_NETWORK_L3_10078, L3Errors.ALLOCATE_IP_ERROR,
-                            "IP allocator strategy[%s] failed, because %s", strategyType, reason));
+                try {
+                    IpAllocatorType strategyType = getIpAllocatorType(msg);
+                    IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
+                    UsedIpInventory ip = ias.allocateIp(msg);
+                    if (ip == null) {
+                        String reason = msg.getRequiredIp() == null ?
+                                String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
+                                String.format("IP[%s] is not available", msg.getRequiredIp());
+                        reply.setError(err(ORG_ZSTACK_NETWORK_L3_10078, L3Errors.ALLOCATE_IP_ERROR,
+                                "IP allocator strategy[%s] failed, because %s", strategyType, reason));
+                        bus.reply(msg, reply);
+                        return;
+                    }
+
+                    ip = overrideUsedIpIfNeeded(msg, ip);
+
+                    logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, ip.getIp()));
+                    reply.setIpInventory(ip);
                     bus.reply(msg, reply);
+                } catch (Throwable t) {
+                    logger.warn(String.format("unexpected error allocating IP on l3Network[uuid:%s]", msg.getL3NetworkUuid()), t);
+                    reply.setError(t instanceof OperationFailureException
+                            ? ((OperationFailureException) t).getErrorCode()
+                            : errf.throwableToInternalError(t));
+                    bus.reply(msg, reply);
+                } finally {
                     chain.next();
-                    return;
                 }
-
-                ip = overrideUsedIpIfNeeded(msg, ip);
-
-                logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, ip.getIp()));
-                reply.setIpInventory(ip);
-                bus.reply(msg, reply);
-                chain.next();
             }
 
             @Override
@@ -975,7 +983,7 @@ public class L3BasicNetwork implements L3Network {
                 }
 
                 UsedIpVO vo = new UsedIpVO();
-                vo.setUuid(Platform.getUuid());
+                vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(ipr.getL3NetworkUuid(), newIp));
                 vo.setIpRangeUuid(ipr.getUuid());
                 vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
                 //vo.setVmNicUuid(nic.getUuid());
@@ -1020,7 +1028,7 @@ public class L3BasicNetwork implements L3Network {
                 }
 
                 UsedIpVO vo = new UsedIpVO();
-                vo.setUuid(Platform.getUuid());
+                vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(ipr.getL3NetworkUuid(), newIp));
                 vo.setIpRangeUuid(ipr.getUuid());
                 vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
                 //vo.setVmNicUuid(nic.getUuid());

@@ -804,19 +804,21 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private UsedIpInventory reserveIpv6(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
+        String canonicalIp = IpRangeHelper.toCanonicalIp(ip);
         try {
-            UsedIpVO vo = new UsedIpVO();
-            //vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            String uuid;
-            if (allowDuplicatedAddress) {
-                uuid = Platform.getUuid();
-            } else {
-                uuid = ipRange.getUuid() + ip;
+            if (!allowDuplicatedAddress && Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, ipRange.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, canonicalIp)
+                    .isExists()) {
+                return null;
             }
-            uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
+            UsedIpVO vo = new UsedIpVO();
+            String uuid = allowDuplicatedAddress
+                    ? Platform.getUuid()
+                    : IpRangeHelper.makeDeterministicUsedIpUuid(ipRange.getL3NetworkUuid(), canonicalIp);
             vo.setUuid(uuid);
             vo.setIpRangeUuid(ipRange.getUuid());
-            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(ip));
+            vo.setIp(canonicalIp);
             vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());
@@ -840,17 +842,20 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private UsedIpInventory reserveIpv4(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
+        String canonicalIp = IpRangeHelper.toCanonicalIp(ip);
         try {
-            UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
-            vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
-            String uuid;
-            if (allowDuplicatedAddress) {
-                uuid = Platform.getUuid();
-            } else {
-                uuid = ipRange.getUuid() + ip;
-                uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
+            if (!allowDuplicatedAddress && Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, ipRange.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, canonicalIp)
+                    .isExists()) {
+                return null;
             }
+            UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), canonicalIp);
+            vo.setIpInLong(NetworkUtils.ipv4StringToLong(canonicalIp));
+            vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
+            String uuid = allowDuplicatedAddress
+                    ? Platform.getUuid()
+                    : IpRangeHelper.makeDeterministicUsedIpUuid(ipRange.getL3NetworkUuid(), canonicalIp);
             vo.setUuid(uuid);
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());

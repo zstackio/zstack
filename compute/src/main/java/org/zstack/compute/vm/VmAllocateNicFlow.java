@@ -9,6 +9,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -24,10 +25,12 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -35,9 +38,11 @@ import org.zstack.utils.network.NicIpAddressInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -185,6 +190,11 @@ public class VmAllocateNicFlow implements Flow {
                         fail(e.getErrorCode());
                         return;
                     } catch (RuntimeException e) {
+                        if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
+                            fail(argerr(ORG_ZSTACK_COMPUTE_VM_10360,
+                                    "static IP on L3 network[uuid:%s] has already been allocated", nw.getUuid()));
+                            return;
+                        }
                         fail(errf.throwableToInternalError(e));
                         return;
                     }
@@ -199,6 +209,7 @@ public class VmAllocateNicFlow implements Flow {
                 public void fail(ErrorCode errorCode) {
                     try {
                         dbf.removeByPrimaryKey(nicVO.getUuid(), VmNicVO.class);
+                        spec.getDestNics().removeIf(inv -> nicVO.getUuid().equals(inv.getUuid()));
                     } catch (Throwable t) {
                         logger.warn(String.format("failed to remove VmNicVO[uuid:%s] after before allocate extension failure",
                                 nicVO.getUuid()), t);
@@ -265,9 +276,18 @@ public class VmAllocateNicFlow implements Flow {
 
         NicIpAddressInfo nicIpAddressInfo = nicNetworkInfoMap.get(nic.getL3NetworkUuid());
         if (!nicIpAddressInfo.ipv6Address.isEmpty()) {
+            String canonicalIp6 = IpRangeHelper.toCanonicalIp(nicIpAddressInfo.ipv6Address);
+            if (Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, canonicalIp6)
+                    .isExists()) {
+                throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10361,
+                        "IPv6 address[%s] has already been allocated on L3 network[uuid:%s]",
+                        canonicalIp6, nic.getL3NetworkUuid()));
+            }
             UsedIpVO vo = new UsedIpVO();
-            vo.setUuid(Platform.getUuid());
-            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Address));
+            vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(nic.getL3NetworkUuid(), canonicalIp6));
+            vo.setIp(canonicalIp6);
             vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicIpAddressInfo.ipv6Address + "/" + nicIpAddressInfo.ipv6Prefix));
             vo.setGateway(nicIpAddressInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicIpAddressInfo.ipv6Gateway));
             vo.setIpVersion(IPv6Constants.IPv6);
@@ -283,9 +303,18 @@ public class VmAllocateNicFlow implements Flow {
             dbf.persist(vo);
         }
         if (!nicIpAddressInfo.ipv4Address.isEmpty()) {
+            String canonicalIp4 = IpRangeHelper.toCanonicalIp(nicIpAddressInfo.ipv4Address);
+            if (Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                    .eq(UsedIpVO_.ip, canonicalIp4)
+                    .isExists()) {
+                throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10362,
+                        "IPv4 address[%s] has already been allocated on L3 network[uuid:%s]",
+                        canonicalIp4, nic.getL3NetworkUuid()));
+            }
             UsedIpVO vo = new UsedIpVO();
-            vo.setUuid(Platform.getUuid());
-            vo.setIp(nicIpAddressInfo.ipv4Address);
+            vo.setUuid(IpRangeHelper.makeDeterministicUsedIpUuid(nic.getL3NetworkUuid(), canonicalIp4));
+            vo.setIp(canonicalIp4);
             vo.setGateway(nicIpAddressInfo.ipv4Gateway);
             vo.setNetmask(nicIpAddressInfo.ipv4Netmask);
             vo.setIpVersion(IPv6Constants.IPv4);

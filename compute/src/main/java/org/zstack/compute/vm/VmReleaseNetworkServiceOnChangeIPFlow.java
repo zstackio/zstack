@@ -25,8 +25,21 @@ import java.util.Map;
 public class VmReleaseNetworkServiceOnChangeIPFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmReleaseNetworkServiceOnChangeIPFlow.class);
 
+    public static final String SKIP_RESTORE_ON_ROLLBACK_KEY = "__skipRestoreNetworkServiceOnRollback__";
+
     @Autowired
     private NetworkServiceManager nsMgr;
+
+    private final boolean restoreOnRollback;
+    private boolean released;
+
+    public VmReleaseNetworkServiceOnChangeIPFlow() {
+        this(false);
+    }
+
+    public VmReleaseNetworkServiceOnChangeIPFlow(boolean restoreOnRollback) {
+        this.restoreOnRollback = restoreOnRollback;
+    }
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -34,6 +47,7 @@ public class VmReleaseNetworkServiceOnChangeIPFlow implements Flow {
         nsMgr.releaseNetworkServiceOnChangeIP(spec, null, new Completion(trigger) {
             @Override
             public void success() {
+                released = true;
                 trigger.next();
             }
 
@@ -46,6 +60,23 @@ public class VmReleaseNetworkServiceOnChangeIPFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback trigger, Map data) {
-        trigger.rollback();
+        if (!restoreOnRollback || !released || Boolean.TRUE.equals(data.get(SKIP_RESTORE_ON_ROLLBACK_KEY))) {
+            trigger.rollback();
+            return;
+        }
+        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        nsMgr.applyNetworkServiceOnChangeIP(spec, null, new Completion(trigger) {
+            @Override
+            public void success() {
+                trigger.rollback();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to restore network service on rollback for vm[uuid:%s]: %s",
+                        spec.getVmInventory().getUuid(), errorCode));
+                trigger.rollback();
+            }
+        });
     }
 }

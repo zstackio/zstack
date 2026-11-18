@@ -26,6 +26,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -445,6 +446,22 @@ public class IpRangeHelper {
         }
 
         return null;
+    }
+
+    public static String toCanonicalIp(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return ip;
+        }
+        if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return IPv6NetworkUtils.getIpv6AddressCanonicalString(ip);
+        }
+        return ip;
+    }
+
+    public static String makeDeterministicUsedIpUuid(String l3NetworkUuid, String ip) {
+        String canonicalIp = toCanonicalIp(ip);
+        return UUID.nameUUIDFromBytes((l3NetworkUuid + canonicalIp).getBytes(StandardCharsets.UTF_8))
+                .toString().replace("-", "");
     }
 
     public static IpRangeVO fromIpRangeInventory(IpRangeInventory ipr, String accountUuid) {
