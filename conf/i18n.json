@@ -37999,7 +37999,7 @@
       "finalArchitecture",
       "hostArchitectures"
     ],
-    "line": 2768,
+    "line": 2769,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -38007,7 +38007,7 @@
     "en_US": "no candidate host has the cpu architecture required by the image or vm",
     "zh_CN": "没有候选物理机符合镜像或云主机要求的 CPU 架构",
     "arguments": [],
-    "line": 2776,
+    "line": 2777,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   }
 ]

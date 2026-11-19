@@ -3189,6 +3189,8 @@ public class KVMAgentCommands {
 
     public static class VmNicInfo {
         private String macAddress;
+        private String nicInternalName;
+        private String pciDeviceAddress;
         private DeviceAddress deviceAddress;
 
         public String getMacAddress() {
@@ -3197,6 +3199,22 @@ public class KVMAgentCommands {
 
         public void setMacAddress(String macAddress) {
             this.macAddress = macAddress;
+        }
+
+        public String getNicInternalName() {
+            return nicInternalName;
+        }
+
+        public void setNicInternalName(String nicInternalName) {
+            this.nicInternalName = nicInternalName;
+        }
+
+        public String getPciDeviceAddress() {
+            return pciDeviceAddress;
+        }
+
+        public void setPciDeviceAddress(String pciDeviceAddress) {
+            this.pciDeviceAddress = pciDeviceAddress;
         }
 
         public DeviceAddress getDeviceAddress() {

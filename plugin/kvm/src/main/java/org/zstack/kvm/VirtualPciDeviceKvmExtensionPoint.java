@@ -10,6 +10,12 @@ import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceSpec;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoint, KVMSyncVmDeviceInfoExtensionPoint {
     @Autowired
     private VmInstanceDeviceManager vidManager;
@@ -56,16 +62,32 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
             return;
         }
 
+        List<VmNicInventory> orderedNics = (spec != null ? spec.getDestNics() : vm.getVmNics())
+                .stream()
+                .sorted(Comparator.comparingInt(VmNicInventory::getDeviceId))
+                .collect(Collectors.toList());
+        Set<String> matchedNicUuids = new HashSet<>();
+
         rsp.getNicInfos().forEach(info -> {
-            VmNicInventory nic = (spec != null ? spec.getDestNics() : vm.getVmNics())
-                    .stream()
-                    .filter(vmNicInventory -> vmNicInventory.getMac().equals(info.getMacAddress()))
-                    .findFirst()
-                    .orElse(null);
+            VmNicInventory nic = null;
+            if (!StringUtils.isEmpty(info.getNicInternalName())) {
+                nic = orderedNics.stream()
+                        .filter(n -> info.getNicInternalName().equals(n.getInternalName()))
+                        .findFirst()
+                        .orElse(null);
+            }
+            if (nic == null) {
+                nic = orderedNics.stream()
+                        .filter(n -> !matchedNicUuids.contains(n.getUuid())
+                                && StringUtils.equalsIgnoreCase(n.getMac(), info.getMacAddress()))
+                        .findFirst()
+                        .orElse(null);
+            }
             if (nic == null) {
                 return;
             }
 
+            matchedNicUuids.add(nic.getUuid());
             vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getDeviceAddress()), vmUuid);
         });
 

@@ -102,8 +102,8 @@ public class TestLongJobInventorySecurity {
     @Test
     public void malformedNestedJsonStringsFailClosed() {
         JsonObject data = new JsonObject();
-        data.addProperty("message", "{not-json");
-        data.addProperty("array", "[unterminated");
+        data.addProperty("message", "{\"message\":\"unterminated");
+        data.addProperty("array", "[\"unterminated");
         data.addProperty("payload", "{\"apiKey\":\"fixture-malformed-credential\"");
         LongJobInventory inv = new LongJobInventory();
         inv.setJobData(data.toString());
@@ -112,6 +112,206 @@ public class TestLongJobInventorySecurity {
         assertEquals("{}", safe.get("array").getAsString());
         assertEquals("{}", safe.get("payload").getAsString());
         assertFalse(inv.getJobData().contains("fixture-malformed-credential"));
+    }
+
+    @Test
+    public void bracketPrefixedBusinessTextSurvivesPublicMappingAndProjection() throws Exception {
+        JsonObject data = new JsonObject();
+        data.addProperty("name", "[Ubuntu 22.04] LTS image");
+        data.addProperty("description", "[migration] volume ready");
+        data.addProperty("message", "[phase 1] {waiting}");
+        data.addProperty("details", "[retry-2] connecting");
+        data.addProperty("payload", "[phase 1] {waiting}");
+        LongJobVO vo = new LongJobVO();
+        vo.setJobData(data.toString());
+        for (LongJobInventory inv : publicMappings(vo)) {
+            assertEquals(data, new JsonParser().parse(inv.getJobData()));
+        }
+        assertEquals(data.toString(), vo.getJobData());
+    }
+
+    @Test
+    public void malformedStructuredPayloadsFailClosedInEveryField() throws Exception {
+        JsonObject data = new JsonObject();
+        data.addProperty("payload", "{\"password\":\"fixture-malformed-payload\"");
+        data.addProperty("serialized", "[{\"session\":{\"uuid\":\"fixture-malformed-session\"}}");
+        data.addProperty("description", "{\"password\":\"fixture-malformed-description\"");
+        data.addProperty("message", "[phase 1] {\"apiKey\":\"fixture-malformed-message\"");
+        LongJobVO vo = new LongJobVO();
+        vo.setJobData(data.toString());
+        for (LongJobInventory inv : publicMappings(vo)) {
+            JsonObject safe = new JsonParser().parse(inv.getJobData()).getAsJsonObject();
+            for (String key : new String[] {"payload", "serialized", "description", "message"}) {
+                assertEquals(key, "{}", safe.get(key).getAsString());
+            }
+        }
+        assertEquals(data.toString(), vo.getJobData());
+    }
+
+    @Test
+    public void imageUrlPasswordsAreNotExposedByPublicMappingOrProjection() throws Exception {
+        String[][] urls = {
+                {"https://image-user:fixture-url-password@images.example.test:8443/path%20name/image.qcow2?format=qcow2#download",
+                        "https://images.example.test:8443/path%20name/image.qcow2?format=qcow2#download"},
+                {"https://image%40user:fixture%3Aurl%40password@images.example.test/image.qcow2",
+                        "https://images.example.test/image.qcow2"},
+                {"http://image-user:fixture-url-password@[2001:db8::1]:8080/image.qcow2",
+                        "http://[2001:db8::1]:8080/image.qcow2"},
+                {"sftp://image-user:fixture-url-password@images.example.test:2222/image.qcow2",
+                        "sftp://images.example.test:2222/image.qcow2"},
+                {"https://image-user@images.example.test/image.qcow2",
+                        "https://images.example.test/image.qcow2"},
+                {"https://image-user:fixture@url@images.example.test/image.qcow2",
+                        "https://images.example.test/image.qcow2"}
+        };
+        for (String[] url : urls) {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("url", url[0]);
+            payload.addProperty("name", "image-with-credentials");
+            payload.addProperty("resourceUuid", "fixture-image-uuid");
+            JsonObject data = payload.deepCopy();
+            data.addProperty("payload", payload.toString());
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                JsonObject safe = new JsonParser().parse(inv.getJobData()).getAsJsonObject();
+                assertEquals(url[1], safe.get("url").getAsString());
+                assertEquals(url[1], new JsonParser().parse(safe.get("payload").getAsString())
+                        .getAsJsonObject().get("url").getAsString());
+                assertEquals("image-with-credentials", safe.get("name").getAsString());
+                assertEquals("fixture-image-uuid", safe.get("resourceUuid").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+    }
+
+    @Test
+    public void ordinaryUrlsAndTextRemainUnchanged() throws Exception {
+        JsonObject data = new JsonObject();
+        data.addProperty("url", "https://images.example.test/path%20name/image.qcow2?format=qcow2#download");
+        data.addProperty("uploadUrl", "upload://fixture-resource");
+        data.addProperty("description", "contact owner@example.test");
+        LongJobVO vo = new LongJobVO();
+        vo.setJobData(data.toString());
+        for (LongJobInventory inv : publicMappings(vo)) {
+            assertEquals(data, new JsonParser().parse(inv.getJobData()));
+        }
+        assertEquals(data.toString(), vo.getJobData());
+    }
+
+    @Test
+    public void unstructuredContainerLikeTextIsPreservedExactly() throws Exception {
+        for (String text : new String[] {"[waiting]", "{waiting}", "{not-json", "[unterminated",
+                "  [phase 1] {waiting}  ", "[training] waiting"}) {
+            JsonObject data = new JsonObject();
+            data.addProperty("value", text);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertEquals(text, new JsonParser().parse(inv.getJobData()).getAsJsonObject()
+                        .get("value").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+    }
+
+    @Test
+    public void malformedUrlUserInfoFailsClosedWhileNonCredentialTextIsPreserved() throws Exception {
+        for (String url : new String[] {"https://image-user:fixture url password@images.example.test/image.qcow2",
+                "https://image-user:fixture%zz@images.example.test/image.qcow2",
+                "https://image-user:fixture-url-password@[invalid/image.qcow2"}) {
+            JsonObject data = new JsonObject();
+            data.addProperty("url", url);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertEquals("{}", new JsonParser().parse(inv.getJobData()).getAsJsonObject()
+                        .get("url").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+    }
+
+    @Test
+    public void nestedJsonStringEncodingCannotBypassCredentialFiltering() throws Exception {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("password", "fixture-layered-password");
+        payload.addProperty("resourceUuid", "fixture-layered-resource");
+        String serialized = payload.toString();
+        for (int layers = 1; layers <= 3; layers++) {
+            serialized = new com.google.gson.JsonPrimitive(serialized).toString();
+            JsonObject data = new JsonObject();
+            data.addProperty("payload", serialized);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertFalse(inv.getJobData().contains("fixture-layered-password"));
+                assertTrue(inv.getJobData().contains("fixture-layered-resource"));
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+        for (String text : new String[] {"{\\\"password\\\":\\\"fixture-broken-encoding", "[1] ready",
+                "[\"fixture-broken-array", "[true", "[nul", "{", "["}) {
+            JsonObject data = new JsonObject();
+            data.addProperty("payload", text);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertEquals("{}", new JsonParser().parse(inv.getJobData()).getAsJsonObject()
+                        .get("payload").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+    }
+
+    @Test
+    public void authorityWithoutUserInfoKeepsAtSignsInThePathOrQuery() throws Exception {
+        for (String url : new String[] {"https://images_internal.example.test/path?owner=a@b",
+                "https://images_internal.example.test/owner@site/path%20name#part",
+                "  HtTpS://[2001:db8::1]:8443/path%20name?owner=a@b#download  "}) {
+            JsonObject data = new JsonObject();
+            data.addProperty("url", url);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertEquals(url, new JsonParser().parse(inv.getJobData()).getAsJsonObject()
+                        .get("url").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+    }
+
+    @Test
+    public void leadingEscapedJsonContainersFailClosedWithoutChangingOrdinaryBackslashes() throws Exception {
+        for (String text : new String[] {"\\\"{\\\"password\\\":\\\"fixture-broken-password",
+                "\\\\\\\"[\\\\\\\"fixture-broken-array"}) {
+            JsonObject data = new JsonObject();
+            data.addProperty("payload", text);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertEquals("{}", new JsonParser().parse(inv.getJobData()).getAsJsonObject()
+                        .get("payload").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+        for (String text : new String[] {"\\waiting", "\\\\server\\share", "\\\"quoted text"}) {
+            JsonObject data = new JsonObject();
+            data.addProperty("payload", text);
+            LongJobVO vo = new LongJobVO();
+            vo.setJobData(data.toString());
+            for (LongJobInventory inv : publicMappings(vo)) {
+                assertEquals(text, new JsonParser().parse(inv.getJobData()).getAsJsonObject()
+                        .get("payload").getAsString());
+            }
+            assertEquals(data.toString(), vo.getJobData());
+        }
+    }
+
+    private LongJobInventory[] publicMappings(LongJobVO vo) throws Exception {
+        LongJobInventory projected = new LongJobInventory();
+        PropertyUtils.setProperty(projected, "jobData", vo.getJobData());
+        return new LongJobInventory[] {LongJobInventory.valueOf(vo), projected};
     }
 
     @Test

@@ -244,7 +244,6 @@ class CreateVmWithHybridClusterCase extends SubCase {
         )
         CreateVmInstanceAction.Result result = action.call()
 
-        // users must learn the image/cluster architecture mismatch instead of a bare "no host" with reason null
         assert result.error != null
         String message = flatten(result.error)
         assert message.contains("aarch64")

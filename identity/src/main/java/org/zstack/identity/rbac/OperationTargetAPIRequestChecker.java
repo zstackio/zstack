@@ -1,6 +1,8 @@
 package org.zstack.identity.rbac;
 
 import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -22,6 +24,9 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
+    @Autowired
+    private PluginRegistry pluginRgty;
+
     protected RBACEntity rbacEntity;
 
     private static Map<Class, RBAC.Permission> rbacInfos =  Collections.synchronizedMap(new HashMap<>());
@@ -120,6 +125,9 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             @Override
             protected void scripts() {
                 APIMessage.getApiParams().get(rbacEntity.getApiMessage().getClass()).forEach(this::checkOperationTarget);
+                for (APIResourceReferenceExtensionPoint ext : pluginRgty.getExtensionList(APIResourceReferenceExtensionPoint.class)) {
+                    ext.getResourceReferences(rbacEntity.getApiMessage()).forEach(this::checkResourceAccess);
+                }
             }
 
             private void checkOperationTarget(APIMessage.FieldParam param) {
@@ -250,6 +258,26 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
                 if (!resourceWithNoAccess.isEmpty()) {
                     throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10009, "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
+                            rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
+                }
+
+            }
+
+            private void checkResourceAccess(Class<?> resourceType, List<String> uuids) {
+                if (RBAC.isResourceGlobalReadable(resourceType)) {
+                    return;
+                }
+                if (!OwnedByAccount.class.isAssignableFrom(resourceType)) {
+                    return;
+                }
+
+                if (uuids.isEmpty()) {
+                    return;
+                }
+
+                List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
+                if (!resourceWithNoAccess.isEmpty()) {
+                    throw new OperationFailureException(operr(ORG_ZSTACK_IDENTITY_RBAC_10014, "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
                             rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
                 }
 

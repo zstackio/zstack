@@ -26,6 +26,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.identity.APIResourceReferenceExtensionPoint;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
@@ -69,7 +70,18 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * Time: 9:55 PM
  * To change this template use File | Settings | File Templates.
  */
-public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
+public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResourceReferenceExtensionPoint {
+    @Override
+    public Map<Class<?>, List<String>> getResourceReferences(APIMessage msg) {
+        if (msg instanceof NewVmInstanceMessage) {
+            return VmNicUtils.getNetworkReferences(((NewVmInstanceMessage) msg).getVmNicParams(), false);
+        }
+        if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            return VmNicUtils.getNetworkReferences(((APIAttachL3NetworkToVmMsg) msg).getVmNicParams(), true);
+        }
+        return Collections.emptyMap();
+    }
+
     private static final CLogger logger = Utils.getLogger(VmInstanceApiInterceptor.class);
     @Autowired
     private CloudBus bus;
