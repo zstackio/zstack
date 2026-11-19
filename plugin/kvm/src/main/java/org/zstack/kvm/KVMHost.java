@@ -5090,17 +5090,31 @@ public class KVMHost extends HostBase implements Host {
                 }
 
                 if (ret.getNicInfos() != null && !ret.getNicInfos().isEmpty()) {
-                    Map<String, VmNicInventory> macNicMap = new HashMap<>();
-                    for (VmNicInventory nic : spec.getDestNics()) {
-                        macNicMap.put(nic.getMac(), nic);
-                    }
+                    List<VmNicInventory> orderedNics = spec.getDestNics().stream()
+                            .sorted(Comparator.comparingInt(VmNicInventory::getDeviceId))
+                            .collect(Collectors.toList());
+                    Set<String> matchedNicUuids = new HashSet<>();
 
                     for (VmNicInfo vmNicInfo : ret.getNicInfos()) {
-                        VmNicInventory nic = macNicMap.get(vmNicInfo.getMacAddress());
+                        VmNicInventory nic = null;
+                        if (!StringUtils.isEmpty(vmNicInfo.getNicInternalName())) {
+                            nic = orderedNics.stream()
+                                    .filter(n -> vmNicInfo.getNicInternalName().equals(n.getInternalName()))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
+                        if (nic == null) {
+                            nic = orderedNics.stream()
+                                    .filter(n -> !matchedNicUuids.contains(n.getUuid())
+                                            && StringUtils.equalsIgnoreCase(n.getMac(), vmNicInfo.getMacAddress()))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
                         if (nic == null) {
                             continue;
                         }
 
+                        matchedNicUuids.add(nic.getUuid());
                         SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(nic.getUuid());
                         creator.inherent = true;
                         creator.recreate = true;
