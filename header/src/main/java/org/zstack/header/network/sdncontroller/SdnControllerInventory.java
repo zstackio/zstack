@@ -2,6 +2,8 @@ package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.message.GsonTransient;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
 
@@ -22,8 +24,10 @@ public class SdnControllerInventory implements Serializable {
     private String description;
     private String ip;
     private String username;
+    @GsonTransient
+    @APINoSee
     @NoLogging
-    private String password;
+    private transient String password;
     private SdnControllerStatus status;
     private List<SdnControllerHostRefInventory> hostRefs;
     private Timestamp createDate;
@@ -40,7 +44,6 @@ public class SdnControllerInventory implements Serializable {
         this.setName(vo.getName());
         this.setIp(toHostAddress(vo.getIp()));
         this.setUsername(vo.getUsername());
-        this.setPassword(vo.getPassword());
         this.setStatus(vo.getStatus());
         this.setHostRefs(SdnControllerHostRefInventory.valueOf(vo.getHostRefVOS()));
         this.setCreateDate(vo.getCreateDate());

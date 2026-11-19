@@ -78,6 +78,13 @@ class SdnControllerCase extends SubCase {
 
         assert sdn.name == "sdn-username-rollback-test"
         assert sdn.username == "old-user"
+        assert sdn.password == null
+
+        List<SdnControllerInventory> queried = querySdnController {
+            conditions = ["uuid=${sdn.uuid}"]
+        }
+        assert queried.size() == 1
+        assert queried[0].password == null
 
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
             def rsp = new H3cVcfcV2Commands.LoginRsp()
