@@ -3,12 +3,17 @@ package org.zstack.test.integration.storage.primary.ceph
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.core.progress.TaskProgressVO
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.volume.VolumeConstant
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.sdk.CephPrimaryStorageInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -41,6 +46,7 @@ class CephStorageOneVmAndImageCase extends SubCase{
     @Override
     void test() {
         env.create {
+            testCurrentVolumeConfigurationAfterMonReplacement()
             createImageFromRootVolume()
             testCreateWithNoCephx()
             testSyncVolumeActualSize()
@@ -135,6 +141,110 @@ class CephStorageOneVmAndImageCase extends SubCase{
         assert vol1.actualSize == vol2.actualSize
     }
     
+    void testCurrentVolumeConfigurationAfterMonReplacement() {
+        VmInstanceInventory vm = env.inventoryByName("test-vm")
+        CephPrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
+        HostInventory destination = env.inventoryByName("ceph-mon")
+        String sourceHostUuid = vm.hostUuid
+        VolumeInventory data = createDataVolume {
+            name = "migration-data"
+            diskOfferingUuid = env.inventoryByName("diskOffering").uuid
+            primaryStorageUuid = ps.uuid
+        }
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = data.uuid
+        }
+
+        addMonToCephPrimaryStorage {
+            uuid = ps.uuid
+            monUrls = ["root:password@127.0.0.3/?monPort=7788"]
+        }
+        removeMonFromCephPrimaryStorage {
+            uuid = ps.uuid
+            monHostnames = ["localhost"]
+        }
+
+        Map command = null
+        env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> request ->
+            command = JSONObjectUtil.toObject(request.body, LinkedHashMap.class)
+            return rsp
+        }
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = destination.uuid
+        }
+        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(ps.uuid, CephSystemTags.KVM_SECRET_UUID_TOKEN)
+        assert secretUuid : "Ceph storage must have a secret UUID: expected=non-empty actual=${secretUuid}"
+        assertVolumeConfiguration(command, [vm.rootVolumeUuid, data.uuid] as Set, 7788, secretUuid)
+
+        def noCephxTag = createSystemTag {
+            resourceType = PrimaryStorageVO.class.simpleName
+            resourceUuid = ps.uuid
+            tag = CephSystemTags.NO_CEPHX_TOKEN
+        }
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        reconnectHost {
+            uuid = sourceHostUuid
+        }
+        command = null
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = sourceHostUuid
+        }
+        assertVolumeConfiguration(command, [vm.rootVolumeUuid, data.uuid] as Set, 7788, null)
+
+        deleteTag {
+            uuid = noCephxTag.uuid
+        }
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        reconnectHost {
+            uuid = destination.uuid
+        }
+        command = null
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = destination.uuid
+        }
+        assertVolumeConfiguration(command, [vm.rootVolumeUuid, data.uuid] as Set, 7788, secretUuid)
+
+        ps = queryCephPrimaryStorage { conditions = ["uuid=${ps.uuid}"] }[0]
+        updateCephPrimaryStorageMon {
+            monUuid = ps.mons[0].monUuid
+            monPort = 7799
+        }
+        detachDataVolumeFromVm {
+            uuid = data.uuid
+        }
+        command = null
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = sourceHostUuid
+        }
+        assertVolumeConfiguration(command, [vm.rootVolumeUuid] as Set, 7799, secretUuid)
+    }
+
+    private void assertVolumeConfiguration(Map command, Set expectedVolumes, int expectedPort, String expectedSecretUuid) {
+        assert command != null : "Migration must send a command: expected=non-null actual=${command}"
+        Set actualVolumes = command.notMigrateDisks?.values()?.collect { it.volumeUuid } as Set
+        assert actualVolumes == expectedVolumes :
+                "Migration must refresh only attached volumes: expected=${expectedVolumes} actual=${actualVolumes}"
+        assert !command.disks :
+                "Shared volumes must not request storage copying: expected=empty actual=${command.disks}"
+        command.notMigrateDisks.each { installPath, volume ->
+            assert installPath == volume.installPath
+            assert volume.secretUuid == expectedSecretUuid :
+                    "Volume ${volume.volumeUuid} must follow current cephx configuration: expected=${expectedSecretUuid} actual=${volume.secretUuid}"
+            def endpoints = volume.monInfo.collect { "${it.hostname}:${it.port.intValue()}" }
+            assert endpoints == ["127.0.0.3:${expectedPort}"] :
+                    "Volume ${volume.volumeUuid} must use current MON configuration: expected=127.0.0.3:${expectedPort} actual=${endpoints}"
+        }
+    }
+
     @Override
     void clean() {
         env.delete()

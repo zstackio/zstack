@@ -1,14 +1,19 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.allocator.DesignatedAllocateHostMsg
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.Message
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by mingjian.deng on 2017/12/26.
  */
@@ -37,6 +42,7 @@ class GetMigrateAfterVmNicDeletedCase extends SubCase {
             prepare()
             testGetVmMigrateHosts()
             testMigrate()
+            testCurrentFileVolumeConfiguration()
         }
     }
 
@@ -85,5 +91,37 @@ class GetMigrateAfterVmNicDeletedCase extends SubCase {
         assert vm.hostUuid != host.uuid
         assert count == 1
         assert allowNoL3
+    }
+
+    void testCurrentFileVolumeConfiguration() {
+        HostInventory destination = env.inventoryByName("kvm")
+        updateResourceConfig {
+            resourceUuid = vm.rootVolumeUuid
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.LIBVIRT_CACHE_MODE.name
+            value = "writethrough"
+        }
+
+        KVMAgentCommands.MigrateVmCmd command = null
+        env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> request ->
+            command = JSONObjectUtil.toObject(request.body, KVMAgentCommands.MigrateVmCmd.class)
+            return rsp
+        }
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = destination.uuid
+        }
+
+        assert command != null : "Migration must send a command: expected=non-null actual=${command}"
+        assert command.notMigrateDisks?.size() == 1 :
+                "File volume must participate in configuration refresh: expected=1 actual=${command.notMigrateDisks?.size()}"
+        String rootPath = vm.allVolumes.find { it.uuid == vm.rootVolumeUuid }.installPath
+        def volume = command.notMigrateDisks[rootPath]
+        assert volume.volumeUuid == vm.rootVolumeUuid :
+                "Refreshed volume identity must match: expected=${vm.rootVolumeUuid} actual=${volume.volumeUuid}"
+        assert volume.cacheMode == "writethrough" :
+                "Migration must read current volume cache mode: expected=writethrough actual=${volume.cacheMode}"
+        assert !command.disks :
+                "Refreshing shared file volume must not copy data: expected=empty actual=${command.disks}"
     }
 }
