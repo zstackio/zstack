@@ -260,204 +260,242 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void handle(APIChangeL3NetworkDhcpIpAddressMsg msg) {
-        APIChangeL3NetworkDhcpIpAddressEvent event = new APIChangeL3NetworkDhcpIpAddressEvent(msg.getId());
-        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
-        List<IpRangeVO> ip4Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
-        List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(
-                ipr -> ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
-                .collect(Collectors.toList());
-
-        SdnControllerDhcp sdnDhcp = sdnMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
-
-        /*
-        * step #1, delete old dhcp server ip
-        * step #2, allocate new dhcp server ip
-        * step #3, flush new dhcp config to host
-        * */
-        FlowChain chain = new SimpleFlowChain();
-        chain.setName(String.format("change-dhcp-server-ip-fo-l3-%s", msg.getL3NetworkUuid()));
-
-        chain.then(new Flow() {
-            String __name__ = "delete-old-dhcp-server-ip";
-
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
-                if (dhcpMap.isEmpty()) {
-                    trigger.next();
-                    return;
-                }
-
-                data.put("oldServerIp", dhcpMap);
-                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
-                    if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
-                        deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
-                    } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null) {
-                        deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
-                    }
-                }
-                trigger.next();
+            public String getSyncSignature() {
+                return String.format("change-dhcp-server-ip-l3-%s", msg.getL3NetworkUuid());
             }
 
             @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                Map<String, String> dhcpMap = (Map<String, String>) data.get("oldServerIp");
-                if (dhcpMap == null || dhcpMap.isEmpty()) {
-                    trigger.rollback();
-                    return;
-                }
+            public void run(SyncTaskChain taskChain) {
+                APIChangeL3NetworkDhcpIpAddressEvent event = new APIChangeL3NetworkDhcpIpAddressEvent(msg.getId());
+                L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+                List<IpRangeVO> ip4Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+                List<IpRangeVO> ip6Ranges = l3VO.getIpRanges().stream().filter(
+                        ipr -> ipr.getIpVersion() == IPv6Constants.IPv6 && !ipr.getAddressMode().equals(IPv6Constants.SLAAC))
+                        .collect(Collectors.toList());
 
-                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
-                    String dhcpIp = null;
-                    if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
-                        boolean allocate_ip = false;
-                        for (IpRangeVO ipr : ip4Ranges) {
-                            if (NetworkUtils.isInRange(e.getKey(), ipr.getStartIp(), ipr.getEndIp())) {
-                                allocate_ip = true;
-                                break;
-                            }
-                        }
-                        dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, allocate_ip, e.getKey(), null);
-                    } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null){
-                        boolean allocate_ip = false;
-                        for (IpRangeVO ipr : ip6Ranges) {
-                            if (IPv6NetworkUtils.isIpv6InRange(e.getKey(), ipr.getStartIp(), ipr.getEndIp())) {
-                                allocate_ip = true;
-                                break;
-                            }
-                        }
-                        dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, allocate_ip, e.getKey(), null);
-                    }
+                SdnControllerDhcp sdnDhcp = sdnMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
 
-                    if (dhcpIp == null || !dhcpIp.equals(e.getKey())) {
-                        logger.error(String.format("roll back dhcp server ip to [%s], but got [%s]", e.getKey(), dhcpIp));
-                    }
-                }
+                /*
+                * step #1, delete old dhcp server ip
+                * step #2, allocate new dhcp server ip
+                * step #3, flush new dhcp config to host
+                * */
+                FlowChain chain = new SimpleFlowChain();
+                chain.setName(String.format("change-dhcp-server-ip-fo-l3-%s", msg.getL3NetworkUuid()));
 
-                trigger.rollback();
-            }
-        }).then(new Flow() {
-            String __name__ = "allocate-new-dhcp-server-ip";
+                chain.then(new Flow() {
+                    String __name__ = "delete-old-dhcp-server-ip";
 
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                if (msg.getDhcpServerIp() != null) {
-                    boolean allocate_ip = false;
-                    for (IpRangeVO ipr : ip4Ranges) {
-                        if (NetworkUtils.isInRange(msg.getDhcpServerIp(), ipr.getStartIp(), ipr.getEndIp())) {
-                            allocate_ip = true;
-                            break;
-                        }
-                    }
-
-                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, allocate_ip, msg.getDhcpServerIp(), null);
-                    if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpServerIp())) {
-                        trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10023, "change dhcp server ip to [%s], but got [%s]", msg.getDhcpServerIp(), dhcpIp));
-                        return;
-                    }
-                }
-
-                if (msg.getDhcpv6ServerIp() != null) {
-                    String canonicalDhcpv6 = IpRangeHelper.toCanonicalIp(msg.getDhcpv6ServerIp());
-                    boolean allocate_ip = false;
-                    for (IpRangeVO ipr : ip6Ranges) {
-                        if (IPv6NetworkUtils.isIpv6InRange(canonicalDhcpv6, ipr.getStartIp(), ipr.getEndIp())) {
-                            allocate_ip = true;
-                            break;
-                        }
-                    }
-
-                    String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, allocate_ip, canonicalDhcpv6, null);
-                    if (dhcpIp == null || !dhcpIp.equals(canonicalDhcpv6)) {
-                        trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10024, "change dhcp server ip to [%s], but got [%s]", msg.getDhcpv6ServerIp(), dhcpIp));
-                        return;
-                    }
-                }
-                trigger.next();
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                if (msg.getDhcpServerIp() != null) {
-                    deleteDhcpServerIp(msg.getL3NetworkUuid(), msg.getDhcpServerIp());
-                }
-
-                if (msg.getDhcpv6ServerIp() != null) {
-                    deleteDhcpServerIp(msg.getL3NetworkUuid(), IpRangeHelper.toCanonicalIp(msg.getDhcpv6ServerIp()));
-                }
-
-                trigger.rollback();
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "refresh-dhcp-server-on-hosts";
-
-            @Override
-            public boolean skip(Map data) {
-                return sdnDhcp != null;
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                refreshDhcpInfoToHosts(l3VO, new Completion(trigger) {
                     @Override
-                    public void success() {
+                    public void run(FlowTrigger trigger, Map data) {
+                        Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
+                        if (dhcpMap.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        Map<String, String> deletedOldServerIps = new LinkedHashMap<>();
+                        for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                            if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
+                                deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
+                                deletedOldServerIps.put(e.getKey(), e.getValue());
+                            } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null) {
+                                deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
+                                deletedOldServerIps.put(e.getKey(), e.getValue());
+                            }
+                        }
+                        if (!deletedOldServerIps.isEmpty()) {
+                            data.put("oldServerIp", deletedOldServerIps);
+                        }
                         trigger.next();
                     }
 
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "refresh-dhcp-server-on-sdn-controller";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
-                if (sdnControllerUuid == null) {
-                    trigger.next();
-                    return;
-                }
-
-                SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
-                dmsg.setL3NetworkUuid(l3VO.getUuid());
-                dmsg.setDhcpServerIp(msg.getDhcpServerIp());
-                dmsg.setDhcpv6ServerIp(msg.getDhcpv6ServerIp());
-                dmsg.setSdnControllerUuid(sdnControllerUuid);
-                bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
-                bus.send(dmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                        } else {
-                            trigger.next();
+                    public void rollback(FlowRollback trigger, Map data) {
+                        Map<String, String> dhcpMap = (Map<String, String>) data.get("oldServerIp");
+                        if (dhcpMap == null || dhcpMap.isEmpty()) {
+                            trigger.rollback();
+                            return;
                         }
+
+                        for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                            String dhcpIp = null;
+                            if (IPv6NetworkUtils.isValidIpv4(e.getKey()) && msg.getDhcpServerIp() != null) {
+                                if (!getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4).isEmpty()) {
+                                    continue;
+                                }
+                                boolean allocate_ip = false;
+                                for (IpRangeVO ipr : ip4Ranges) {
+                                    if (NetworkUtils.isInRange(e.getKey(), ipr.getStartIp(), ipr.getEndIp())) {
+                                        allocate_ip = true;
+                                        break;
+                                    }
+                                }
+                                dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, allocate_ip, e.getKey(), null);
+                            } else if (IPv6NetworkUtils.isIpv6Address(e.getKey()) && msg.getDhcpv6ServerIp() != null) {
+                                if (!getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6).isEmpty()) {
+                                    continue;
+                                }
+                                boolean allocate_ip = false;
+                                for (IpRangeVO ipr : ip6Ranges) {
+                                    if (IPv6NetworkUtils.isIpv6InRange(e.getKey(), ipr.getStartIp(), ipr.getEndIp())) {
+                                        allocate_ip = true;
+                                        break;
+                                    }
+                                }
+                                dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, allocate_ip, e.getKey(), null);
+                            }
+
+                            if (dhcpIp == null || !dhcpIp.equals(e.getKey())) {
+                                logger.error(String.format("roll back dhcp server ip to [%s], but got [%s]", e.getKey(), dhcpIp));
+                            }
+                        }
+
+                        trigger.rollback();
                     }
-                });
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                event.setError(errCode);
-                bus.publish(event);
-            }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
-                for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
-                    if (IPv6NetworkUtils.isValidIpv4(e.getKey())) {
-                        event.setDhcpServerIp(e.getKey());
-                    } else {
-                        event.setDhcpv6ServerIp(e.getKey());
+                }).then(new Flow() {
+                    String __name__ = "allocate-new-dhcp-server-ip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Map<String, String> allocatedServerIps = new LinkedHashMap<>();
+                        data.put("allocatedServerIps", allocatedServerIps);
+
+                        if (msg.getDhcpServerIp() != null) {
+                            boolean allocate_ip = false;
+                            for (IpRangeVO ipr : ip4Ranges) {
+                                if (NetworkUtils.isInRange(msg.getDhcpServerIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                                    allocate_ip = true;
+                                    break;
+                                }
+                            }
+
+                            String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4, allocate_ip, msg.getDhcpServerIp(), null);
+                            if (dhcpIp == null || !dhcpIp.equals(msg.getDhcpServerIp())) {
+                                trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10023, "change dhcp server ip to [%s], but got [%s]", msg.getDhcpServerIp(), dhcpIp));
+                                return;
+                            }
+                            String allocatedUuid = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4).get(dhcpIp);
+                            allocatedServerIps.put(dhcpIp, allocatedUuid);
+                        }
+
+                        if (msg.getDhcpv6ServerIp() != null) {
+                            String canonicalDhcpv6 = IpRangeHelper.toCanonicalIp(msg.getDhcpv6ServerIp());
+                            boolean allocate_ip = false;
+                            for (IpRangeVO ipr : ip6Ranges) {
+                                if (IPv6NetworkUtils.isIpv6InRange(canonicalDhcpv6, ipr.getStartIp(), ipr.getEndIp())) {
+                                    allocate_ip = true;
+                                    break;
+                                }
+                            }
+
+                            String dhcpIp = allocateDhcpIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6, allocate_ip, canonicalDhcpv6, null);
+                            if (dhcpIp == null || !dhcpIp.equals(canonicalDhcpv6)) {
+                                trigger.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10024, "change dhcp server ip to [%s], but got [%s]", msg.getDhcpv6ServerIp(), dhcpIp));
+                                return;
+                            }
+                            String allocatedUuid = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6).get(dhcpIp);
+                            allocatedServerIps.put(dhcpIp, allocatedUuid);
+                        }
+                        trigger.next();
                     }
-                }
-                bus.publish(event);
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        Map<String, String> allocatedServerIps = (Map<String, String>) data.get("allocatedServerIps");
+                        if (allocatedServerIps != null && !allocatedServerIps.isEmpty()) {
+                            Map<String, String> currentMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
+                            for (Map.Entry<String, String> e : allocatedServerIps.entrySet()) {
+                                String currentUuid = currentMap.get(e.getKey());
+                                if (currentUuid != null && Objects.equals(currentUuid, e.getValue())) {
+                                    deleteDhcpServerIp(msg.getL3NetworkUuid(), e.getKey(), e.getValue());
+                                }
+                            }
+                        }
+
+                        trigger.rollback();
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "refresh-dhcp-server-on-hosts";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return sdnDhcp != null;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        refreshDhcpInfoToHosts(l3VO, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "refresh-dhcp-server-on-sdn-controller";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
+                        if (sdnControllerUuid == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
+                        dmsg.setL3NetworkUuid(l3VO.getUuid());
+                        dmsg.setDhcpServerIp(msg.getDhcpServerIp());
+                        dmsg.setDhcpv6ServerIp(msg.getDhcpv6ServerIp());
+                        dmsg.setSdnControllerUuid(sdnControllerUuid);
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+                        bus.send(dmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                }).error(new FlowErrorHandler(msg, taskChain) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        event.setError(errCode);
+                        bus.publish(event);
+                        taskChain.next();
+                    }
+                }).done(new FlowDoneHandler(msg, taskChain) {
+                    @Override
+                    public void handle(Map data) {
+                        Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
+                        for (Map.Entry<String, String> e : dhcpMap.entrySet()) {
+                            if (IPv6NetworkUtils.isValidIpv4(e.getKey())) {
+                                event.setDhcpServerIp(e.getKey());
+                            } else {
+                                event.setDhcpv6ServerIp(e.getKey());
+                            }
+                        }
+                        bus.publish(event);
+                        taskChain.next();
+                    }
+                }).start();
             }
-        }).start();
+
+            @Override
+            public String getName() {
+                return String.format("change-dhcp-server-ip-l3-%s", msg.getL3NetworkUuid());
+            }
+        });
     }
 
     private void handle(APIGetL3NetworkIpStatisticMsg msg) {
@@ -1682,27 +1720,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     }
 
-    private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp) {
-        FlatNetworkSystemTags.getDhcpServerIpTag(NetworkUtils.isIpv4Address(dhcpServerIp)
-                ? IPv6Constants.IPv4 : IPv6Constants.IPv6).deleteInherentTag(l3Uuid);
-        for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
-            exp.afterRemoveDhcpServerIP(l3Uuid, dhcpServerIp);
-        }
-    }
-
     private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp, String dhcpServerIpUuid) {
         if (dhcpServerIpUuid == null) {
             dhcpServerIpUuid = Q.New(UsedIpVO.class).select(UsedIpVO_.uuid)
                     .eq(UsedIpVO_.l3NetworkUuid, l3Uuid)
                     .eq(UsedIpVO_.ip, dhcpServerIp).findValue();
         }
-        ReturnIpMsg rmsg = new ReturnIpMsg();
-        rmsg.setL3NetworkUuid(l3Uuid);
-        rmsg.setUsedIpUuid(dhcpServerIpUuid);
-        bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
-        MessageReply reply = bus.call(rmsg);
-        if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
+        if (dhcpServerIpUuid != null && !"null".equals(dhcpServerIpUuid)) {
+            ReturnIpMsg rmsg = new ReturnIpMsg();
+            rmsg.setL3NetworkUuid(l3Uuid);
+            rmsg.setUsedIpUuid(dhcpServerIpUuid);
+            bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
+            MessageReply reply = bus.call(rmsg);
+            if (!reply.isSuccess()) {
+                throw new OperationFailureException(reply.getError());
+            }
         }
 
         PatternedSystemTag tagType = FlatNetworkSystemTags.getDhcpServerIpTag(NetworkUtils.isIpv4Address(dhcpServerIp)
@@ -1710,7 +1742,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         tagType.deleteInherentTag(l3Uuid,
                 tagType.instantiateTag(map(
                         e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(dhcpServerIp)),
-                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, dhcpServerIpUuid))));
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, dhcpServerIpUuid == null ? "null" : dhcpServerIpUuid))));
 
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
             exp.afterRemoveDhcpServerIP(l3Uuid, dhcpServerIp);

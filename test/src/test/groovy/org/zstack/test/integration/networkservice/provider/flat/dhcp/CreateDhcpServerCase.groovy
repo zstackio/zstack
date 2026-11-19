@@ -1,10 +1,12 @@
 package org.zstack.test.integration.networkservice.provider.flat.dhcp
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.*
@@ -13,6 +15,9 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.network.IPv6Constants
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP_IP
 import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP6_IP
@@ -126,6 +131,7 @@ class CreateDhcpServerCase extends SubCase {
             testAddDhcpServerIp()
             testAddDhcpv6ServerIp()
             testDualStackDhcpTags()
+            testConcurrentChangeDhcpIpAndRollbackConsistency()
         }
     }
 
@@ -544,6 +550,107 @@ class CreateDhcpServerCase extends SubCase {
         assert !L3_NETWORK_DHCP_IP.hasTag(l3.uuid)
         assert !L3_NETWORK_DHCP6_IP.hasTag(l3.uuid)
         assert Q.New(UsedIpVO).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count() == 0
+        deleteL3Network { uuid = l3.uuid }
+    }
+
+    void testConcurrentChangeDhcpIpAndRollbackConsistency() {
+        def l3 = createL3Network {
+            name = 'concurrent-dhcp-change-l3'
+            l2NetworkUuid = env.inventoryByName('l2').uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        addIpRange {
+            name = 'concurrent-dhcp-ipr'
+            l3NetworkUuid = l3.uuid
+            startIp = '198.18.80.10'
+            endIp = '198.18.80.100'
+            gateway = '198.18.80.1'
+            netmask = '255.255.255.0'
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = ['Flat': ['DHCP']]
+            systemTags = ['flatNetwork::DhcpServer::198.18.80.20::ipUuid::null']
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            name = 'vm-concurrent-dhcp'
+            instanceOfferingUuid = env.inventoryByName('instanceOffering').uuid
+            imageUuid = env.inventoryByName('image1').uuid
+            l3NetworkUuids = [l3.uuid]
+            systemTags = ["staticIp::${l3.uuid}::198.18.80.50".toString()]
+        }
+
+        boolean failApply = false
+        long applyDelayMs = 200L
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            if (applyDelayMs > 0) {
+                TimeUnit.MILLISECONDS.sleep(applyDelayMs)
+            }
+            if (failApply) {
+                throw new Exception("simulate dhcp host refresh failure")
+            }
+            return rsp
+        }
+
+        // Part 1: Concurrent ChangeL3NetworkDhcpIpAddress on same L3 must serialize cleanly
+        CountDownLatch startGate = new CountDownLatch(1)
+        CountDownLatch doneGate = new CountDownLatch(2)
+        def results = Collections.synchronizedMap(new HashMap<String, ChangeL3NetworkDhcpIpAddressAction.Result>())
+        ['198.18.80.21', '198.18.80.22'].each { targetIp ->
+            Thread.start {
+                try {
+                    startGate.await(10, TimeUnit.SECONDS)
+                    def action = new ChangeL3NetworkDhcpIpAddressAction()
+                    action.l3NetworkUuid = l3.uuid
+                    action.dhcpServerIp = targetIp
+                    action.sessionId = adminSession()
+                    results[targetIp] = action.call()
+                } finally {
+                    doneGate.countDown()
+                }
+            }
+        }
+        startGate.countDown()
+        assert doneGate.await(30, TimeUnit.SECONDS)
+
+        assert results['198.18.80.21'].error == null : "Concurrent change to .21 failed: ${results['198.18.80.21'].error}"
+        assert results['198.18.80.22'].error == null : "Concurrent change to .22 failed: ${results['198.18.80.22'].error}"
+        assert results['198.18.80.21'].value.dhcpServerIp == '198.18.80.21'
+        assert results['198.18.80.22'].value.dhcpServerIp == '198.18.80.22'
+
+        def tagsAfterConcurrent = L3_NETWORK_DHCP_IP.getTokensOfTagsByResourceUuid(l3.uuid)
+        assert tagsAfterConcurrent.size() == 1 : "Expected exactly 1 DHCP tag, got ${tagsAfterConcurrent}"
+        String currentDhcpIp = tagsAfterConcurrent[0]['ip']
+        assert currentDhcpIp in ['198.18.80.21', '198.18.80.22'] : "Final DHCP IP must be one of the requested targets, got ${currentDhcpIp}"
+
+        List<UsedIpVO> dhcpUsedIpsAfterConcurrent = Q.New(UsedIpVO).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).isNull(UsedIpVO_.vmNicUuid).list()
+        assert dhcpUsedIpsAfterConcurrent.size() == 1 : "Expected exactly 1 DHCP UsedIpVO, got ${dhcpUsedIpsAfterConcurrent.collect { it.ip }}"
+        assert dhcpUsedIpsAfterConcurrent[0].ip == currentDhcpIp
+        assert dhcpUsedIpsAfterConcurrent[0].uuid == tagsAfterConcurrent[0]['ipUuid']
+
+        // Part 2: Host refresh failure during ChangeL3NetworkDhcpIpAddress must release new UsedIpVO and restore old DHCP IP
+        applyDelayMs = 0L
+        failApply = true
+        def failAction = new ChangeL3NetworkDhcpIpAddressAction()
+        failAction.l3NetworkUuid = l3.uuid
+        failAction.dhcpServerIp = '198.18.80.23'
+        failAction.sessionId = adminSession()
+        def failRes = failAction.call()
+        assert failRes.error != null : "ChangeL3NetworkDhcpIpAddress should fail when host refresh fails"
+        failApply = false
+
+        def tagsAfterRollback = L3_NETWORK_DHCP_IP.getTokensOfTagsByResourceUuid(l3.uuid)
+        assert tagsAfterRollback.size() == 1
+        assert tagsAfterRollback[0]['ip'] == currentDhcpIp : "Rollback must restore ${currentDhcpIp}, got ${tagsAfterRollback[0]['ip']}"
+
+        List<UsedIpVO> dhcpUsedIpsAfterRollback = Q.New(UsedIpVO).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).isNull(UsedIpVO_.vmNicUuid).list()
+        assert dhcpUsedIpsAfterRollback.size() == 1 : "Rollback must not leak new UsedIpVO 198.18.80.23, got ${dhcpUsedIpsAfterRollback.collect { it.ip }}"
+        assert dhcpUsedIpsAfterRollback[0].ip == currentDhcpIp
+        assert dhcpUsedIpsAfterRollback[0].uuid == tagsAfterRollback[0]['ipUuid']
+
+        destroyVmInstance { uuid = vm.uuid }
+        expungeVmInstance { uuid = vm.uuid }
         deleteL3Network { uuid = l3.uuid }
     }
 
