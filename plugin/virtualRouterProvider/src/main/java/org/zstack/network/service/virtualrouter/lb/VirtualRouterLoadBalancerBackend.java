@@ -2772,6 +2772,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             struct.setListeners(LoadBalancerListenerInventory.valueOf(e.getValue()));
             struct.setVmNics(nicMap);
             struct.setTags(systemTags);
+            lbMgr.loadDisabledBackendServers(struct);
             ret.add(struct);
         }
 

@@ -12,6 +12,7 @@ public interface LoadBalancerManager {
     LoadBalancerBackend getBackend(String providerType);
     LoadBalancerFactory getLoadBalancerFactory(String type);
     LoadBalancerStruct makeStruct(LoadBalancerVO vo);
+    void loadDisabledBackendServers(LoadBalancerStruct struct);
     LoadBalancerServerGroupVO getDefaultServerGroup(LoadBalancerVO vo);
     LoadBalancerServerGroupVO getDefaultServerGroup(LoadBalancerListenerVO vo);
     List<String> getLoadBalancerListenterByVmNics(List<String> vmNicUuids);
