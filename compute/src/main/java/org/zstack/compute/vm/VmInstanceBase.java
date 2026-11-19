@@ -3712,27 +3712,42 @@ public class VmInstanceBase extends AbstractVmInstance {
                 APIDeleteVmStaticIpEvent evt = new APIDeleteVmStaticIpEvent(msg.getId());
                 StaticIpOperator staticIpOp = new StaticIpOperator();
                 boolean hadCustomNetworkParams = staticIpOp.hasCustomStaticNetworkParams(self.getUuid(), msg.getL3NetworkUuid());
+                boolean targetMatchesVm;
                 if (msg.getStaticIp() == null) {
                     staticIpOp.deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid());
+                    targetMatchesVm = true;
                 } else {
-                    staticIpOp.deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid(),
+                    targetMatchesVm = staticIpOp.deleteMatchingStaticIpByVmUuidAndL3Uuid(
+                            self.getUuid(), msg.getL3NetworkUuid(),
                             IPv6NetworkUtils.ipv6AddessToTagValue(msg.getStaticIp()));
                 }
+                if (!targetMatchesVm) {
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
                 boolean restoredRangeDefaults = restoreRangeDefaultNetworkParams(msg.getL3NetworkUuid(), msg.getStaticIp());
                 staticIpOp.setIpChange(self.getUuid(), msg.getL3NetworkUuid());
 
-                boolean shouldSyncNetworkParams = hadCustomNetworkParams || restoredRangeDefaults;
-                if (shouldSyncNetworkParams) {
+                if (hadCustomNetworkParams || restoredRangeDefaults) {
                     SystemTagCreator creator = VmSystemTags.SYNC_PORTS.newSystemTagCreator(self.getUuid());
                     creator.recreate = true;
                     creator.setTagByTokens(map(e(VmSystemTags.SYNC_PORTS_TOKEN, self.getUuid())));
                     creator.create();
                 }
 
-                if (shouldSyncNetworkParams && self.getState() == VmInstanceState.Running) {
-                    refreshDhcpAfterDeleteStaticIp(msg.getL3NetworkUuid(), new NoErrorCompletion(chain) {
+                if (self.getState() == VmInstanceState.Running) {
+                    refreshDhcpAfterDeleteStaticIp(msg.getL3NetworkUuid(), new Completion(msg, chain) {
                         @Override
-                        public void done() {
+                        public void success() {
+                            bus.publish(evt);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            evt.setError(errorCode);
                             bus.publish(evt);
                             chain.next();
                         }
@@ -3766,8 +3781,27 @@ public class VmInstanceBase extends AbstractVmInstance {
                 .eq(UsedIpVO_.vmNicUuid, nicVO.getUuid())
                 .eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid)
                 .list();
+        if (usedIps.isEmpty()) {
+            return false;
+        }
 
-        boolean restored = false;
+        Set<String> rangeUuids = usedIps.stream()
+                .map(UsedIpVO::getIpRangeUuid)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (rangeUuids.isEmpty()) {
+            return false;
+        }
+        List<NormalIpRangeVO> ipRanges = Q.New(NormalIpRangeVO.class)
+                .in(NormalIpRangeVO_.uuid, rangeUuids)
+                .list();
+        Map<String, NormalIpRangeVO> ipRangeMap = new HashMap<>();
+        for (NormalIpRangeVO ipRange : ipRanges) {
+            ipRangeMap.put(ipRange.getUuid(), ipRange);
+        }
+
+        List<UsedIpVO> usedIpsToUpdate = new ArrayList<>();
+        boolean updatePrimaryNic = false;
         for (UsedIpVO usedIp : usedIps) {
             if (canonicalTargetIp != null && !canonicalTargetIp.equals(IpRangeHelper.toCanonicalIp(usedIp.getIp()))) {
                 continue;
@@ -3775,39 +3809,54 @@ public class VmInstanceBase extends AbstractVmInstance {
             if (usedIp.getIpRangeUuid() == null) {
                 continue;
             }
-            NormalIpRangeVO ipRange = dbf.findByUuid(usedIp.getIpRangeUuid(), NormalIpRangeVO.class);
+            NormalIpRangeVO ipRange = ipRangeMap.get(usedIp.getIpRangeUuid());
             if (ipRange == null) {
                 continue;
             }
-            boolean changed = !Objects.equals(usedIp.getNetmask(), ipRange.getNetmask())
+            boolean usedIpChanged = !Objects.equals(usedIp.getNetmask(), ipRange.getNetmask())
                     || !Objects.equals(usedIp.getGateway(), ipRange.getGateway())
                     || !Objects.equals(usedIp.getPrefixLen(), ipRange.getPrefixLen());
-            if (!changed) {
-                continue;
+            if (usedIpChanged) {
+                usedIp.setNetmask(ipRange.getNetmask());
+                usedIp.setGateway(ipRange.getGateway());
+                usedIp.setPrefixLen(ipRange.getPrefixLen());
+                usedIpsToUpdate.add(usedIp);
             }
-            usedIp.setNetmask(ipRange.getNetmask());
-            usedIp.setGateway(ipRange.getGateway());
-            usedIp.setPrefixLen(ipRange.getPrefixLen());
-            dbf.update(usedIp);
-            if (usedIp.getUuid().equals(nicVO.getUsedIpUuid())) {
+            if (usedIp.getUuid().equals(nicVO.getUsedIpUuid())
+                    && (!Objects.equals(nicVO.getNetmask(), ipRange.getNetmask())
+                    || !Objects.equals(nicVO.getGateway(), ipRange.getGateway()))) {
                 nicVO.setNetmask(ipRange.getNetmask());
                 nicVO.setGateway(ipRange.getGateway());
-                dbf.update(nicVO);
+                updatePrimaryNic = true;
             }
-            restored = true;
         }
-        if (restored) {
-            self = dbf.reload(self);
+
+        if (usedIpsToUpdate.isEmpty() && !updatePrimaryNic) {
+            return false;
         }
-        return restored;
+
+        final boolean needUpdateNic = updatePrimaryNic;
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (UsedIpVO usedIp : usedIpsToUpdate) {
+                    merge(usedIp);
+                }
+                if (needUpdateNic) {
+                    merge(nicVO);
+                }
+            }
+        }.execute();
+        self = dbf.reload(self);
+        return true;
     }
 
-    private void refreshDhcpAfterDeleteStaticIp(String l3NetworkUuid, NoErrorCompletion completion) {
+    private void refreshDhcpAfterDeleteStaticIp(String l3NetworkUuid, Completion completion) {
         VmInstanceInventory vmInv = getSelfInventory();
         VmNicInventory nic = vmInv.findNic(l3NetworkUuid);
         L3NetworkVO l3Vo = dbf.findByUuid(l3NetworkUuid, L3NetworkVO.class);
         if (nic == null || l3Vo == null || self.getHostUuid() == null) {
-            completion.done();
+            completion.success();
             return;
         }
         L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
@@ -3815,7 +3864,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 .filter(s -> NetworkServiceType.DHCP.toString().equals(s.getNetworkServiceType()))
                 .collect(Collectors.toList());
         if (dhcpServices.isEmpty()) {
-            completion.done();
+            completion.success();
             return;
         }
         l3Inv.setNetworkServices(dhcpServices);
@@ -3825,14 +3874,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         nsMgr.applyNetworkServiceOnChangeIP(spec, null, new Completion(completion) {
             @Override
             public void success() {
-                completion.done();
+                completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("failed to refresh DHCP for vm[uuid:%s] on l3[uuid:%s] after deleting static ip: %s",
                         self.getUuid(), l3NetworkUuid, errorCode));
-                completion.done();
+                completion.fail(errorCode);
             }
         });
     }

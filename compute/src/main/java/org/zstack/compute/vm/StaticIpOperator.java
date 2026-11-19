@@ -21,6 +21,7 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -224,19 +225,92 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
     }
 
     public void deleteStaticIpByVmUuidAndL3Uuid(String vmUuid, String l3Uuid, String ip) {
-        VmSystemTags.STATIC_IP.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
-                map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid), e(VmSystemTags.STATIC_IP_TOKEN, ip))
-        )));
+        deleteMatchingStaticIpByVmUuidAndL3Uuid(vmUuid, l3Uuid, ip);
+    }
+
+    public boolean deleteMatchingStaticIpByVmUuidAndL3Uuid(String vmUuid, String l3Uuid, String ip) {
         String rawIp = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
-        if (NetworkUtils.isIpv4Address(rawIp)) {
+        String canonicalTargetIp = IpRangeHelper.toCanonicalIp(rawIp);
+        if (canonicalTargetIp == null || canonicalTargetIp.isEmpty()) {
+            return false;
+        }
+        boolean targetIsIpv4 = NetworkUtils.isIpv4Address(rawIp);
+        boolean targetIsIpv6 = !targetIsIpv4 && IPv6NetworkUtils.isIpv6Address(rawIp);
+        if (!targetIsIpv4 && !targetIsIpv6) {
+            return false;
+        }
+
+        List<String> staticIpTags = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .eq(SystemTagVO_.resourceUuid, vmUuid)
+                .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
+                        map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid))
+                )))
+                .listValues();
+
+        List<String> matchedTags = new ArrayList<>();
+        boolean hasOtherSameVersionStaticTag = false;
+        int remainingStaticTagCount = 0;
+        for (String tagStr : staticIpTags) {
+            if (!VmSystemTags.STATIC_IP.isMatch(tagStr)) {
+                continue;
+            }
+            Map<String, String> tokens = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), tagStr);
+            if (!l3Uuid.equals(tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN))) {
+                continue;
+            }
+            String tagRawIp = IPv6NetworkUtils.ipv6TagValueToAddress(tokens.get(VmSystemTags.STATIC_IP_TOKEN));
+            if (canonicalTargetIp.equals(IpRangeHelper.toCanonicalIp(tagRawIp))) {
+                matchedTags.add(tagStr);
+            } else {
+                remainingStaticTagCount++;
+                if ((targetIsIpv4 && NetworkUtils.isIpv4Address(tagRawIp))
+                        || (targetIsIpv6 && IPv6NetworkUtils.isIpv6Address(tagRawIp))) {
+                    hasOtherSameVersionStaticTag = true;
+                }
+            }
+        }
+
+        boolean matchesVmUsedIp = false;
+        if (matchedTags.isEmpty() && !hasOtherSameVersionStaticTag) {
+            String nicUuid = Q.New(VmNicVO.class)
+                    .select(VmNicVO_.uuid)
+                    .eq(VmNicVO_.vmInstanceUuid, vmUuid)
+                    .eq(VmNicVO_.l3NetworkUuid, l3Uuid)
+                    .limit(1)
+                    .findValue();
+            if (nicUuid != null) {
+                List<String> nicIps = Q.New(UsedIpVO.class)
+                        .select(UsedIpVO_.ip)
+                        .eq(UsedIpVO_.vmNicUuid, nicUuid)
+                        .eq(UsedIpVO_.l3NetworkUuid, l3Uuid)
+                        .listValues();
+                for (String nicIp : nicIps) {
+                    if (canonicalTargetIp.equals(IpRangeHelper.toCanonicalIp(nicIp))) {
+                        matchesVmUsedIp = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (matchedTags.isEmpty() && !matchesVmUsedIp) {
+            return false;
+        }
+
+        for (String matchedTag : matchedTags) {
+            VmSystemTags.STATIC_IP.delete(vmUuid, matchedTag);
+        }
+        if (targetIsIpv4) {
             deleteIpv4StaticParamsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
-        } else if (IPv6NetworkUtils.isIpv6Address(rawIp)) {
+        } else {
             deleteIpv6StaticParamsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
         }
-        List<String> remaining = getStaticIpbyVmUuid(vmUuid).get(l3Uuid);
-        if (remaining == null || remaining.isEmpty()) {
+        if (remainingStaticTagCount == 0) {
             deleteStaticDnsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
         }
+        return true;
     }
 
     public void deleteStaticIpByL3NetworkUuid(String l3Uuid) {
