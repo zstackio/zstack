@@ -1133,9 +1133,8 @@ public class L3BasicNetwork implements L3Network {
                     break;
                 }
 
-                if (NetworkUtils.isInRange(ip, sip, eip)) {
+                if (!inRange && NetworkUtils.isInRange(ip, sip, eip)) {
                     inRange = true;
-                    break;
                 }
             }
         }

@@ -421,6 +421,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             msg.getRequiredIpMap().put(l3Uuid, ips);
         }
 
+        if (msg.getStaticIp() != null) {
+            staticIpOp.checkIpAvailability(msg.getDestL3NetworkUuid(), IPv6NetworkUtils.ipv6TagValueToAddress(msg.getStaticIp()));
+        }
+
         validateDnsAddresses(msg.getDnsAddresses());
     }
 
@@ -720,6 +724,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             msg.setNetmask(ipv4Result[0]);
             msg.setGateway(ipv4Result[1]);
             checkIpOccupied(normalizedIp, msg.getL3NetworkUuid());
+            staticIpOp.checkIpAvailability(msg.getL3NetworkUuid(), normalizedIp);
         }
         if (normalizedIp6 != null) {
             List<NormalIpRangeVO> ipv6Ranges = Q.New(NormalIpRangeVO.class)
@@ -730,6 +735,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             msg.setIpv6Prefix(ipv6Result[0]);
             msg.setIpv6Gateway(ipv6Result[1]);
             checkIpOccupied(normalizedIp6, msg.getL3NetworkUuid());
+            staticIpOp.checkIpAvailability(msg.getL3NetworkUuid(), normalizedIp6);
         }
 
         validateDnsAddresses(msg.getDnsAddresses());
