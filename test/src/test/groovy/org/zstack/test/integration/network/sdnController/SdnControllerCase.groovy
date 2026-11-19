@@ -20,6 +20,7 @@ import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by shixin on 2019/09/30.
@@ -78,6 +79,15 @@ class SdnControllerCase extends SubCase {
 
         assert sdn.name == "sdn-username-rollback-test"
         assert sdn.username == "old-user"
+        assert !SdnControllerInventory.class.declaredFields.any { it.name == "password" }
+        assert !JSONObjectUtil.toJsonString(sdn).contains("old-password")
+
+        List<SdnControllerInventory> queried = querySdnController {
+            conditions = ["uuid=${sdn.uuid}"]
+        }
+        assert queried.size() == 1
+        assert queried[0].uuid == sdn.uuid
+        assert !JSONObjectUtil.toJsonString(queried[0]).contains("old-password")
 
         env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
             def rsp = new H3cVcfcV2Commands.LoginRsp()

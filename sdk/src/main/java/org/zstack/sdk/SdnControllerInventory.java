@@ -60,14 +60,6 @@ public class SdnControllerInventory  {
         return this.username;
     }
 
-    public java.lang.String password;
-    public void setPassword(java.lang.String password) {
-        this.password = password;
-    }
-    public java.lang.String getPassword() {
-        return this.password;
-    }
-
     public SdnControllerStatus status;
     public void setStatus(SdnControllerStatus status) {
         this.status = status;
