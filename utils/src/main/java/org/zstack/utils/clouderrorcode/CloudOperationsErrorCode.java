@@ -1866,6 +1866,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_IMAGE_10048 = "ORG_ZSTACK_IMAGE_10048";
 
+    public static final String ORG_ZSTACK_IMAGE_10049 = "ORG_ZSTACK_IMAGE_10049";
+
     public static final String ORG_ZSTACK_QUERY_10000 = "ORG_ZSTACK_QUERY_10000";
 
     public static final String ORG_ZSTACK_QUERY_10001 = "ORG_ZSTACK_QUERY_10001";
@@ -10209,6 +10211,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_COMPUTE_VM_10346 = "ORG_ZSTACK_COMPUTE_VM_10346";
     public static final String ORG_ZSTACK_COMPUTE_VM_10347 = "ORG_ZSTACK_COMPUTE_VM_10347";
     public static final String ORG_ZSTACK_COMPUTE_VM_10345 = "ORG_ZSTACK_COMPUTE_VM_10345";
+    public static final String ORG_ZSTACK_COMPUTE_VM_10351 = "ORG_ZSTACK_COMPUTE_VM_10351";
     public static final String ORG_ZSTACK_COMPUTE_VM_10349 = "ORG_ZSTACK_COMPUTE_VM_10349";
     public static final String ORG_ZSTACK_COMPUTE_VM_10350 = "ORG_ZSTACK_COMPUTE_VM_10350";
 

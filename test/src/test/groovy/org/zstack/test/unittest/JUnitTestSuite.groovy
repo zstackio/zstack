@@ -7,6 +7,7 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.longjob.TestLongJobInventorySecurity
 import org.zstack.core.ansible.AnsibleAgentRestartCase
 import org.zstack.storage.ceph.backup.CephUploadCancelRecoveryCase
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
@@ -32,6 +33,10 @@ import java.util.stream.Collectors
  * Created by lining on 2018/3/18.
  */
 
+import org.zstack.test.unittest.compute.VmAllocationFailureAggregationCase
+
+import org.zstack.test.unittest.image.ImageArchitectureFilterCase
+
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
         AnsibleAgentRestartCase.class,
@@ -52,7 +57,10 @@ import java.util.stream.Collectors
         ZnsProxyKvmReconnectExtensionTest.class,
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
-        SystemTagUtilsCase.class
+        SystemTagUtilsCase.class,
+        TestLongJobInventorySecurity.class,
+        ImageArchitectureFilterCase.class,
+        VmAllocationFailureAggregationCase.class
     ])
 class JUnitTestSuite {
 
