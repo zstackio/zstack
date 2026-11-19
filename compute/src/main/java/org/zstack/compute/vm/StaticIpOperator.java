@@ -218,12 +218,25 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
         VmSystemTags.STATIC_IP.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
                 map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid))
         )));
+        deleteIpv4StaticParamsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
+        deleteIpv6StaticParamsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
+        deleteStaticDnsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
     }
 
     public void deleteStaticIpByVmUuidAndL3Uuid(String vmUuid, String l3Uuid, String ip) {
         VmSystemTags.STATIC_IP.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
                 map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid), e(VmSystemTags.STATIC_IP_TOKEN, ip))
         )));
+        String rawIp = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
+        if (NetworkUtils.isIpv4Address(rawIp)) {
+            deleteIpv4StaticParamsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
+        } else if (IPv6NetworkUtils.isIpv6Address(rawIp)) {
+            deleteIpv6StaticParamsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
+        }
+        List<String> remaining = getStaticIpbyVmUuid(vmUuid).get(l3Uuid);
+        if (remaining == null || remaining.isEmpty()) {
+            deleteStaticDnsByVmUuidAndL3Uuid(vmUuid, l3Uuid);
+        }
     }
 
     public void deleteStaticIpByL3NetworkUuid(String l3Uuid) {
@@ -231,6 +244,73 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
                 e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3Uuid),
                 e(VmSystemTags.STATIC_IP_TOKEN, "%")
         )));
+        VmSystemTags.IPV4_NETMASK.delete(null, VmSystemTags.IPV4_NETMASK.instantiateTag(map(
+                e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, l3Uuid),
+                e(VmSystemTags.IPV4_NETMASK_TOKEN, "%")
+        )));
+        VmSystemTags.IPV4_GATEWAY.delete(null, VmSystemTags.IPV4_GATEWAY.instantiateTag(map(
+                e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, l3Uuid),
+                e(VmSystemTags.IPV4_GATEWAY_TOKEN, "%")
+        )));
+        VmSystemTags.IPV6_PREFIX.delete(null, VmSystemTags.IPV6_PREFIX.instantiateTag(map(
+                e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, l3Uuid),
+                e(VmSystemTags.IPV6_PREFIX_TOKEN, "%")
+        )));
+        VmSystemTags.IPV6_GATEWAY.delete(null, VmSystemTags.IPV6_GATEWAY.instantiateTag(map(
+                e(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN, l3Uuid),
+                e(VmSystemTags.IPV6_GATEWAY_TOKEN, "%")
+        )));
+        VmSystemTags.STATIC_DNS.delete(null, VmSystemTags.STATIC_DNS.instantiateTag(map(
+                e(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN, l3Uuid),
+                e(VmSystemTags.STATIC_DNS_TOKEN, "%")
+        )));
+    }
+
+    private void deleteIpv4StaticParamsByVmUuidAndL3Uuid(String vmUuid, String l3Uuid) {
+        VmSystemTags.IPV4_NETMASK.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.IPV4_NETMASK.instantiateTag(
+                map(e(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN, l3Uuid))
+        )));
+        VmSystemTags.IPV4_GATEWAY.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.IPV4_GATEWAY.instantiateTag(
+                map(e(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN, l3Uuid))
+        )));
+    }
+
+    private void deleteIpv6StaticParamsByVmUuidAndL3Uuid(String vmUuid, String l3Uuid) {
+        VmSystemTags.IPV6_PREFIX.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.IPV6_PREFIX.instantiateTag(
+                map(e(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN, l3Uuid))
+        )));
+        VmSystemTags.IPV6_GATEWAY.delete(vmUuid, TagUtils.tagPatternToSqlPattern(VmSystemTags.IPV6_GATEWAY.instantiateTag(
+                map(e(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN, l3Uuid))
+        )));
+    }
+
+    public boolean hasCustomStaticNetworkParams(String vmUuid, String l3Uuid) {
+        for (Map<String, String> tokens : VmSystemTags.STATIC_DNS.getTokensOfTagsByResourceUuid(vmUuid)) {
+            if (l3Uuid.equals(tokens.get(VmSystemTags.STATIC_DNS_L3_UUID_TOKEN))) {
+                return true;
+            }
+        }
+        for (Map<String, String> tokens : VmSystemTags.IPV4_NETMASK.getTokensOfTagsByResourceUuid(vmUuid)) {
+            if (l3Uuid.equals(tokens.get(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN))) {
+                return true;
+            }
+        }
+        for (Map<String, String> tokens : VmSystemTags.IPV4_GATEWAY.getTokensOfTagsByResourceUuid(vmUuid)) {
+            if (l3Uuid.equals(tokens.get(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN))) {
+                return true;
+            }
+        }
+        for (Map<String, String> tokens : VmSystemTags.IPV6_PREFIX.getTokensOfTagsByResourceUuid(vmUuid)) {
+            if (l3Uuid.equals(tokens.get(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN))) {
+                return true;
+            }
+        }
+        for (Map<String, String> tokens : VmSystemTags.IPV6_GATEWAY.getTokensOfTagsByResourceUuid(vmUuid)) {
+            if (l3Uuid.equals(tokens.get(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setStaticDns(String vmUuid, String l3Uuid, List<String> dnsAddresses) {

@@ -46,6 +46,8 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.header.storage.primary.*;
@@ -72,6 +74,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
@@ -138,6 +141,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     private VmPriorityOperator priorityOperator;
     @Autowired
     private VmNicManager nicManager;
+    @Autowired
+    private NetworkServiceManager nsMgr;
     @Autowired
     protected L3NetworkManager l3nm;
     @Autowired
@@ -3703,13 +3708,38 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
                 APIDeleteVmStaticIpEvent evt = new APIDeleteVmStaticIpEvent(msg.getId());
+                StaticIpOperator staticIpOp = new StaticIpOperator();
+                boolean hadCustomNetworkParams = staticIpOp.hasCustomStaticNetworkParams(self.getUuid(), msg.getL3NetworkUuid());
                 if (msg.getStaticIp() == null) {
-                    new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid());
+                    staticIpOp.deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid());
                 } else {
-                    new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid(), IPv6NetworkUtils.ipv6AddessToTagValue(msg.getStaticIp()));
+                    staticIpOp.deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid(),
+                            IPv6NetworkUtils.ipv6AddessToTagValue(msg.getStaticIp()));
                 }
-                new StaticIpOperator().setIpChange(self.getUuid(), msg.getL3NetworkUuid());
+                boolean restoredRangeDefaults = restoreRangeDefaultNetworkParams(msg.getL3NetworkUuid(), msg.getStaticIp());
+                staticIpOp.setIpChange(self.getUuid(), msg.getL3NetworkUuid());
+
+                boolean shouldSyncNetworkParams = hadCustomNetworkParams || restoredRangeDefaults;
+                if (shouldSyncNetworkParams) {
+                    SystemTagCreator creator = VmSystemTags.SYNC_PORTS.newSystemTagCreator(self.getUuid());
+                    creator.recreate = true;
+                    creator.setTagByTokens(map(e(VmSystemTags.SYNC_PORTS_TOKEN, self.getUuid())));
+                    creator.create();
+                }
+
+                if (shouldSyncNetworkParams && self.getState() == VmInstanceState.Running) {
+                    refreshDhcpAfterDeleteStaticIp(msg.getL3NetworkUuid(), new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            bus.publish(evt);
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
                 bus.publish(evt);
                 chain.next();
             }
@@ -3717,6 +3747,92 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return "delete-static-ip";
+            }
+        });
+    }
+
+    private boolean restoreRangeDefaultNetworkParams(String l3NetworkUuid, String targetStaticIp) {
+        VmNicVO nicVO = Q.New(VmNicVO.class)
+                .eq(VmNicVO_.vmInstanceUuid, self.getUuid())
+                .eq(VmNicVO_.l3NetworkUuid, l3NetworkUuid)
+                .limit(1).find();
+        if (nicVO == null) {
+            return false;
+        }
+        String canonicalTargetIp = targetStaticIp == null
+                ? null
+                : IpRangeHelper.toCanonicalIp(IPv6NetworkUtils.ipv6TagValueToAddress(targetStaticIp));
+        List<UsedIpVO> usedIps = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.vmNicUuid, nicVO.getUuid())
+                .eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid)
+                .list();
+
+        boolean restored = false;
+        for (UsedIpVO usedIp : usedIps) {
+            if (canonicalTargetIp != null && !canonicalTargetIp.equals(IpRangeHelper.toCanonicalIp(usedIp.getIp()))) {
+                continue;
+            }
+            if (usedIp.getIpRangeUuid() == null) {
+                continue;
+            }
+            NormalIpRangeVO ipRange = dbf.findByUuid(usedIp.getIpRangeUuid(), NormalIpRangeVO.class);
+            if (ipRange == null) {
+                continue;
+            }
+            boolean changed = !Objects.equals(usedIp.getNetmask(), ipRange.getNetmask())
+                    || !Objects.equals(usedIp.getGateway(), ipRange.getGateway())
+                    || !Objects.equals(usedIp.getPrefixLen(), ipRange.getPrefixLen());
+            if (!changed) {
+                continue;
+            }
+            usedIp.setNetmask(ipRange.getNetmask());
+            usedIp.setGateway(ipRange.getGateway());
+            usedIp.setPrefixLen(ipRange.getPrefixLen());
+            dbf.update(usedIp);
+            if (usedIp.getUuid().equals(nicVO.getUsedIpUuid())) {
+                nicVO.setNetmask(ipRange.getNetmask());
+                nicVO.setGateway(ipRange.getGateway());
+                dbf.update(nicVO);
+            }
+            restored = true;
+        }
+        if (restored) {
+            self = dbf.reload(self);
+        }
+        return restored;
+    }
+
+    private void refreshDhcpAfterDeleteStaticIp(String l3NetworkUuid, NoErrorCompletion completion) {
+        VmInstanceInventory vmInv = getSelfInventory();
+        VmNicInventory nic = vmInv.findNic(l3NetworkUuid);
+        L3NetworkVO l3Vo = dbf.findByUuid(l3NetworkUuid, L3NetworkVO.class);
+        if (nic == null || l3Vo == null || self.getHostUuid() == null) {
+            completion.done();
+            return;
+        }
+        L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
+        List<NetworkServiceL3NetworkRefInventory> dhcpServices = l3Inv.getNetworkServices().stream()
+                .filter(s -> NetworkServiceType.DHCP.toString().equals(s.getNetworkServiceType()))
+                .collect(Collectors.toList());
+        if (dhcpServices.isEmpty()) {
+            completion.done();
+            return;
+        }
+        l3Inv.setNetworkServices(dhcpServices);
+        VmInstanceSpec spec = buildSpecFromInventory(vmInv, VmOperation.ChangeNicIp);
+        spec.setDestNics(list(nic));
+        spec.setL3Networks(list(new VmNicSpec(l3Inv)));
+        nsMgr.applyNetworkServiceOnChangeIP(spec, null, new Completion(completion) {
+            @Override
+            public void success() {
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to refresh DHCP for vm[uuid:%s] on l3[uuid:%s] after deleting static ip: %s",
+                        self.getUuid(), l3NetworkUuid, errorCode));
+                completion.done();
             }
         });
     }

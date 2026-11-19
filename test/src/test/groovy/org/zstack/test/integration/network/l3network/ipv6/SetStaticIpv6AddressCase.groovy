@@ -1,7 +1,17 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
 import com.googlecode.ipv6.IPv6Address
+import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.StaticIpOperator
+import org.zstack.compute.vm.VmSystemTags
+import org.zstack.core.db.Q
+import org.zstack.header.network.l3.NormalIpRangeVO
+import org.zstack.header.network.l3.NormalIpRangeVO_
+import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.header.network.l3.UsedIpVO_
+import org.zstack.header.vm.VmNicVO
+import org.zstack.network.service.NetworkServiceManager
+import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.sdk.GetL3NetworkDhcpIpAddressResult
 import org.zstack.sdk.ImageInventory
@@ -15,6 +25,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 
@@ -48,6 +59,7 @@ class SetStaticIpv6AddressCase extends SubCase {
             testCreateVmOfPrivateIPv6Network()
             testCreateVmWithStaticIpv6()
             testAttachL3NetworkToVmNicWithStaticIpv6()
+            testDeleteVmStaticIpCleansCustomNetworkParamsAndRestoresL3Policy()
         }
     }
 
@@ -356,6 +368,174 @@ class SetStaticIpv6AddressCase extends SubCase {
         assert staticIpMap.get(l3_statefull.uuid).size() == 2
         assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
         assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
+    }
+
+    void testDeleteVmStaticIpCleansCustomNetworkParamsAndRestoresL3Policy() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+        NetworkServiceManager nsMgr = bean(NetworkServiceManager.class)
+
+        addDnsToL3Network {
+            l3NetworkUuid = l3_statefull.uuid
+            dns = "8.8.8.8"
+        }
+
+        NormalIpRangeVO ipv4Range = Q.New(NormalIpRangeVO.class)
+                .eq(NormalIpRangeVO_.l3NetworkUuid, l3_statefull.uuid)
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4)
+                .find()
+        assert ipv4Range != null
+
+        GetL3NetworkDhcpIpAddressResult dhcpRet = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        List<String> ip4Candidates = ["192.168.110.70", "192.168.110.71", "192.168.110.72"]
+        ip4Candidates.remove(dhcpRet.ip)
+        String staticIp4 = ip4Candidates[0]
+        String staticIp4Dual = ip4Candidates[1]
+
+        List<String> ip6Candidates = [
+                IPv6Address.fromString("2001:2003::70").toString(),
+                IPv6Address.fromString("2001:2003::71").toString()
+        ]
+        ip6Candidates.remove(dhcpRet.ip6)
+        String staticIp6Dual = ip6Candidates[0]
+
+        // Part 1: Running VM with SetVmStaticIp (custom netmask, gateway, DNS) -> DeleteVmStaticIp -> Stop/Start
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-delete-static-params"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3_statefull.uuid]
+            defaultL3NetworkUuid = l3_statefull.uuid
+        }
+        VmSystemTags.SYNC_PORTS.delete(vm.uuid)
+
+        setVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            ip = staticIp4
+            netmask = "255.255.0.0"
+            gateway = "192.168.0.1"
+            dnsAddresses = ["9.9.9.9"]
+        }
+
+        assert !VmSystemTags.STATIC_DNS.getTags(vm.uuid).isEmpty()
+        assert nsMgr.getVmNicDns(vm.uuid, l3_statefull.uuid) == ["9.9.9.9"]
+
+        FlatDhcpBackend.BatchApplyDhcpCmd onlineDeleteCmd = null
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            onlineDeleteCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            return rsp
+        }
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+        }
+
+        assert new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid).get(l3_statefull.uuid) == null
+        assert VmSystemTags.STATIC_DNS.getTags(vm.uuid).isEmpty() : "staticDns tag must be deleted on DeleteVmStaticIp"
+        assert VmSystemTags.IPV4_NETMASK.getTags(vm.uuid).isEmpty()
+        assert VmSystemTags.IPV4_GATEWAY.getTags(vm.uuid).isEmpty()
+        assert VmSystemTags.SYNC_PORTS.hasTag(vm.uuid) : "SYNC_PORTS tag must be set so QGA syncs restored L3 DNS/params"
+
+        List<String> dnsAfterDelete = nsMgr.getVmNicDns(vm.uuid, l3_statefull.uuid)
+        assert dnsAfterDelete.contains("8.8.8.8") && !dnsAfterDelete.contains("9.9.9.9")
+
+        VmNicVO nicAfterDelete = dbFindByUuid(vm.vmNics[0].uuid, VmNicVO.class)
+        assert nicAfterDelete.netmask == ipv4Range.netmask : "NIC netmask should revert to L3 range default, got ${nicAfterDelete.netmask}"
+        assert nicAfterDelete.gateway == ipv4Range.gateway : "NIC gateway should revert to L3 range default, got ${nicAfterDelete.gateway}"
+        UsedIpVO usedIp4AfterDelete = Q.New(UsedIpVO.class)
+                .eq(UsedIpVO_.vmNicUuid, nicAfterDelete.uuid)
+                .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4)
+                .find()
+        assert usedIp4AfterDelete.netmask == ipv4Range.netmask
+        assert usedIp4AfterDelete.gateway == ipv4Range.gateway
+
+        assert onlineDeleteCmd != null : "Running VM should refresh DHCP on DeleteVmStaticIp"
+        def onlineDhcp = onlineDeleteCmd.dhcpInfos.collectMany { it.dhcp }.find { it.ip == staticIp4 }
+        assert onlineDhcp != null
+        assert onlineDhcp.dns.contains("8.8.8.8") && !onlineDhcp.dns.contains("9.9.9.9")
+        assert onlineDhcp.netmask == ipv4Range.netmask
+        assert onlineDhcp.gateway == ipv4Range.gateway
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        FlatDhcpBackend.BatchApplyDhcpCmd restartCmd = null
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            restartCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            return rsp
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+
+        assert restartCmd != null
+        def restartDhcp = restartCmd.dhcpInfos.collectMany { it.dhcp }.find { it.ip == staticIp4 }
+        assert restartDhcp != null
+        assert restartDhcp.dns.contains("8.8.8.8") && !restartDhcp.dns.contains("9.9.9.9")
+        assert restartDhcp.netmask == ipv4Range.netmask
+        assert restartDhcp.gateway == ipv4Range.gateway
+
+        // Part 2: Dual-stack partial delete cleans version-specific tags, and last delete cleans staticDns
+        VmInstanceInventory vm2 = createVmInstance {
+            name = "vm-delete-dual-static-params"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3_statefull.uuid]
+            defaultL3NetworkUuid = l3_statefull.uuid
+            systemTags = [
+                    "staticIp::${l3_statefull.uuid}::${staticIp4Dual}".toString(),
+                    "ipv4Netmask::${l3_statefull.uuid}::255.255.255.0".toString(),
+                    "ipv4Gateway::${l3_statefull.uuid}::192.168.110.1".toString(),
+                    "staticIp::${l3_statefull.uuid}::${IPv6NetworkUtils.ipv6AddessToTagValue(staticIp6Dual)}".toString(),
+                    "ipv6Prefix::${l3_statefull.uuid}::64".toString(),
+                    "ipv6Gateway::${l3_statefull.uuid}::${IPv6NetworkUtils.ipv6AddessToTagValue('2001:2003::1')}".toString(),
+                    "staticDns::${l3_statefull.uuid}::9.9.9.9".toString()
+            ]
+        }
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm2.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            staticIp = staticIp4Dual
+        }
+        assert VmSystemTags.IPV4_NETMASK.getTags(vm2.uuid).isEmpty()
+        assert VmSystemTags.IPV4_GATEWAY.getTags(vm2.uuid).isEmpty()
+        assert !VmSystemTags.IPV6_PREFIX.getTags(vm2.uuid).isEmpty()
+        assert !VmSystemTags.IPV6_GATEWAY.getTags(vm2.uuid).isEmpty()
+        assert !VmSystemTags.STATIC_DNS.getTags(vm2.uuid).isEmpty()
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm2.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            staticIp = staticIp6Dual
+        }
+        assert VmSystemTags.IPV6_PREFIX.getTags(vm2.uuid).isEmpty()
+        assert VmSystemTags.IPV6_GATEWAY.getTags(vm2.uuid).isEmpty()
+        assert VmSystemTags.STATIC_DNS.getTags(vm2.uuid).isEmpty()
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+        destroyVmInstance {
+            uuid = vm2.uuid
+        }
+        expungeVmInstance {
+            uuid = vm2.uuid
+        }
+        removeDnsFromL3Network {
+            l3NetworkUuid = l3_statefull.uuid
+            dns = "8.8.8.8"
+        }
     }
 }
 
