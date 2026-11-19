@@ -2,9 +2,11 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.portfo
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
@@ -12,6 +14,7 @@ import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.service.portforwarding.PortForwardingRuleState
 import org.zstack.network.service.portforwarding.PortForwardingRuleStateEvent
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO
+import org.zstack.network.service.portforwarding.PortForwardingRuleVO_
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
@@ -353,10 +356,6 @@ class PortForwardingCase extends SubCase {
         List<VirtualRouterCommands.CreatePortForwardingRuleCmd> createCmds = Collections.synchronizedList(new ArrayList<>())
         List<VirtualRouterCommands.SyncPortForwardingRuleCmd> syncCmds = Collections.synchronizedList(new ArrayList<>())
 
-        env.afterSimulator(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING) { VirtualRouterCommands.RevokePortForwardingRuleRsp rsp, HttpEntity<String> e ->
-            revokeCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterCommands.RevokePortForwardingRuleCmd.class))
-            return rsp
-        }
         env.afterSimulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { VirtualRouterCommands.CreatePortForwardingRuleRsp rsp, HttpEntity<String> e ->
             createCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterCommands.CreatePortForwardingRuleCmd.class))
             return rsp
@@ -366,15 +365,65 @@ class PortForwardingCase extends SubCase {
             return rsp
         }
 
-        // 1. Disabling an attached PF rule must revoke it on VR while keeping DB binding
+        // 1. Disabling an attached PF rule must revoke it on VR, keep DB binding, and NOT overwrite concurrent guestIp update
+        String originalGuestIp = vm.vmNics[0].ip
+        String concurrentGuestIp = "192.168.100.250"
+        boolean simulateIpChangeOnce = true
+        env.afterSimulator(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING) { VirtualRouterCommands.RevokePortForwardingRuleRsp rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.RevokePortForwardingRuleCmd.class)
+            revokeCmds.add(cmd)
+            if (simulateIpChangeOnce && cmd.rules.any { it.uuid == pf.uuid }) {
+                simulateIpChangeOnce = false
+                SQL.New(PortForwardingRuleVO.class)
+                        .eq(PortForwardingRuleVO_.uuid, pf.uuid)
+                        .set(PortForwardingRuleVO_.guestIp, concurrentGuestIp)
+                        .update()
+            }
+            return rsp
+        }
         PortForwardingRuleInventory disabledPf = changePortForwardingRuleState {
             uuid = pf.uuid
             stateEvent = PortForwardingRuleStateEvent.disable.toString()
         }
         assert disabledPf.state == PortForwardingRuleState.Disabled.toString()
         assert disabledPf.vmNicUuid == vm.vmNics[0].uuid
+        assert disabledPf.guestIp == concurrentGuestIp :
+                "State update must not overwrite concurrent guestIp change, got ${disabledPf.guestIp}"
+        assert dbFindByUuid(pf.uuid, PortForwardingRuleVO.class).guestIp == concurrentGuestIp
         assert revokeCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
                 "Disabling attached PF rule must revoke it on VR, got revokeCmds=${revokeCmds.size()}"
+
+        // Restore original guestIp for remaining assertions
+        SQL.New(PortForwardingRuleVO.class)
+                .eq(PortForwardingRuleVO_.uuid, pf.uuid)
+                .set(PortForwardingRuleVO_.guestIp, originalGuestIp)
+                .update()
+
+        // 1b. Stale Enabled struct queued to attachPortForwardingRule after rule was Disabled must be skipped
+        createCmds.clear()
+        def pfMgr = bean(org.zstack.network.service.portforwarding.PortForwardingManager.class)
+        def staleRuleInv = org.zstack.network.service.portforwarding.PortForwardingRuleInventory.valueOf(dbFindByUuid(pf.uuid, PortForwardingRuleVO.class))
+        staleRuleInv.state = PortForwardingRuleState.Enabled.toString()
+        def staleStruct = pfMgr.makePortForwardingStruct(staleRuleInv)
+        def latch = new java.util.concurrent.CountDownLatch(1)
+        def attachErr = null
+        pfMgr.attachPortForwardingRule(staleStruct, org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE,
+                new org.zstack.header.core.Completion(null) {
+                    @Override
+                    void success() {
+                        latch.countDown()
+                    }
+
+                    @Override
+                    void fail(org.zstack.header.errorcode.ErrorCode errorCode) {
+                        attachErr = errorCode
+                        latch.countDown()
+                    }
+                })
+        assert latch.await(15, java.util.concurrent.TimeUnit.SECONDS)
+        assert attachErr == null
+        assert !createCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                "attachPortForwardingRule must skip rule disabled in DB even when struct snapshot was Enabled"
 
         // 2. While disabled, destroying old VR and recreating VR via VM stop/start must NOT push disabled rule
         createCmds.clear()
@@ -407,6 +456,27 @@ class PortForwardingCase extends SubCase {
         reconnectVirtualRouter { vmInstanceUuid = newVrUuid }
         assert syncCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
                 "Reconnecting VR after re-enabling PF rule must include rule in sync"
+
+        // 4. Disabling rule while VM is in Starting state must still revoke from VR
+        revokeCmds.clear()
+        SQL.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vm.uuid)
+                .set(VmInstanceVO_.state, VmInstanceState.Starting)
+                .update()
+        try {
+            PortForwardingRuleInventory disabledWhileStarting = changePortForwardingRuleState {
+                uuid = pf.uuid
+                stateEvent = PortForwardingRuleStateEvent.disable.toString()
+            }
+            assert disabledWhileStarting.state == PortForwardingRuleState.Disabled.toString()
+            assert revokeCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                    "Disabling attached PF rule while VM is Starting must still revoke it on VR"
+        } finally {
+            SQL.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, vm.uuid)
+                    .set(VmInstanceVO_.state, VmInstanceState.Running)
+                    .update()
+        }
 
         deletePortForwardingRule { uuid = pf.uuid }
         deleteVip { uuid = vip.uuid }
