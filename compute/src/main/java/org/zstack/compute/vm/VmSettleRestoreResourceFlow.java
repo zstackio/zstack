@@ -47,7 +47,7 @@ public class VmSettleRestoreResourceFlow implements Flow {
         }
         VmInstanceBase vm = (VmInstanceBase) data.get(VmInstanceBase.class.getName());
         if (vm.self.getState() == VmInstanceState.Running) {
-            vm.changeVmStateInDb(VmInstanceStateEvent.rebooting);
+            vm.changeVmStateInDb(VmInstanceStateEvent.restoring);
         }
         trigger.rollback();
     }

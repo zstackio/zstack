@@ -554,7 +554,7 @@ public class KVMHost extends HostBase implements Host {
                 .addState(VmInstanceState.Paused, AttachVolumeToVmOnHypervisorMsg.class.getName());
         skipOperations
                 .addState(VmInstanceState.Stopped, AttachVolumeToVmOnHypervisorMsg.class.getName())
-                .addState(VmInstanceState.Rebooting, AttachVolumeToVmOnHypervisorMsg.class.getName());
+                .addState(VmInstanceState.Restoring, AttachVolumeToVmOnHypervisorMsg.class.getName());
     }
 
     class Http<T> {
@@ -2727,7 +2727,7 @@ public class KVMHost extends HostBase implements Host {
         boolean running = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
                 .notNull(VmInstanceVO_.hostUuid)
-                .notEq(VmInstanceVO_.state, VmInstanceState.Rebooting)
+                .notEq(VmInstanceVO_.state, VmInstanceState.Restoring)
                 .isExists();
         if (!running) {
             logger.debug(String.format("Skip detach nic[uuid=%s] on hypervisor: VM[uuid=%s] is not running",
@@ -3328,23 +3328,22 @@ public class KVMHost extends HostBase implements Host {
             q.select(VmInstanceVO_.state);
             q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, msg.getVmUuid());
             VmInstanceState vmState = q.findValue();
-            if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Paused) {
+            boolean online = vmState == VmInstanceState.Running || vmState == VmInstanceState.Paused;
+            if (!online && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Restoring) {
                 throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10059, "vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
             }
 
-            if (!HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
-                if (vmState != VmInstanceState.Stopped) {
-                    reply.setError(err(ORG_ZSTACK_KVM_10060, SysErrors.NO_CAPABILITY_ERROR,
-                            "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
-                                    self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
-                    ));
-                    bus.reply(msg, reply);
-                    completion.done();
-                    return;
-                }
+            if (online && !HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
+                reply.setError(err(ORG_ZSTACK_KVM_10060, SysErrors.NO_CAPABILITY_ERROR,
+                        "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
+                        self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
+                ));
+                bus.reply(msg, reply);
+                completion.done();
+                return;
             }
 
-            cmd.setOnline(vmState != VmInstanceState.Stopped);
+            cmd.setOnline(online);
             cmd.setVmUuid(msg.getVmUuid());
         }
 
@@ -3822,7 +3821,7 @@ public class KVMHost extends HostBase implements Host {
         boolean running = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, msg.getNicInventory().getVmInstanceUuid())
                 .notNull(VmInstanceVO_.hostUuid)
-                .notEq(VmInstanceVO_.state, VmInstanceState.Rebooting)
+                .notEq(VmInstanceVO_.state, VmInstanceState.Restoring)
                 .isExists();
         if (!running) {
             logger.debug(String.format("Skip attach nic[uuid=%s] on hypervisor: VM[uuid=%s] is not running",
@@ -3900,7 +3899,7 @@ public class KVMHost extends HostBase implements Host {
                 .eq(VmInstanceVO_.uuid, msg.getVmInventory().getUuid())
                 .select(VmInstanceVO_.state)
                 .findValue();
-        if (Objects.equals(state, VmInstanceState.Stopped) || Objects.equals(state, VmInstanceState.Rebooting)) {
+        if (Objects.equals(state, VmInstanceState.Stopped) || Objects.equals(state, VmInstanceState.Restoring)) {
             logger.debug(String.format("skip detach volume[uuid=%s] on hypervisor when VM[uuid=%s] is stopped",
                     msg.getInventory().getUuid(), msg.getVmInventory().getUuid()));
             bus.reply(msg, new DetachVolumeFromVmOnHypervisorReply());

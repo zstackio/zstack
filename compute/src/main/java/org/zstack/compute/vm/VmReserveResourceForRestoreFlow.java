@@ -44,7 +44,7 @@ public class VmReserveResourceForRestoreFlow implements Flow {
         VmInstanceBase vm = (VmInstanceBase) data.get(VmInstanceBase.class.getName());
         vm.changeVmResource(spec.getVmInventory());
         data.put(RESERVED, true);
-        vm.changeVmStateInDb(VmInstanceStateEvent.rebooting);
+        vm.changeVmStateInDb(VmInstanceStateEvent.restoring);
         vm.buildSpecFromInventory(vm.getSelfInventory(), VmInstanceConstant.VmOperation.Reboot, spec);
         StopVmInstanceMsg stop = new StopVmInstanceMsg();
         stop.setVmInstanceUuid(vm.self.getUuid());
