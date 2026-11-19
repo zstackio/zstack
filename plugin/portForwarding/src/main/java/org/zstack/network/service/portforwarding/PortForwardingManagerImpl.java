@@ -480,9 +480,75 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             return;
         }
 
-        vo.setState(vo.getState().nextState(PortForwardingRuleStateEvent.valueOf(msg.getStateEvent())));
-        vo = dbf.updateAndRefresh(vo);
-        completion.success(PortForwardingRuleInventory.valueOf(vo));
+        PortForwardingRuleState nextState = vo.getState().nextState(PortForwardingRuleStateEvent.valueOf(msg.getStateEvent()));
+        if (nextState == vo.getState()) {
+            completion.success(PortForwardingRuleInventory.valueOf(vo));
+            return;
+        }
+
+        if (vo.getVmNicUuid() == null) {
+            vo.setState(nextState);
+            vo = dbf.updateAndRefresh(vo);
+            completion.success(PortForwardingRuleInventory.valueOf(vo));
+            return;
+        }
+
+        final PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(vo));
+        final NetworkServiceProviderType providerType;
+        try {
+            providerType = getPortForwardingProviderTypeIfEnabled(struct.getGuestL3Network().getUuid());
+        } catch (OperationFailureException e) {
+            completion.fail(e.getErrorCode());
+            return;
+        }
+
+        L3NetworkVO nicL3Vo = dbf.findByUuid(struct.getGuestL3Network().getUuid(), L3NetworkVO.class);
+        VmInstanceState vmState = getVmStateFromVmNicUuid(vo.getVmNicUuid());
+        boolean skipBackendForVmState = l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType())
+                && VmInstanceState.Running != vmState
+                && !(nextState == PortForwardingRuleState.Disabled && VmInstanceState.Starting == vmState);
+        if (providerType == null || skipBackendForVmState) {
+            SQL.New(PortForwardingRuleVO.class)
+                    .eq(PortForwardingRuleVO_.uuid, vo.getUuid())
+                    .set(PortForwardingRuleVO_.state, nextState)
+                    .update();
+            PortForwardingRuleVO updated = dbf.findByUuid(vo.getUuid(), PortForwardingRuleVO.class);
+            if (updated == null) {
+                vo.setState(nextState);
+                updated = vo;
+            }
+            completion.success(PortForwardingRuleInventory.valueOf(updated));
+            return;
+        }
+
+        final PortForwardingRuleVO ruleVo = vo;
+        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+        Completion backendCompletion = new Completion(completion) {
+            @Override
+            public void success() {
+                SQL.New(PortForwardingRuleVO.class)
+                        .eq(PortForwardingRuleVO_.uuid, ruleVo.getUuid())
+                        .set(PortForwardingRuleVO_.state, nextState)
+                        .update();
+                PortForwardingRuleVO updated = dbf.findByUuid(ruleVo.getUuid(), PortForwardingRuleVO.class);
+                if (updated == null) {
+                    ruleVo.setState(nextState);
+                    updated = ruleVo;
+                }
+                completion.success(PortForwardingRuleInventory.valueOf(updated));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        };
+
+        if (nextState == PortForwardingRuleState.Disabled) {
+            bkd.revokePortForwardingRule(struct, backendCompletion);
+        } else {
+            bkd.applyPortForwardingRule(struct, backendCompletion);
+        }
     }
 
     private void handle(final APIDetachPortForwardingRuleMsg msg) {
@@ -1411,8 +1477,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             public void run(SyncTaskChain chain) {
-                if (!dbf.isExist(struct.getRule().getUuid(), PortForwardingRuleVO.class)) {
+                PortForwardingRuleVO rule = dbf.findByUuid(struct.getRule().getUuid(), PortForwardingRuleVO.class);
+                if (rule == null) {
                     completion.fail(operr(ORG_ZSTACK_NETWORK_SERVICE_PORTFORWARDING_10004, "port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
+                    chain.next();
+                    return;
+                }
+                if (rule.getState() == PortForwardingRuleState.Disabled) {
+                    logger.debug(String.format("port forwarding rule[uuid:%s] is Disabled, skip attaching to backend", rule.getUuid()));
+                    completion.success();
                     chain.next();
                     return;
                 }

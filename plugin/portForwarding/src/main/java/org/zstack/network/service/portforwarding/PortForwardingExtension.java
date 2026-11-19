@@ -46,7 +46,11 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension imp
         return NetworkServiceType.PortForwarding;
     }
 
-    protected List<PortForwardingStruct> makePortForwardingStruct(List<VmNicInventory> nics, boolean releaseVmNicInfo,L3NetworkInventory l3) {
+    protected List<PortForwardingStruct> makePortForwardingStruct(List<VmNicInventory> nics, boolean releaseVmNicInfo, L3NetworkInventory l3) {
+        return makePortForwardingStruct(nics, releaseVmNicInfo, l3, false);
+    }
+
+    protected List<PortForwardingStruct> makePortForwardingStruct(List<VmNicInventory> nics, boolean releaseVmNicInfo, L3NetworkInventory l3, boolean onlyEnabled) {
         VmNicInventory nic = null;
         for (VmNicInventory inv : nics) {
             if (VmNicHelper.getL3Uuids(inv).contains(l3.getUuid())) {
@@ -60,6 +64,9 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension imp
         }
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
         q.add(PortForwardingRuleVO_.vmNicUuid, SimpleQuery.Op.EQ, nic.getUuid());
+        if (onlyEnabled) {
+            q.add(PortForwardingRuleVO_.state, SimpleQuery.Op.EQ, PortForwardingRuleState.Enabled);
+        }
         List<PortForwardingRuleVO> pfvos = q.list();
         if (pfvos.isEmpty()) {
             // having port forwarding service but no rules applied yet
@@ -97,7 +104,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension imp
             return;
         }
 
-        Map<String, List<PortForwardingStruct>> structs = workoutPortForwarding(spec);
+        Map<String, List<PortForwardingStruct>> structs = workoutPortForwarding(spec, true);
         Map<String, List<PortForwardingStruct>> applieds = new HashMap<String, List<PortForwardingStruct>>();
         data.put(SUCCESS, applieds);
         applyNetworkService(structs.entrySet().iterator(), applieds, completion);
@@ -216,6 +223,10 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension imp
     }
 
     private Map<String, List<PortForwardingStruct>> workoutPortForwarding(VmInstanceSpec spec) {
+        return workoutPortForwarding(spec, false);
+    }
+
+    private Map<String, List<PortForwardingStruct>> workoutPortForwarding(VmInstanceSpec spec, boolean onlyEnabled) {
         Map<String, List<PortForwardingStruct>> map = new HashMap<String, List<PortForwardingStruct>>();
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.PortForwarding,
                 VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
@@ -229,7 +240,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension imp
                     continue;
                 }
 
-                lst.addAll(makePortForwardingStruct(spec.getDestNics(), spec.getCurrentVmOperation() == VmOperation.Destroy || spec.getCurrentVmOperation() == VmOperation.DetachNic, l3));
+                lst.addAll(makePortForwardingStruct(spec.getDestNics(), spec.getCurrentVmOperation() == VmOperation.Destroy || spec.getCurrentVmOperation() == VmOperation.DetachNic, l3, onlyEnabled));
             }
 
             map.put(ptype.toString(), lst);
