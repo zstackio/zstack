@@ -1098,14 +1098,16 @@ public class L3BasicNetwork implements L3Network {
             ip = IPv6NetworkUtils.getIpv6AddressCanonicalString(ip);
         }
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
-        rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
+        rq.select(IpRangeVO_.uuid, IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
         rq.add(IpRangeVO_.ipVersion, Op.EQ, ipversion);
         List<Tuple> ts = rq.listTuple();
 
-        List<String> addressPoolGateways = Q.New(AddressPoolVO.class)
-                .select(AddressPoolVO_.gateway)
-                .eq(AddressPoolVO_.l3NetworkUuid,self.getUuid()).listValues();
+        SimpleQuery<AddressPoolVO> apq = dbf.createQuery(AddressPoolVO.class);
+        apq.select(AddressPoolVO_.uuid);
+        apq.add(AddressPoolVO_.l3NetworkUuid, Op.EQ, self.getUuid());
+        List<String> poolUuids = apq.listValue();
+        Set<String> addressPoolUuids = poolUuids == null ? Collections.emptySet() : new HashSet<>(poolUuids);
 
         boolean inRange = false;
         boolean isGateway = false;
@@ -1122,20 +1124,20 @@ public class L3BasicNetwork implements L3Network {
             inRange = true;
         } else {
             for (Tuple t : ts) {
-                String sip = t.get(0, String.class);
-                String eip = t.get(1, String.class);
-                String gw = t.get(2, String.class);
+                String rangeUuid = t.get(0, String.class);
+                String sip = t.get(1, String.class);
+                String eip = t.get(2, String.class);
+                String gw = t.get(3, String.class);
                 if (ipversion == IPv6Constants.IPv6 && gw != null) {
                     gw = IPv6NetworkUtils.getIpv6AddressCanonicalString(gw);
                 }
-                if (ip.equals(gw) && !addressPoolGateways.contains(gw)) {
+                if (!addressPoolUuids.contains(rangeUuid) && ip.equals(gw)) {
                     isGateway = true;
                     break;
                 }
 
-                if (NetworkUtils.isInRange(ip, sip, eip)) {
+                if (!inRange && NetworkUtils.isInRange(ip, sip, eip)) {
                     inRange = true;
-                    break;
                 }
             }
         }

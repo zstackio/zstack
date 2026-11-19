@@ -19,12 +19,17 @@ import org.zstack.kvm.KVMSystemTags
 import org.zstack.network.l3.IpRangeHelper
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatNetworkSystemTags
+import org.zstack.sdk.ChangeVmNicNetworkAction
+import org.zstack.sdk.CheckIpAvailabilityResult
 import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.GetIpAddressCapacityResult
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.IpRangeInventory
+import org.zstack.sdk.IpRangeType
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.SetVmStaticIpAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.kvm.Env
@@ -64,6 +69,7 @@ class VmNicBasicCase extends SubCase {
             testDetachVmNic()
             testDeleteVmNic()
             testStaticIpLifecycleAndConcurrency()
+            testSetStaticIpRejectsL3Gateway()
             testSameMacMultiNicPciAddressMapping()
         }
     }
@@ -425,6 +431,246 @@ class VmNicBasicCase extends SubCase {
         }
         deleteL3Network {
             uuid = noDhcpL3.uuid
+        }
+        deleteInstanceOffering {
+            uuid = offering.uuid
+        }
+    }
+
+    void testSetStaticIpRejectsL3Gateway() {
+        L2NetworkInventory l2 = env.inventoryByName("l2")
+        ImageInventory image = env.inventoryByName("image1")
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+        String flatProviderUuid = Q.New(NetworkServiceProviderVO.class)
+                .select(NetworkServiceProviderVO_.uuid)
+                .eq(NetworkServiceProviderVO_.type, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)
+                .findValue()
+
+        InstanceOfferingInventory offering = createInstanceOffering {
+            name = "gw-static-ip-offering"
+            memorySize = SizeUnit.MEGABYTE.toByte(512)
+            cpuNum = 1
+        }
+
+        L3NetworkInventory flatL3 = createL3Network {
+            name = "flat-l3-gw-guard"
+            l2NetworkUuid = l2.uuid
+        }
+        addIpRange {
+            name = "ipr-v4-gw-guard"
+            l3NetworkUuid = flatL3.uuid
+            startIp = "10.211.83.2"
+            endIp = "10.211.83.254"
+            netmask = "255.255.255.0"
+            gateway = "10.211.83.1"
+        }
+        addIpv6Range {
+            name = "ipr-v6-gw-guard"
+            l3NetworkUuid = flatL3.uuid
+            startIp = "2001:db8:83::2"
+            endIp = "2001:db8:83::ff"
+            gateway = "2001:db8:83::1"
+            prefixLen = 64
+            addressMode = "Stateful-DHCP"
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = flatL3.uuid
+            networkServices = [(flatProviderUuid): ["DHCP"]]
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-gw-guard"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [flatL3.uuid]
+        }
+
+        VmNicInventory nicBefore = queryVmNic {
+            conditions = ["vmInstanceUuid=${vm.uuid}"]
+        }[0]
+        String origIp = nicBefore.ip
+        String origUsedIpUuid = dbFindByUuid(nicBefore.uuid, VmNicVO.class).usedIpUuid
+        List<String> origUsedIps = nicBefore.usedIps.collect { it.ip }.sort()
+        GetIpAddressCapacityResult capBefore = getIpAddressCapacity {
+            l3NetworkUuids = [flatL3.uuid]
+        }
+
+        // 1. SetVmStaticIp with IPv4 L3 gateway (omitting netmask & gateway) must fail
+        def action1 = new SetVmStaticIpAction()
+        action1.vmInstanceUuid = vm.uuid
+        action1.l3NetworkUuid = flatL3.uuid
+        action1.ip = "10.211.83.1"
+        action1.sessionId = adminSession()
+        def res1 = action1.call()
+        assert res1.error != null : "SetVmStaticIp with IPv4 L3 gateway must be rejected"
+        assert res1.error.details.contains("gateway")
+
+        // 2. SetVmStaticIp with IPv4 L3 gateway and explicit netmask & gateway must also fail
+        def action2 = new SetVmStaticIpAction()
+        action2.vmInstanceUuid = vm.uuid
+        action2.l3NetworkUuid = flatL3.uuid
+        action2.ip = "10.211.83.1"
+        action2.netmask = "255.255.255.0"
+        action2.gateway = "10.211.83.1"
+        action2.sessionId = adminSession()
+        def res2 = action2.call()
+        assert res2.error != null : "SetVmStaticIp with explicit IPv4 L3 gateway must be rejected"
+        assert res2.error.details.contains("gateway")
+
+        // 3. SetVmStaticIp with IPv6 L3 gateway must fail
+        def action3 = new SetVmStaticIpAction()
+        action3.vmInstanceUuid = vm.uuid
+        action3.l3NetworkUuid = flatL3.uuid
+        action3.ip6 = "2001:db8:83::1"
+        action3.sessionId = adminSession()
+        def res3 = action3.call()
+        assert res3.error != null : "SetVmStaticIp with IPv6 L3 gateway must be rejected"
+        assert res3.error.details.contains("gateway")
+
+        // 3b. SetVmStaticIp with two IPv6 addresses (ip=L3 IPv6 gateway, ip6=out-of-range IPv6) must fail
+        def action3b = new SetVmStaticIpAction()
+        action3b.vmInstanceUuid = vm.uuid
+        action3b.l3NetworkUuid = flatL3.uuid
+        action3b.ip = "2001:db8:83::1"
+        action3b.ip6 = "2001:db8:83::500"
+        action3b.sessionId = adminSession()
+        def res3b = action3b.call()
+        assert res3b.error != null : "SetVmStaticIp with both ip and ip6 as IPv6 must be rejected"
+        assert res3b.error.details.contains("cannot specify IPv6 addresses in both")
+
+        // Verify zero side effects on NIC, UsedIp, L3 capacity, and staticIp tags
+        VmNicInventory nicAfter = queryVmNic {
+            conditions = ["uuid=${nicBefore.uuid}"]
+        }[0]
+        assert nicAfter.ip == origIp
+        assert dbFindByUuid(nicBefore.uuid, VmNicVO.class).usedIpUuid == origUsedIpUuid
+        assert nicAfter.usedIps.collect { it.ip }.sort() == origUsedIps
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, flatL3.uuid).eq(UsedIpVO_.ip, "10.211.83.1").isExists()
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, flatL3.uuid).eq(UsedIpVO_.ip, "2001:db8:83::1").isExists()
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, flatL3.uuid).eq(UsedIpVO_.ip, "2001:db8:83::500").isExists()
+        assert VmSystemTags.STATIC_IP.getTags(vm.uuid).isEmpty()
+        GetIpAddressCapacityResult capAfter = getIpAddressCapacity {
+            l3NetworkUuids = [flatL3.uuid]
+        }
+        assert capAfter.availableCapacity == capBefore.availableCapacity
+
+        // 4. ChangeVmNicNetwork with staticIp param equal to destination L3 gateway must also fail
+        String pubGw = pubL3.ipRanges[0].gateway
+        def changeAction = new ChangeVmNicNetworkAction()
+        changeAction.vmNicUuid = nicBefore.uuid
+        changeAction.destL3NetworkUuid = pubL3.uuid
+        changeAction.staticIp = pubGw
+        changeAction.sessionId = adminSession()
+        def changeRes = changeAction.call()
+        assert changeRes.error != null : "ChangeVmNicNetwork with dest L3 gateway staticIp must be rejected"
+        assert changeRes.error.details.contains("gateway")
+
+        // 5. Legacy single-field IPv6 via ip (with ip6 omitted) still works for valid IPv6 and rejects gateway
+        def actionLegacyGw = new SetVmStaticIpAction()
+        actionLegacyGw.vmInstanceUuid = vm.uuid
+        actionLegacyGw.l3NetworkUuid = flatL3.uuid
+        actionLegacyGw.ip = "2001:db8:83::1"
+        actionLegacyGw.sessionId = adminSession()
+        def resLegacyGw = actionLegacyGw.call()
+        assert resLegacyGw.error != null
+        assert resLegacyGw.error.details.contains("gateway")
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        String targetLegacyV6 = origUsedIps.contains("2001:db8:83::88") ? "2001:db8:83::89" : "2001:db8:83::88"
+        setVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = flatL3.uuid
+            ip = targetLegacyV6
+        }
+        VmNicInventory nicLegacyOk = queryVmNic {
+            conditions = ["uuid=${nicBefore.uuid}"]
+        }[0]
+        assert nicLegacyOk.usedIps.any { it.ip == targetLegacyV6 }
+
+        // 6. Public L3 where NormalIpRange real gateway equals non-overlapping AddressPool startIp must still reject gateway
+        L3NetworkInventory pubPoolL3 = createL3Network {
+            name = "pub-l3-pool-gw-guard"
+            l2NetworkUuid = l2.uuid
+            category = "Public"
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = pubPoolL3.uuid
+            networkServices = [(flatProviderUuid): ["DHCP"]]
+        }
+        addIpRange {
+            name = "normal-range"
+            l3NetworkUuid = pubPoolL3.uuid
+            startIp = "100.64.102.2"
+            endIp = "100.64.102.100"
+            netmask = "255.255.255.0"
+            gateway = "100.64.102.1"
+        }
+        addIpRange {
+            name = "pool-matching-normal-gw"
+            l3NetworkUuid = pubPoolL3.uuid
+            startIp = "100.64.102.1"
+            endIp = "100.64.102.1"
+            netmask = "255.255.255.0"
+            ipRangeType = IpRangeType.AddressPool.toString()
+        }
+        addIpRange {
+            name = "pool-standalone-start"
+            l3NetworkUuid = pubPoolL3.uuid
+            startIp = "100.64.102.201"
+            endIp = "100.64.102.201"
+            netmask = "255.255.255.0"
+            ipRangeType = IpRangeType.AddressPool.toString()
+        }
+
+        CheckIpAvailabilityResult gwAvail = checkIpAvailability {
+            l3NetworkUuid = pubPoolL3.uuid
+            ip = "100.64.102.1"
+        }
+        assert !gwAvail.available
+        assert gwAvail.reason.contains("gateway")
+
+        CheckIpAvailabilityResult poolStartAvail = checkIpAvailability {
+            l3NetworkUuid = pubPoolL3.uuid
+            ip = "100.64.102.201"
+        }
+        assert poolStartAvail.available
+
+        VmInstanceInventory vmAttached = attachL3NetworkToVm {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = pubPoolL3.uuid
+        }
+        VmNicInventory pubPoolNicBefore = vmAttached.vmNics.find { it.l3NetworkUuid == pubPoolL3.uuid }
+        assert pubPoolNicBefore != null
+        String pubPoolOrigIp = pubPoolNicBefore.ip
+
+        def pubGwAction = new SetVmStaticIpAction()
+        pubGwAction.vmInstanceUuid = vm.uuid
+        pubGwAction.l3NetworkUuid = pubPoolL3.uuid
+        pubGwAction.ip = "100.64.102.1"
+        pubGwAction.sessionId = adminSession()
+        def pubGwRes = pubGwAction.call()
+        assert pubGwRes.error != null : "SetVmStaticIp must reject NormalIpRange gateway even when AddressPool startIp has the same value"
+        assert pubGwRes.error.details.contains("gateway")
+
+        VmNicInventory pubPoolNicAfter = queryVmNic {
+            conditions = ["uuid=${pubPoolNicBefore.uuid}"]
+        }[0]
+        assert pubPoolNicAfter.ip == pubPoolOrigIp
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, pubPoolL3.uuid).eq(UsedIpVO_.ip, "100.64.102.1").isExists()
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+        deleteL3Network {
+            uuid = pubPoolL3.uuid
+        }
+        deleteL3Network {
+            uuid = flatL3.uuid
         }
         deleteInstanceOffering {
             uuid = offering.uuid

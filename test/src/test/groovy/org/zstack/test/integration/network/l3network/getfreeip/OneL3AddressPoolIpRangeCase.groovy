@@ -53,6 +53,13 @@ class OneL3AddressPoolIpRangeCase extends SubCase {
                 ipRangeType = IpRangeType.AddressPool.toString()
             }
 
+            // check checkIpAvailability when 'gateway' in standalone AddressPool
+            CheckIpAvailabilityResult availBefore = checkIpAvailability {
+                l3NetworkUuid = l3.uuid
+                ip = "100.64.101.101"
+            }
+            assert availBefore.available
+
             // check getFreeIp when 'gateway' in AddressPool
             List<FreeIpInventory> freeIps = getFreeIpOfIpRange {
                 ipRangeUuid = ipr4_pool.uuid

@@ -421,6 +421,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             msg.getRequiredIpMap().put(l3Uuid, ips);
         }
 
+        if (msg.getStaticIp() != null) {
+            staticIpOp.checkIpAvailability(msg.getDestL3NetworkUuid(), IPv6NetworkUtils.ipv6TagValueToAddress(msg.getStaticIp()));
+        }
+
         validateDnsAddresses(msg.getDnsAddresses());
     }
 
@@ -670,6 +674,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
                     existingIpv6 = usedIp;
                 }
             }
+            String ipv6InIpField = null;
             if (msg.getIp() != null) {
                 String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
                 if (NetworkUtils.isIpv4Address(ip)) {
@@ -677,6 +682,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
                     normalizedIp = ip;
                 } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
                     validateStaticIPv6(nic, l3NetworkVO, ip);
+                    ipv6InIpField = ip;
                     msg.setIp(ip);
                     normalizedIp6 = ip;
                 } else {
@@ -686,6 +692,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             if (msg.getIp6() != null) {
                 String ip6 = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp6());
                 validateStaticIPv6(nic, l3NetworkVO, ip6);
+                if (ipv6InIpField != null) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10370,
+                            "cannot specify IPv6 addresses in both ip[%s] and ip6[%s]", ipv6InIpField, ip6));
+                }
                 msg.setIp6(ip6);
                 normalizedIp6 = ip6;
             }
@@ -720,6 +730,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             msg.setNetmask(ipv4Result[0]);
             msg.setGateway(ipv4Result[1]);
             checkIpOccupied(normalizedIp, msg.getL3NetworkUuid());
+            staticIpOp.checkIpAvailability(msg.getL3NetworkUuid(), normalizedIp);
         }
         if (normalizedIp6 != null) {
             List<NormalIpRangeVO> ipv6Ranges = Q.New(NormalIpRangeVO.class)
@@ -730,6 +741,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
             msg.setIpv6Prefix(ipv6Result[0]);
             msg.setIpv6Gateway(ipv6Result[1]);
             checkIpOccupied(normalizedIp6, msg.getL3NetworkUuid());
+            staticIpOp.checkIpAvailability(msg.getL3NetworkUuid(), normalizedIp6);
         }
 
         validateDnsAddresses(msg.getDnsAddresses());
