@@ -638,7 +638,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             VmInstanceState state = t.get(0, VmInstanceState.class);
             String vmHostUuid = t.get(1, String.class);
 
-            if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Restoring) {
+            if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Recovering) {
                 DebugUtils.Assert(vmHostUuid != null,
                         String.format("vm[uuid:%s] is %s, but has no hostUuid", vol.getVmInstanceUuid(), state));
                 huuid = vmHostUuid;

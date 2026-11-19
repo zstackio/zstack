@@ -8,7 +8,7 @@ public enum VmInstanceStateEvent {
     migrated,
     destroying,
     rebooting,
-    restoring,
+    recovering,
     destroyed,
     expunging,
     pausing,

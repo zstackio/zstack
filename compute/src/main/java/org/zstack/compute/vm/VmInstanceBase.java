@@ -8575,7 +8575,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
                 if (rollbackError != null && VmInstanceState.Running.toString().equals(original.getState())
                         && data.containsKey(VmReserveResourceForRestoreFlow.class.getName())) {
-                    if (refreshVO().getState() != VmInstanceState.Restoring) {
+                    if (refreshVO().getState() != VmInstanceState.Recovering) {
                         if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Unknown) {
                             for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
                                 ext.failedToRecoverVmAfterRestore(msg);
@@ -8591,7 +8591,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     bus.send(cmsg, new CloudBusCallBack(completion) {
                         @Override
                         public void run(MessageReply reply) {
-                            if (refreshVO().getState() != VmInstanceState.Restoring) {
+                            if (refreshVO().getState() != VmInstanceState.Recovering) {
                                 if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Unknown) {
                                     for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
                                         ext.failedToRecoverVmAfterRestore(msg);
