@@ -18,14 +18,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-final class LongJobDataSanitizer {
+public final class LongJobDataSanitizer {
     private static final TypeAdapter<JsonElement> JSON_ELEMENT = new Gson().getAdapter(JsonElement.class);
     private static final Pattern URI_PREFIX = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://");
 
     private LongJobDataSanitizer() {
     }
 
-    static String sanitize(String data) {
+    public static String sanitize(String data) {
         if (data == null) {
             return null;
         }

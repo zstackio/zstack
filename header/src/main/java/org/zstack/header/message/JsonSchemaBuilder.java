@@ -56,7 +56,7 @@ public class JsonSchemaBuilder {
                     if (value instanceof Collection) {
                         Collection c = (Collection) value;
 
-                        Class gtype = FieldUtils.getGenericType(f);
+                        Class gtype = Collection.class.isAssignableFrom(f.getType()) ? FieldUtils.getGenericType(f) : null;
 
                         if (gtype != null && !gtype.getName().startsWith("java.")) {
                             int i = 0;
@@ -68,7 +68,7 @@ public class JsonSchemaBuilder {
                         }
 
                     } else if (value instanceof Map) {
-                        Class gtype = FieldUtils.getGenericType(f);
+                        Class gtype = Map.class.isAssignableFrom(f.getType()) ? FieldUtils.getGenericType(f) : null;
 
                         if (gtype != null && !gtype.getName().startsWith("java.")) {
                             for (Object me : ((Map) value).entrySet()) {

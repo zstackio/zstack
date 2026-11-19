@@ -68,6 +68,14 @@ public class ModelService  {
         return this.vmImageUuid;
     }
 
+    public java.lang.String cpuArchitecture;
+    public void setCpuArchitecture(java.lang.String cpuArchitecture) {
+        this.cpuArchitecture = cpuArchitecture;
+    }
+    public java.lang.String getCpuArchitecture() {
+        return this.cpuArchitecture;
+    }
+
     public java.lang.String primaryStorageUuid;
     public void setPrimaryStorageUuid(java.lang.String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
@@ -154,6 +162,14 @@ public class ModelService  {
     }
     public java.lang.String getClusterUuid() {
         return this.clusterUuid;
+    }
+
+    public java.lang.String hostUuid;
+    public void setHostUuid(java.lang.String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+    public java.lang.String getHostUuid() {
+        return this.hostUuid;
     }
 
     public java.lang.Long memorySize;

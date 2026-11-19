@@ -40,6 +40,9 @@ public class DeployAppDevelopmentServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmImageUuid;
 
+    @Param(required = false, validValues = {"x86_64","aarch64"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cpuArchitecture;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String primaryStorageUuid;
 

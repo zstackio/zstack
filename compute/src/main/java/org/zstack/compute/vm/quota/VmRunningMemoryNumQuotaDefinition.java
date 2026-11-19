@@ -29,7 +29,7 @@ public class VmRunningMemoryNumQuotaDefinition implements QuotaDefinition {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)" +
-                " and vm.type != :vmtype";
+                " and vm.type not in (:vmtypes)";
 
         Long used = SQL.New(sql, Long.class)
                 .param("auuid", accountUuid)
@@ -37,7 +37,7 @@ public class VmRunningMemoryNumQuotaDefinition implements QuotaDefinition {
                 .param("starting", VmInstanceState.Starting)
                 .param("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                         VmInstanceState.Destroyed, VmInstanceState.Created))
-                .param("vmtype", "baremetal2")
+                .param("vmtypes", VmQuotaConstant.VM_TYPES_NOT_COUNTED)
                 .find();
         return used == null ? 0L : used;
     }

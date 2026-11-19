@@ -19,6 +19,7 @@ import org.zstack.core.db.Q;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -59,11 +60,13 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import javax.persistence.LockModeType;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -987,11 +990,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         httpCall(GET_CAPACITY_PATH, cmd, GetCapacityRsp.class, new ReturnValueCompletion<GetCapacityRsp>(comp) {
             @Override
             public void success(GetCapacityRsp returnValue) {
+                updatePoolCapacities(poolNames, returnValue.getLogicalPoolInfos());
                 reloadDbInfo();
-                addonInfo.setLogicalPoolInfos(returnValue.getLogicalPoolInfos());
-                SQL.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, self.getUuid())
-                        .set(ExternalPrimaryStorageVO_.addonInfo, JSONObjectUtil.toJsonString(addonInfo))
-                        .update();
 
                 List<LogicalPoolInfo> logicalPoolInfos = getSelfPools();
                 long total = logicalPoolInfos.stream().mapToLong(LogicalPoolInfo::getCapacity).sum();
@@ -1013,6 +1013,31 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 comp.fail(errorCode);
             }
         });
+    }
+
+    private void updatePoolCapacities(List<String> requestedPools, List<LogicalPoolInfo> refreshedPools) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                ExternalPrimaryStorageVO storage = SQL.New(
+                        "select ps from ExternalPrimaryStorageVO ps where ps.uuid = :uuid", ExternalPrimaryStorageVO.class)
+                        .param("uuid", self.getUuid()).lock(LockModeType.PESSIMISTIC_WRITE).find();
+                databaseFacade.getEntityManager().refresh(storage, LockModeType.PESSIMISTIC_WRITE);
+                AddonInfo current = StringUtils.isEmpty(storage.getAddonInfo()) ? new AddonInfo() :
+                        JSONObjectUtil.toObject(storage.getAddonInfo(), AddonInfo.class);
+                Map<String, LogicalPoolInfo> pools = new LinkedHashMap<>();
+                for (LogicalPoolInfo pool : current.getLogicalPoolInfos()) {
+                    if (!requestedPools.contains(pool.getLogicalPoolName())) {
+                        pools.put(pool.getLogicalPoolName(), pool);
+                    }
+                }
+                for (LogicalPoolInfo pool : refreshedPools) {
+                    pools.put(pool.getLogicalPoolName(), pool);
+                }
+                current.setLogicalPoolInfos(new ArrayList<>(pools.values()));
+                storage.setAddonInfo(JSONObjectUtil.toJsonString(current));
+            }
+        }.execute();
     }
 
     @Override
@@ -1113,16 +1138,22 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String allocateSpace(AllocateSpaceSpec aspec) {
-        if (config == null || addonInfo == null) {
-            reloadDbInfo();
-        }
+        Tuple snapshot = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.config, ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, self.getUuid()).findTuple();
+        String configJson = snapshot.get(0, String.class);
+        String addonInfoJson = snapshot.get(1, String.class);
+        Config allocationConfig = StringUtils.isEmpty(configJson) ? new Config() :
+                JSONObjectUtil.toObject(configJson, Config.class);
+        AddonInfo allocationInfo = StringUtils.isEmpty(addonInfoJson) ? new AddonInfo() :
+                JSONObjectUtil.toObject(addonInfoJson, AddonInfo.class);
 
-        Predicate<LogicalPoolInfo> p = aspec.getRequiredUrl() == null ? null : it -> {
-            String pool = getPoolFromVolumePath(aspec.getRequiredUrl());
-            return StringUtils.equals(pool, it.getLogicalPoolName());
-        };
+        List<String> poolNames = allocationConfig.getPoolNames();
+        String requiredPool = aspec.getRequiredUrl() == null ? null : getPoolFromVolumePath(aspec.getRequiredUrl());
+        Predicate<LogicalPoolInfo> p = it -> poolNames.contains(it.getLogicalPoolName()) &&
+                (requiredPool == null || StringUtils.equals(requiredPool, it.getLogicalPoolName()));
 
-        LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize(), p);
+        LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize(), p, allocationInfo.getLogicalPoolInfos());
         if (logicalPoolInfo == null) {
             throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10017, "no available logical pool with enough space[%d] and required url: %s",
                     aspec.getSize(), aspec.getRequiredUrl()));
@@ -1131,8 +1162,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         return buildPoolPath(logicalPoolInfo.getLogicalPoolName());
     }
 
-    private LogicalPoolInfo allocateFreePool(long size, Predicate<LogicalPoolInfo> filter) {
-        List<LogicalPoolInfo> logicalPoolInfos = getSelfPools();
+    private LogicalPoolInfo allocateFreePool(long size, Predicate<LogicalPoolInfo> filter,
+                                             List<LogicalPoolInfo> logicalPoolInfos) {
+        if (logicalPoolInfos == null) {
+            return null;
+        }
         Stream<LogicalPoolInfo> s = logicalPoolInfos.stream().filter(it -> it.getCapacity() - it.getUsedSize() > size);
         if (filter != null) {
             s = s.filter(filter);
@@ -1157,7 +1191,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         cmd.setSize(alignSizeTo(v.getSize(), cmd.getUnit()));
         cmd.setSkipIfExisting(true);
         String poolName = v.getAllocatedUrl() != null ? getPoolFromVolumePath(v.getAllocatedUrl()) :
-                allocateFreePool(cmd.getSize(), null).getLogicalPoolName();
+                allocateFreePool(cmd.getSize(), null, getSelfPools()).getLogicalPoolName();
         cmd.setLogicalPool(poolName);
 
         httpCall(CREATE_VOLUME_PATH, cmd, CreateVolumeRsp.class, new ReturnValueCompletion<CreateVolumeRsp>(comp) {

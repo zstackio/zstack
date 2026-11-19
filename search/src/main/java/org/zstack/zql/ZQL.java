@@ -24,6 +24,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.longjob.LongJobDataSanitizer;
+import org.zstack.header.longjob.LongJobInventory;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
@@ -147,16 +149,30 @@ public class ZQL {
                 Object[] fieldValues = (Object[]) vo;
                 for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
                     String fieldName = astResult.targetFieldNames.get(i);
-                    inv.put(fieldName, fieldValues[i]);
+                    inv.put(fieldName, toPublicFieldValue(fieldName, fieldValues[i]));
                 }
             } else {
                 String fieldName = astResult.targetFieldNames.get(0);
-                inv.put(fieldName, vo);
+                inv.put(fieldName, toPublicFieldValue(fieldName, vo));
             }
             return inv;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    private Object toPublicFieldValue(String fieldName, Object value) {
+        if ("jobData".equals(fieldName) && value instanceof String
+                && LongJobInventory.class.isAssignableFrom(astResult.inventoryMetadata.selfInventoryClass)) {
+            return LongJobDataSanitizer.sanitize((String) value);
+        }
+        return value;
+    }
+
+    private void addAggregateResult(ZQLQueryReturn queryReturn, Object result) {
+        LinkedHashMap<Object, Object> inventory = entityVOtoMap(result);
+        String aggregateField = astResult.targetFieldNames.get(astResult.targetFieldNames.size() - 1);
+        queryReturn.inventoryAggregateFunctions.put(inventory, inventory.get(aggregateField));
     }
 
     private static void callExtensions(ASTNode.Query node) {
@@ -364,13 +380,7 @@ public class ZQL {
                 } else if (isMax(function) || isMin(function) || isSum(function) || isAvg(function)) {
                     qr.inventoryAggregateFunctions = new LinkedHashMap<>();
                     for (Object result : ret.vos) {
-                        if (result instanceof Object[]) {
-                            Object[] fieldValues = (Object[]) result;
-                            int aggregateFunIndex = fieldValues.length - 1;
-                            qr.inventoryAggregateFunctions.put(entityVOtoMap(fieldValues), fieldValues[aggregateFunIndex]);
-                        } else {
-                            qr.inventoryAggregateFunctions.put(entityVOtoMap(result), result);
-                        }
+                        addAggregateResult(qr, result);
                     }
                 } else {
                     // `distinct` keeps the original method for compatibility

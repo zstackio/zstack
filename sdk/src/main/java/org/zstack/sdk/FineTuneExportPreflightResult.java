@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.FineTuneMergeReport;
 
 public class FineTuneExportPreflightResult  {
 
@@ -74,6 +74,14 @@ public class FineTuneExportPreflightResult  {
     }
     public java.lang.String getExportId() {
         return this.exportId;
+    }
+
+    public FineTuneMergeReport mergeReport;
+    public void setMergeReport(FineTuneMergeReport mergeReport) {
+        this.mergeReport = mergeReport;
+    }
+    public FineTuneMergeReport getMergeReport() {
+        return this.mergeReport;
     }
 
 }

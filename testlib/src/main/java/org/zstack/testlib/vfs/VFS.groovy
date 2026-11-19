@@ -209,7 +209,9 @@ class VFS {
         } else {
             logger.debug("[VFS(id: ${id}) CREATE FILE]: ${p}, ${str}")
         }
-        Files.write(p, str.getBytes())
+        synchronized (fileSystem) {
+            Files.write(p, str.getBytes())
+        }
     }
 
     Path createDirectories(String pathStr) {
@@ -225,15 +227,18 @@ class VFS {
     }
 
     static <T> T getFile(Path path, VFS vfs) {
-        if (!Files.exists(path)) {
-            return null
-        }
+        String json
+        synchronized (vfs.fileSystem) {
+            if (!Files.exists(path)) {
+                return null
+            }
 
-        if (!Files.isRegularFile(path)) {
-            throw new FileNotFoundException("${path.toString()} is not a file")
-        }
+            if (!Files.isRegularFile(path)) {
+                throw new FileNotFoundException("${path.toString()} is not a file")
+            }
 
-        String json = Files.readAllLines(path).join("\n")
+            json = Files.readAllLines(path).join("\n")
+        }
         return VFSFile.fromJSON(json, vfs)
     }
 

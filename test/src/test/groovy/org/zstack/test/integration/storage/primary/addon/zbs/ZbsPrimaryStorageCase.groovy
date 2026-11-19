@@ -32,6 +32,8 @@ import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO
+import org.zstack.header.storage.addon.primary.AllocateSpaceSpec
+import org.zstack.header.storage.addon.StorageCapacity
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO_
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO
@@ -52,6 +54,7 @@ import org.zstack.storage.zbs.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageCanonicalEvent
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
@@ -69,6 +72,7 @@ import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.storage.zbs.ZbsKvmAgentCommands.CheckHostStorageConnectionCmd
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.test.integration.physicalserver.PhysicalServerTest
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -77,6 +81,9 @@ import org.zstack.utils.gson.JSONObjectUtil
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Xingwei Yu
@@ -95,6 +102,7 @@ class ZbsPrimaryStorageCase extends SubCase {
 
     @Override
     void clean() {
+        PhysicalServerTest.cleanupPhysicalServerRecords()
         env.delete()
     }
 
@@ -223,6 +231,8 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsConnectFailed()
             testLifecycle()
             testHostReconnectWithFailedStorage()
+            testAllocationUsesCollectedCapacity()
+            testAllocationPreservesPendingConnectionState()
             testDataVolumeLifecycle()
             testMdsPing()
             testCheckHostStorageConnection()
@@ -1378,6 +1388,176 @@ class ZbsPrimaryStorageCase extends SubCase {
         retryInSecs {
             assert getUsedCapacity("lpool2") == usedCapPoolBefore
             assert getUsedCapacity() == usedCapPsBefore
+        }
+    }
+
+    void collectPoolCapacity(List<LogicalPoolInfo> pools) {
+        env.afterSimulator(ZbsStorageController.GET_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
+            rsp.logicalPoolInfos = pools
+            return rsp
+        }
+        syncPrimaryStorageCapacity {
+            primaryStorageUuid = ps.uuid
+        }
+    }
+
+    void testAllocationUsesCollectedCapacity() {
+        def controller = bean(ExternalPrimaryStorageFactory.class).getControllerSvc(ps.uuid) as ZbsStorageController
+        def availablePool = new LogicalPoolInfo(logicalPoolName: "lpool1", physicalPoolName: "pool1",
+                capacity: 321153662976L, usedSize: 12582912L)
+        def fullPool = new LogicalPoolInfo(logicalPoolName: "lpool1", physicalPoolName: "pool1",
+                capacity: 321153662976L, usedSize: 321153662976L)
+        String original = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+        def cachedAvailable = JSONObjectUtil.toObject(original, AddonInfo.class)
+        cachedAvailable.logicalPoolInfos = [availablePool]
+        try {
+            [[], [fullPool]].each { stalePools ->
+                collectPoolCapacity([availablePool])
+                String collected = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+                def stale = JSONObjectUtil.toObject(collected, AddonInfo.class)
+                stale.logicalPoolInfos = stalePools
+                controller.syncAddonInfo(JSONObjectUtil.toJsonString(stale))
+
+                def action = new CreateDataVolumeAction()
+                action.name = "volume-with-stale-pool-cache"
+                action.diskOfferingUuid = diskOffering.uuid
+                action.primaryStorageUuid = ps.uuid
+                action.sessionId = adminSession()
+                def result = action.call()
+                assert result.error == null :
+                        "Committed pool capacity must allow creation despite stale pools=${stalePools}: " +
+                                JSONObjectUtil.toJsonString(result.error)
+                VolumeInventory volume = result.value.inventory
+                assert volume.installPath.startsWith("zbs://lpool1/") :
+                        "Volume must use configured pool lpool1: actualPath=${volume.installPath}"
+                deleteVolume(volume.uuid)
+            }
+
+            def allocation = new AllocateSpaceSpec(size: 12682240L)
+            def unrelatedPool = new LogicalPoolInfo(logicalPoolName: "other", physicalPoolName: "other",
+                    capacity: availablePool.capacity)
+            [0L, allocation.size, allocation.size + 1].each { freeBytes ->
+                def pool = new LogicalPoolInfo(logicalPoolName: "lpool1", physicalPoolName: "pool1",
+                        capacity: freeBytes)
+                collectPoolCapacity([pool, unrelatedPool])
+                controller.syncAddonInfo(JSONObjectUtil.toJsonString(cachedAvailable))
+                if (freeBytes > allocation.size) {
+                    String path = controller.allocateSpace(allocation)
+                    assert path == "zbs://lpool1" : "Allocation must select configured pool: actualPath=${path}"
+                } else {
+                    assertAllocationFails(controller, allocation)
+                }
+            }
+
+            def secondPool = new LogicalPoolInfo(logicalPoolName: "lpool2", physicalPoolName: "pool2",
+                    capacity: 321153662976L)
+            collectPoolCapacity([availablePool, secondPool])
+            [[fullPool], []].each { refreshedPools ->
+                env.afterSimulator(ZbsStorageController.GET_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
+                    def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetCapacityCmd.class)
+                    assert cmd.logicalPoolNames == ["lpool1"]
+                    rsp.logicalPoolInfos = refreshedPools
+                    return rsp
+                }
+                AtomicBoolean completed = new AtomicBoolean(false)
+                controller.getCapacity(["zbs://lpool1"], new ReturnValueCompletion<StorageCapacity>(null) {
+                    @Override
+                    void success(StorageCapacity capacity) {
+                        completed.set(true)
+                    }
+
+                    @Override
+                    void fail(ErrorCode errorCode) {
+                        assert false : "partial capacity refresh failed: ${errorCode}"
+                    }
+                })
+                retryInSecs { assert completed.get() }
+                assert controller.allocateSpace(new AllocateSpaceSpec(size: allocation.size,
+                        requiredUrl: "zbs://lpool2")) == "zbs://lpool2" :
+                        "refreshing lpool1 must retain collected capacity for lpool2"
+                assertAllocationFails(controller, new AllocateSpaceSpec(size: allocation.size,
+                        requiredUrl: "zbs://lpool1"))
+            }
+
+            collectPoolCapacity([])
+            controller.syncAddonInfo(JSONObjectUtil.toJsonString(cachedAvailable))
+            assertAllocationFails(controller, allocation)
+        } finally {
+            env.cleanAfterSimulatorHandlers()
+            controller.syncAddonInfo(original)
+            reconnectPrimaryStorage {
+                uuid = ps.uuid
+            }
+            retryInSecs {
+                assert getUsedCapacity() == 0
+                assert getUsedCapacity("lpool1") == 0
+                assert getUsedCapacity("lpool2") == 0
+            }
+            def capacity = Q.New(PrimaryStorageCapacityVO.class).eq(PrimaryStorageCapacityVO_.uuid, ps.uuid).find()
+            assert capacity.totalCapacity > 0 : "Fixture total capacity was not restored: ${capacity.totalCapacity}"
+            assert capacity.availableCapacity > diskOffering.diskSize :
+                    "Fixture available capacity must allow subsequent volumes: actual=${capacity.availableCapacity}"
+        }
+    }
+
+    void assertAllocationFails(ZbsStorageController controller, AllocateSpaceSpec allocation) {
+        expect(OperationFailureException.class) {
+            try {
+                controller.allocateSpace(allocation)
+            } catch (OperationFailureException error) {
+                assert error.errorCode.globalErrorCode == "ORG_ZSTACK_STORAGE_ZBS_10017" :
+                        "Collected pool must reject size=${allocation.size} with ORG_ZSTACK_STORAGE_ZBS_10017: " +
+                                "actual=${error.errorCode}"
+                throw error
+            }
+        }
+    }
+
+    void testAllocationPreservesPendingConnectionState() {
+        def vo = Q.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).find()
+        def controller = new ZbsStorageController(vo)
+        def pending = JSONObjectUtil.toObject(vo.addonInfo, AddonInfo.class)
+        pending.clusterInfo.uuid = "pending-cluster"
+        pending.mdsInfos[0].addr = "127.0.9.1"
+        pending.logicalPoolInfos = []
+        def pendingConfig = JSONObjectUtil.toObject(vo.config, Config.class)
+        pendingConfig.pools = [new Config.Pool("pending-pool", "pending")]
+        def published = new CountDownLatch(1)
+        def allocated = new CountDownLatch(1)
+        def executor = Executors.newFixedThreadPool(2)
+        try {
+            def connection = executor.submit({
+                controller.syncConfig(JSONObjectUtil.toJsonString(pendingConfig))
+                controller.syncAddonInfo(JSONObjectUtil.toJsonString(pending))
+                def cachedConfig = controller.config
+                def cachedAddonInfo = controller.addonInfo
+                published.countDown()
+                assert allocated.await(30, TimeUnit.SECONDS) : "Allocation did not finish with pending connection state"
+                assert controller.config.is(cachedConfig) : "Allocation replaced pending connection config reference"
+                assert controller.addonInfo.is(cachedAddonInfo) : "Allocation replaced pending addonInfo reference"
+                assert controller.addonInfo.clusterInfo.uuid == "pending-cluster" :
+                        "Allocation replaced pending cluster: actual=${controller.addonInfo.clusterInfo.uuid}"
+                assert controller.addonInfo.mdsInfos[0].addr == "127.0.9.1" :
+                        "Allocation replaced pending MDS: actual=${controller.addonInfo.mdsInfos[0].addr}"
+                assert controller.addonInfo.logicalPoolInfos.empty :
+                        "Allocation populated pending connection pools: actual=${controller.addonInfo.logicalPoolInfos}"
+            } as Runnable)
+            def allocation = executor.submit({
+                try {
+                    assert published.await(30, TimeUnit.SECONDS) : "Connection state was not published"
+                    String path = controller.allocateSpace(
+                            new AllocateSpaceSpec(size: 12682240L, requiredUrl: "zbs://lpool1"))
+                    assert path == "zbs://lpool1" : "Allocation must use database pool: actualPath=${path}"
+                } finally {
+                    allocated.countDown()
+                }
+            } as Runnable)
+            allocation.get(40, TimeUnit.SECONDS)
+            connection.get(40, TimeUnit.SECONDS)
+        } finally {
+            executor.shutdownNow()
         }
     }
 
