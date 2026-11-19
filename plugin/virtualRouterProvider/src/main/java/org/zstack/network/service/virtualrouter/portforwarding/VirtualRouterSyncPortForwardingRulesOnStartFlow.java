@@ -58,7 +58,10 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
                 return new ArrayList<>();
             }
 
-            return Q.New(PortForwardingRuleVO.class).in(PortForwardingRuleVO_.uuid, pfUuids).list();
+            return Q.New(PortForwardingRuleVO.class)
+                    .in(PortForwardingRuleVO_.uuid, pfUuids)
+                    .eq(PortForwardingRuleVO_.state, PortForwardingRuleState.Enabled)
+                    .list();
         } else {
             List<VmNicInventory> guestNics = vr.getGuestNics();
             if (guestNics == null || guestNics.isEmpty()) {
@@ -77,8 +80,10 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             }
 
             String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic where " +
-                    " rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid in (:vipL3Uuids) and nic.l3NetworkUuid in (:guestL3Uuid)";
+                    " rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and rule.state = :enabledState" +
+                    " and vip.l3NetworkUuid in (:vipL3Uuids) and nic.l3NetworkUuid in (:guestL3Uuid)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
+            q.setParameter("enabledState", PortForwardingRuleState.Enabled);
             q.setParameter("vipL3Uuids", pubL3Uuids);
             q.setParameter("guestL3Uuid", guestNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
 

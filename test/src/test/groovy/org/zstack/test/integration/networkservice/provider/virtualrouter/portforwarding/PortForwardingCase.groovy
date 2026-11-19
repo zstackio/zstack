@@ -9,10 +9,15 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
+import org.zstack.network.service.portforwarding.PortForwardingRuleState
+import org.zstack.network.service.portforwarding.PortForwardingRuleStateEvent
+import org.zstack.network.service.portforwarding.PortForwardingRuleVO
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
@@ -155,6 +160,7 @@ class PortForwardingCase extends SubCase {
         env.create {
             testDeleteOneUnattchedPortForwadingRuleAndAttachAnotherWillRequireVip()
             testDeletePortForwardingRuleWhenNotAttachAnyVm()
+            testChangePortForwardingRuleStateSyncWithVr()
         }
     }
 
@@ -322,5 +328,87 @@ class PortForwardingCase extends SubCase {
         }
         VipVO vipVO = dbFindByUuid(vip.uuid, VipVO.class)
         assert vipVO.serviceProvider != null
+    }
+
+    void testChangePortForwardingRuleStateSyncWithVr() {
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        VipInventory vip = createVip {
+            name = "vip-pf-state"
+            l3NetworkUuid = pubL3.uuid
+        }
+
+        PortForwardingRuleInventory pf = createPortForwardingRule {
+            name = "pf-state-rule"
+            vipUuid = vip.uuid
+            vipPortStart = 18000
+            vipPortEnd = 18000
+            privatePortStart = 8000
+            privatePortEnd = 8000
+            protocolType = PortForwardingProtocolType.TCP.toString()
+            vmNicUuid = vm.vmNics[0].uuid
+        }
+
+        List<VirtualRouterCommands.RevokePortForwardingRuleCmd> revokeCmds = Collections.synchronizedList(new ArrayList<>())
+        List<VirtualRouterCommands.CreatePortForwardingRuleCmd> createCmds = Collections.synchronizedList(new ArrayList<>())
+        List<VirtualRouterCommands.SyncPortForwardingRuleCmd> syncCmds = Collections.synchronizedList(new ArrayList<>())
+
+        env.afterSimulator(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING) { VirtualRouterCommands.RevokePortForwardingRuleRsp rsp, HttpEntity<String> e ->
+            revokeCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterCommands.RevokePortForwardingRuleCmd.class))
+            return rsp
+        }
+        env.afterSimulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { VirtualRouterCommands.CreatePortForwardingRuleRsp rsp, HttpEntity<String> e ->
+            createCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterCommands.CreatePortForwardingRuleCmd.class))
+            return rsp
+        }
+        env.afterSimulator(VirtualRouterConstant.VR_SYNC_PORT_FORWARDING) { VirtualRouterCommands.SyncPortForwardingRuleRsp rsp, HttpEntity<String> e ->
+            syncCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterCommands.SyncPortForwardingRuleCmd.class))
+            return rsp
+        }
+
+        // 1. Disabling an attached PF rule must revoke it on VR while keeping DB binding
+        PortForwardingRuleInventory disabledPf = changePortForwardingRuleState {
+            uuid = pf.uuid
+            stateEvent = PortForwardingRuleStateEvent.disable.toString()
+        }
+        assert disabledPf.state == PortForwardingRuleState.Disabled.toString()
+        assert disabledPf.vmNicUuid == vm.vmNics[0].uuid
+        assert revokeCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                "Disabling attached PF rule must revoke it on VR, got revokeCmds=${revokeCmds.size()}"
+
+        // 2. While disabled, destroying old VR and recreating VR via VM stop/start must NOT push disabled rule
+        createCmds.clear()
+        syncCmds.clear()
+        String oldVrUuid = Q.New(VirtualRouterVmVO.class).select(VirtualRouterVmVO_.uuid).eq(VirtualRouterVmVO_.state, VmInstanceState.Running).findValue()
+        assert oldVrUuid != null
+        destroyVmInstance { uuid = oldVrUuid }
+
+        stopVmInstance { uuid = vm.uuid }
+        startVmInstance { uuid = vm.uuid }
+
+        String newVrUuid = Q.New(VirtualRouterVmVO.class).select(VirtualRouterVmVO_.uuid).eq(VirtualRouterVmVO_.state, VmInstanceState.Running).findValue()
+        assert newVrUuid != null && newVrUuid != oldVrUuid
+        assert !syncCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                "Newly created VR must not sync disabled PF rule"
+        assert !createCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                "Starting VM must not apply disabled PF rule"
+
+        // 3. Re-enabling rule must apply it to the new VR, and subsequent reconnect must sync it
+        createCmds.clear()
+        syncCmds.clear()
+        PortForwardingRuleInventory enabledPf = changePortForwardingRuleState {
+            uuid = pf.uuid
+            stateEvent = PortForwardingRuleStateEvent.enable.toString()
+        }
+        assert enabledPf.state == PortForwardingRuleState.Enabled.toString()
+        assert createCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                "Re-enabling attached PF rule must apply it on VR"
+
+        reconnectVirtualRouter { vmInstanceUuid = newVrUuid }
+        assert syncCmds.any { cmd -> cmd.rules.any { it.uuid == pf.uuid } } :
+                "Reconnecting VR after re-enabling PF rule must include rule in sync"
+
+        deletePortForwardingRule { uuid = pf.uuid }
+        deleteVip { uuid = vip.uuid }
     }
 }

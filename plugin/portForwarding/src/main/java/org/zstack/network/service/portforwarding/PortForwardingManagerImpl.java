@@ -480,9 +480,58 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             return;
         }
 
-        vo.setState(vo.getState().nextState(PortForwardingRuleStateEvent.valueOf(msg.getStateEvent())));
-        vo = dbf.updateAndRefresh(vo);
-        completion.success(PortForwardingRuleInventory.valueOf(vo));
+        PortForwardingRuleState nextState = vo.getState().nextState(PortForwardingRuleStateEvent.valueOf(msg.getStateEvent()));
+        if (nextState == vo.getState()) {
+            completion.success(PortForwardingRuleInventory.valueOf(vo));
+            return;
+        }
+
+        if (vo.getVmNicUuid() == null) {
+            vo.setState(nextState);
+            vo = dbf.updateAndRefresh(vo);
+            completion.success(PortForwardingRuleInventory.valueOf(vo));
+            return;
+        }
+
+        final PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(vo));
+        final NetworkServiceProviderType providerType;
+        try {
+            providerType = getPortForwardingProviderTypeIfEnabled(struct.getGuestL3Network().getUuid());
+        } catch (OperationFailureException e) {
+            completion.fail(e.getErrorCode());
+            return;
+        }
+
+        L3NetworkVO nicL3Vo = dbf.findByUuid(struct.getGuestL3Network().getUuid(), L3NetworkVO.class);
+        VmInstanceState vmState = getVmStateFromVmNicUuid(vo.getVmNicUuid());
+        if (providerType == null || (VmInstanceState.Running != vmState && l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType()))) {
+            vo.setState(nextState);
+            vo = dbf.updateAndRefresh(vo);
+            completion.success(PortForwardingRuleInventory.valueOf(vo));
+            return;
+        }
+
+        final PortForwardingRuleVO ruleVo = vo;
+        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+        Completion backendCompletion = new Completion(completion) {
+            @Override
+            public void success() {
+                ruleVo.setState(nextState);
+                PortForwardingRuleVO updated = dbf.updateAndRefresh(ruleVo);
+                completion.success(PortForwardingRuleInventory.valueOf(updated));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        };
+
+        if (nextState == PortForwardingRuleState.Disabled) {
+            bkd.revokePortForwardingRule(struct, backendCompletion);
+        } else {
+            bkd.applyPortForwardingRule(struct, backendCompletion);
+        }
     }
 
     private void handle(final APIDetachPortForwardingRuleMsg msg) {
