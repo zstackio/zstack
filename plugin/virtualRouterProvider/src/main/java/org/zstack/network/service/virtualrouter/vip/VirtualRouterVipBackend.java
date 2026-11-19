@@ -390,9 +390,34 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void preReleaseServicesOnVip(VipInventory vip, Completion completion) {
-        /* this ugly */
-        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
-        completion.success();
+        VirtualRouterVipVO vrVip = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);
+        if (vrVip == null) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vrVO = dbf.findByUuid(vrVip.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
+        if (vrVO == null || vrVO.getState() != VmInstanceState.Running) {
+            SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
+            completion.success();
+            return;
+        }
+
+        releaseVipOnVirtualRouterVm(VirtualRouterVmInventory.valueOf(vrVO), vip, new Completion(completion) {
+            @Override
+            public void success() {
+                SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to release vip[uuid:%s, ip:%s] on virtual router[uuid:%s], %s",
+                        vip.getUuid(), vip.getIp(), vrVO.getUuid(), errorCode));
+                SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
