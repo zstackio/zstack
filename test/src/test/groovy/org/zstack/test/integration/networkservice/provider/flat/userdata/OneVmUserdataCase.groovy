@@ -2,8 +2,13 @@ package org.zstack.test.integration.networkservice.provider.flat.userdata
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.core.db.Q
+import org.zstack.core.gc.GCStatus
+import org.zstack.core.gc.GarbageCollectorVO
+import org.zstack.core.gc.GarbageCollectorVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.BridgeNameFinder
@@ -132,6 +137,7 @@ class OneVmUserdataCase extends SubCase {
             testSetAndDeleteUserddataWhenRebootVm()
             testDeleteUserdataWhenDestroyVm()
             testUserdataForMigratedVm()
+            testStaleUserdataReleaseGCNotDeleteAfterMigrateBack()
 
             FlatUserdataBackend.UserdataReleseGC.INTERVAL = oldValue
         }
@@ -308,6 +314,97 @@ class OneVmUserdataCase extends SubCase {
         testGCOnUserdataOnVmMigrationSuccessButFailedToReleaseUserdataOnSrcHost()
         testUserdataReleaseOnDestHostWhenVmMigrationFailure()
         testGCOnUserdataOnVmMigrationFailureButFailedToReleaseUserdataOnDstHost()
+    }
+
+    void testStaleUserdataReleaseGCNotDeleteAfterMigrateBack() {
+        HostInventory kvm = env.inventoryByName("kvm")
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+
+        // Reset KVM_MIGRATE_VM_PATH simulator from previous scenario
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) {
+            return new KVMAgentCommands.MigrateVmResponse()
+        }
+
+        long savedInterval = FlatUserdataBackend.UserdataReleseGC.INTERVAL
+        FlatUserdataBackend.UserdataReleseGC.INTERVAL = 300
+
+        VmInstanceInventory migrateVmInv = null
+        try {
+            migrateVmInv = createVmInstance {
+                name = "vm-stale-userdata-gc"
+                imageUuid = env.inventoryByName("image").uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+                systemTags = [VmSystemTags.USERDATA.instantiateTag([
+                        (VmSystemTags.USERDATA_TOKEN): new String(Base64.getEncoder().encode("stale-gc-userdata".getBytes()))
+                ])]
+                hostUuid = kvm.uuid
+            }
+
+            List<String> existingGcUuids = Q.New(GarbageCollectorVO.class)
+                    .select(GarbageCollectorVO_.uuid)
+                    .eq(GarbageCollectorVO_.runnerClass, FlatUserdataBackend.UserdataReleseGC.class.getName())
+                    .listValues()
+
+            boolean failSrcRelease = true
+            List<FlatUserdataBackend.ReleaseUserdataCmd> srcHostReleaseCmds = Collections.synchronizedList(new ArrayList<>())
+            env.afterSimulator(FlatUserdataBackend.RELEASE_USER_DATA) { rsp, HttpEntity<String> e ->
+                FlatUserdataBackend.ReleaseUserdataCmd cmd = json(e.body, FlatUserdataBackend.ReleaseUserdataCmd.class)
+                if (cmd.hostUuid == kvm.uuid) {
+                    if (failSrcRelease) {
+                        throw new Exception("simulate src host unreachable on release userdata")
+                    }
+                    srcHostReleaseCmds.add(cmd)
+                }
+                return rsp
+            }
+
+            // 1. Migrate H1 (kvm) -> H2 (kvm1) while H1 release_userdata fails -> creates UserdataReleseGC for H1
+            migrateVm {
+                vmInstanceUuid = migrateVmInv.uuid
+                hostUuid = kvm1.uuid
+            }
+
+            GarbageCollectorVO gcVo = null
+            retryInSecs {
+                List<GarbageCollectorVO> allGcs = Q.New(GarbageCollectorVO.class)
+                        .eq(GarbageCollectorVO_.runnerClass, FlatUserdataBackend.UserdataReleseGC.class.getName())
+                        .list()
+                gcVo = allGcs.find { !existingGcUuids.contains(it.uuid) }
+                assert gcVo != null : "UserdataReleseGC should be created when src host release fails"
+            }
+
+            // 2. Host H1 recovers, migrate VM BACK to H1 (kvm) before GC fires
+            failSrcRelease = false
+            migrateVm {
+                vmInstanceUuid = migrateVmInv.uuid
+                hostUuid = kvm.uuid
+            }
+            assert dbFindByUuid(migrateVmInv.uuid, VmInstanceVO.class).hostUuid == kvm.uuid
+            assert srcHostReleaseCmds.isEmpty()
+
+            // 3. Trigger the stale UserdataReleseGC for H1 -> must cancel without deleting H1's active userdata!
+            triggerGCJob {
+                uuid = gcVo.uuid
+            }
+
+            retryInSecs {
+                GarbageCollectorVO afterGc = dbFindByUuid(gcVo.uuid, GarbageCollectorVO.class)
+                assert afterGc != null && afterGc.status == GCStatus.Done
+            }
+
+            assert srcHostReleaseCmds.isEmpty() : "Stale UserdataReleseGC must not release userdata on H1 where VM is currently running, but got ${srcHostReleaseCmds.size()} release cmd(s)"
+        } finally {
+            FlatUserdataBackend.UserdataReleseGC.INTERVAL = savedInterval
+            if (migrateVmInv != null) {
+                destroyVmInstance {
+                    uuid = migrateVmInv.uuid
+                }
+                expungeVmInstance {
+                    uuid = migrateVmInv.uuid
+                }
+            }
+        }
     }
 
     void testSetAndDeleteUserddataWhenRebootVm() {

@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
@@ -610,6 +611,25 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             String vmIp = CollectionUtils.find(struct.getVmNics(), arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null);
             if (vmIp == null) {
+                completion.cancel();
+                return;
+            }
+
+            long activeOwnerCount = SQL.New("select count(vm.uuid) from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                    " where vm.uuid = nic.vmInstanceUuid and nic.uuid = ip.vmNicUuid" +
+                    " and ip.l3NetworkUuid = :l3Uuid and ip.ip = :vmIp" +
+                    " and vm.hostUuid = :hostUuid and vm.state not in (:inactiveStates)", Long.class)
+                    .param("l3Uuid", struct.getL3NetworkUuid())
+                    .param("vmIp", vmIp)
+                    .param("hostUuid", struct.getHostUuid())
+                    .param("inactiveStates", Arrays.asList(
+                            VmInstanceState.Stopped,
+                            VmInstanceState.Destroyed,
+                            VmInstanceState.Expunging))
+                    .find();
+            if (activeOwnerCount > 0) {
+                logger.debug(String.format("cancel stale UserdataReleseGC for ip[%s] on l3[uuid:%s] host[uuid:%s] because an active VM currently uses it on this host",
+                        vmIp, struct.getL3NetworkUuid(), struct.getHostUuid()));
                 completion.cancel();
                 return;
             }
