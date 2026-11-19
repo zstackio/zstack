@@ -10237,7 +10237,6 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_COMPUTE_VM_10349 = "ORG_ZSTACK_COMPUTE_VM_10349";
     public static final String ORG_ZSTACK_COMPUTE_VM_10350 = "ORG_ZSTACK_COMPUTE_VM_10350";
 
-    public static final String ORG_ZSTACK_COMPUTE_VM_10351 = "ORG_ZSTACK_COMPUTE_VM_10351";
 
     public static final String ORG_ZSTACK_IDENTITY_LOGIN_10000 = "ORG_ZSTACK_IDENTITY_LOGIN_10000";
 
