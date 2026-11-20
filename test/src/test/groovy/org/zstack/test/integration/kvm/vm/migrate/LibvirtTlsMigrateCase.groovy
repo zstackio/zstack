@@ -1,10 +1,14 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
+import org.mockito.MockedConstruction
+import org.mockito.Mockito
 import org.springframework.http.HttpEntity
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMHost
+import org.zstack.kvm.KVMHostUtils
+import org.zstack.kvm.KvmHostConfigChecker
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.VmInstanceInventory
@@ -14,14 +18,12 @@ import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.ssh.Ssh
+import org.zstack.utils.ssh.SshResult
 
 /**
  * Verify that the libvirt TLS configuration (ZSTAC-81343) is correctly
  * propagated in the MigrateVmCmd sent to kvmagent.
- *
- * TLS certificate deployment is now handled by SSH-based detection +
- * ansible deploy (ZSTAC-83696), which skips in unit tests. Only
- * migration TLS flag propagation is tested here.
  *
  * Key logic under test (KVMHost.java):
  *   cmd.setUseTls(LIBVIRT_TLS_ENABLED && RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE)
@@ -131,6 +133,7 @@ class LibvirtTlsMigrateCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testLibvirtListenerConfigOnReconnect()
             testSanIpParsing()
             testMigrateWithTlsEnabled()
             testMigrateWithTlsDisabled()
@@ -268,6 +271,55 @@ class LibvirtTlsMigrateCase extends SubCase {
             category = "kvm"
             name = "libvirt.tls.enabled"
             value = "true"
+        }
+    }
+
+    void testLibvirtListenerConfigOnReconnect() {
+        def config = KVMGlobalConfig.LIBVIRT_TLS_ENABLED
+        def original = config.value()
+        try {
+            String tls = 'listen_tls = 1\nlisten_tcp = 0\nauth_tcp = "sasl"\n'
+            String tcp = 'listen_tls = 0\nlisten_tcp = 1\nauth_tcp = "sasl"\n'
+            String template = tls.replace('"sasl"', '"none"')
+            def host = new SshResult(stdout: template)
+            updateGlobalConfig {
+                category = "kvm"
+                name = "libvirt.tls.enabled"
+                value = "false"
+            }
+            template = KVMHostUtils.configureLibvirtTls(template)
+            assert template == tcp : "Sync with TLS disabled should produce the TCP template, got ${template}"
+            def checker = new KvmHostConfigChecker(requireKsmCheck: "none")
+            def ssh = Mockito.mockConstruction(Ssh, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_SELF),
+                    { mock, context -> Mockito.when(mock.runAndClose()).thenReturn(host) } as MockedConstruction.MockInitializer)
+            try {
+                assert checker.needDeploy() : "Reconnect should deploy the TCP template to a TLS-only host"
+                host.stdout = tcp.replace('"sasl"', '"none"')
+                assert checker.needDeploy() : "Reconnect should reconcile TCP authentication on an existing TCP host"
+                host.stdout = tcp
+                assert !checker.needDeploy() : "Reconnect should skip deployment when the host matches the template"
+
+                updateGlobalConfig {
+                    category = "kvm"
+                    name = "libvirt.tls.enabled"
+                    value = "true"
+                }
+                template = KVMHostUtils.configureLibvirtTls(template)
+                assert template == tls : "TLS enabled: expected TLS template, got ${template}"
+                assert checker.needDeploy() : "Reconnect should deploy the TLS template to a TCP-only host"
+
+                updateGlobalConfig {
+                    category = "kvm"
+                    name = "libvirt.tls.enabled"
+                    value = "false"
+                }
+                template = KVMHostUtils.configureLibvirtTls(template)
+                assert template == tcp : "Disabling TLS again should restore the TCP template, got ${template}"
+            } finally {
+                ssh.close()
+            }
+        } finally {
+            config.updateValue(original)
         }
     }
 

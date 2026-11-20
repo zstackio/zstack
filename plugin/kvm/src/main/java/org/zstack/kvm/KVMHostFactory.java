@@ -420,6 +420,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         }
 
         asf.deployModule(KVMConstant.ANSIBLE_MODULE_PATH, KVMConstant.ANSIBLE_PLAYBOOK_NAME);
+        KVMGlobalConfig.LIBVIRT_TLS_ENABLED.installUpdateExtension((oldConfig, newConfig) ->
+                KVMHostUtils.syncLibvirtListenerTemplate());
+        KVMHostUtils.syncLibvirtListenerTemplate();
     }
 
     void physicalCpuStatusAlarmEvent(HostPhysicalDeviceStatusAlarmEventCmd cmd) {
