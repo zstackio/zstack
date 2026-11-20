@@ -13,7 +13,7 @@ public enum VmInstanceState {
     Stopping(VmInstanceStateEvent.stopping),
     Stopped(VmInstanceStateEvent.stopped),
     Rebooting(VmInstanceStateEvent.rebooting),
-    Restoring(VmInstanceStateEvent.restoring),
+    Recovering(VmInstanceStateEvent.recovering),
     Destroying(VmInstanceStateEvent.destroying),
     Destroyed(VmInstanceStateEvent.destroyed),
     Migrating(VmInstanceStateEvent.migrating),
@@ -36,7 +36,7 @@ public enum VmInstanceState {
         intermediateStates.add(Starting);
         intermediateStates.add(Stopping);
         intermediateStates.add(Rebooting);
-        intermediateStates.add(Restoring);
+        intermediateStates.add(Recovering);
         intermediateStates.add(Destroying);
         intermediateStates.add(Migrating);
         intermediateStates.add(Pausing);
@@ -68,7 +68,7 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.stopping, VmInstanceState.Stopping),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.rebooting, VmInstanceState.Rebooting),
-                new Transaction(VmInstanceStateEvent.restoring, VmInstanceState.Restoring),
+                new Transaction(VmInstanceStateEvent.recovering, VmInstanceState.Recovering),
                 new Transaction(VmInstanceStateEvent.migrating, VmInstanceState.Migrating),
                 new Transaction(VmInstanceStateEvent.volumeMigrating, VmInstanceState.Migrating),
                 new Transaction(VmInstanceStateEvent.volumeRecovering, VmInstanceState.VolumeRecovering),
@@ -130,7 +130,7 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)
         );
-        Restoring.transactions(
+        Recovering.transactions(
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.paused, VmInstanceState.Paused),

@@ -154,7 +154,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 StartVmInstanceMsg.class.getName(),
                 StopVmInstanceMsg.class.getName());
 
-        allowedOperations.addState(VmInstanceState.Restoring,
+        allowedOperations.addState(VmInstanceState.Recovering,
                 AttachDataVolumeToVmMsg.class.getName(),
                 DetachDataVolumeFromVmMsg.class.getName(),
                 VmAttachNicMsg.class.getName(),
