@@ -9,6 +9,8 @@ import java.util.List;
 public class StorageCapabilities {
     private VolumeSnapshotCapability snapshotCapability;
 
+    private boolean supportPathBlacklist;
+    private boolean supportNodeBlacklist;
     private boolean supportMultiSpace;
     private boolean supportCloneFromVolume;
     private boolean supportCloneFromAnotherSpace;
@@ -20,6 +22,22 @@ public class StorageCapabilities {
     private VolumeProtocol defaultIsoActiveProtocol;
     private VolumeProtocol defaultImageExportProtocol;
     private int minLogicalSectorSize = 512;
+
+    public boolean isSupportPathBlacklist() {
+        return supportPathBlacklist;
+    }
+
+    public void setSupportPathBlacklist(boolean supportPathBlacklist) {
+        this.supportPathBlacklist = supportPathBlacklist;
+    }
+
+    public boolean isSupportNodeBlacklist() {
+        return supportNodeBlacklist;
+    }
+
+    public void setSupportNodeBlacklist(boolean supportNodeBlacklist) {
+        this.supportNodeBlacklist = supportNodeBlacklist;
+    }
 
     public int getMinLogicalSectorSize() {
         return minLogicalSectorSize;

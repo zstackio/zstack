@@ -97,6 +97,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
         scap.setSupportLazyDelete(true);
         scap.setVolumePathFromInternalSnapshotRegex("^[^@]+");
         capabilities.setSnapshotCapability(scap);
+        capabilities.setSupportPathBlacklist(true);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(true);
         capabilities.setSupportLiveExpandVolume(false);

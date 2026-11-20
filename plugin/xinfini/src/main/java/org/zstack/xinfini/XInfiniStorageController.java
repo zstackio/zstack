@@ -98,6 +98,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         scap.setSupportLazyDelete(false);
         scap.setVolumePathFromInternalSnapshotRegex("^[^@]+");
         capabilities.setSnapshotCapability(scap);
+        capabilities.setSupportNodeBlacklist(true);
         capabilities.setSupportCloneFromVolume(false);
         capabilities.setSupportStorageQos(false);
         capabilities.setSupportLiveExpandVolume(false);
@@ -176,7 +177,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
         VhostVolumeTO to = new VhostVolumeTO();
         BdcBdevModule bdev = apiHelper.queryBdcBdevByVolumeIdAndBdcId(volModule.getSpec().getId(), bdc.getSpec().getId());
-        if (bdev != null && MetadataState.active.toString().equals(bdev.getMetadata().getState().getState())) {
+        if (bdev != null && MetadataState.active.toString().equals(apiHelper.getBdcBdevStateForActivation(bdev))) {
             logger.info("dest bdc bdev has been created, skip active");
             to.setInstallPath(bdev.getSpec().getSocketPath());
             return to;
@@ -288,6 +289,20 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         throw new OperationFailureException(operr("xinfini does not support volume path isolation yet, " +
                         "abort starting VM on host[uuid:%s, ip:%s] to prevent split-brain on volume[path:%s, protocol:%s]",
                 h.getUuid(), h.getManagementIp(), installPath, protocol));
+    }
+
+    @Override
+    public void blacklistNode(HostInventory h) {
+        BdcModule bdc = apiHelper.queryBdcByIp(h.getManagementIp());
+        apiHelper.blacklistBdc(bdc.getSpec().getId());
+    }
+
+    @Override
+    public void unblacklistNode(HostInventory h) {
+        BdcModule bdc = apiHelper.queryBdcByIp(h.getManagementIp(), false);
+        if (bdc != null) {
+            apiHelper.unblacklistBdc(bdc.getSpec().getId());
+        }
     }
 
     @Override

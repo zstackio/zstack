@@ -40,6 +40,7 @@ public class BdcModule extends BaseResource {
         private int xbsMetaClusterId;
         private boolean installed;
         private String runState;
+        private String storageFencedState;
         private String version;
         private String systemUuid;
         private String hostname;
@@ -75,6 +76,14 @@ public class BdcModule extends BaseResource {
 
         public void setRunState(String runState) {
             this.runState = runState;
+        }
+
+        public String getStorageFencedState() {
+            return storageFencedState;
+        }
+
+        public void setStorageFencedState(String storageFencedState) {
+            this.storageFencedState = storageFencedState;
         }
 
         public String getVersion() {
@@ -176,6 +185,7 @@ public class BdcModule extends BaseResource {
 
     public static class BdcSpec extends BaseSpec{
         private String ip;
+        private String storageFencedState;
         private int port;
         private int adminPort;
         private int metricPort;
@@ -194,6 +204,14 @@ public class BdcModule extends BaseResource {
 
         public void setIp(String ip) {
             this.ip = ip;
+        }
+
+        public String getStorageFencedState() {
+            return storageFencedState;
+        }
+
+        public void setStorageFencedState(String storageFencedState) {
+            this.storageFencedState = storageFencedState;
         }
 
         public int getPort() {

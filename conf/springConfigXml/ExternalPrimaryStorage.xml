@@ -54,6 +54,14 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ExternalPrimaryStorageNodeBlacklist"
+          class="org.zstack.externalStorage.primary.ExternalPrimaryStorageNodeBlacklist">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.host.HostExtensionManager" />
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="ExternalPrimaryStorageKvmFactory" class="org.zstack.externalStorage.primary.kvm.ExternalPrimaryStorageKvmFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
