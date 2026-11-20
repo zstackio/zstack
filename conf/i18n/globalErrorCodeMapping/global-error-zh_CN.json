@@ -2915,6 +2915,8 @@
   "ORG_ZSTACK_PCIDEVICE_10090": "PCI 设备[uuid:%s]的显示名称去除首尾空格后必须为 1 到 %s 个字符",
   "ORG_ZSTACK_PCIDEVICE_10091": "PCI 设备[uuid:%s]已不存在",
   "ORG_ZSTACK_PCIDEVICE_10092": "PCI 设备[uuid:%s]在当前虚拟化状态[%s]下无法加载",
+  "ORG_ZSTACK_PCIDEVICE_10093": "IB 设备[uuid:%s, address:%s]在物理机[uuid:%s]上恢复驱动失败：%s；请确认物理机驱动已恢复后再启用设备",
+  "ORG_ZSTACK_PCIDEVICE_10094": "无法启用 IB 设备[uuid:%s, address:%s]，物理机[uuid:%s]的驱动恢复情况尚未确认（%s）",
   "ORG_ZSTACK_AI_CONTAINER_10023": "无效的K8s部署YAML: %s",
   "ORG_ZSTACK_AI_CONTAINER_10020": "失败将 Kubernetes 部署 %s 中的所有 Pod 删除",
   "ORG_ZSTACK_AI_CONTAINER_10025": "模型服务实例组 %s 在数据库中未找到",
