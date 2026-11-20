@@ -137,6 +137,8 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 import static org.zstack.kvm.KvmHostUpdateOsExtensionPoint.UPDATE_OS_RSP;
+import static org.zstack.kvm.KVMSystemTags.KVM_EPT_TOKEN;
+import static org.zstack.kvm.KVMSystemTags.KVM_NESTED_TOKEN;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -3468,6 +3470,34 @@ public class KVMHost extends HostBase implements Host {
         }
     }
 
+    @Transactional(readOnly = true)
+    private ErrorCode checkKvmModuleParametersForMigration(MigrateStruct s) {
+        ErrorCode error = compareKvmModuleParameter(s, KVMSystemTags.KVM_MODULE_EPT, KVM_EPT_TOKEN);
+        return error != null ? error : compareKvmModuleParameter(s, KVMSystemTags.KVM_MODULE_NESTED, KVM_NESTED_TOKEN);
+    }
+
+    private ErrorCode compareKvmModuleParameter(MigrateStruct s, PatternedSystemTag tag, String name) {
+        List<String> hosts = Arrays.asList(s.srcHostUuid, s.dstHostUuid);
+        Map<String, String> values = new HashMap<>();
+        for (SystemTagInventory inv : tag.getTagInventories(hosts)) {
+            if (inv.isInherent()) {
+                values.put(inv.getResourceUuid(), tag.getTokenByTag(inv.getTag(), name));
+            }
+        }
+        for (String hostUuid : hosts) {
+            if (values.get(hostUuid) == null) {
+                return operr(ORG_ZSTACK_KVM_10063, "cannot live migrate vm[uuid:%s]: KVM module parameter[%s] " +
+                        "is unavailable on host[uuid:%s]; reconnect the host to refresh its facts", s.vmUuid, name, hostUuid);
+            }
+        }
+        if (!values.get(s.srcHostUuid).equals(values.get(s.dstHostUuid))) {
+            return operr(ORG_ZSTACK_KVM_10063, "cannot live migrate vm[uuid:%s]: KVM module parameter[%s] differs " +
+                    "between source host[uuid:%s, value:%s] and destination host[uuid:%s, value:%s]",
+                    s.vmUuid, name, s.srcHostUuid, values.get(s.srcHostUuid), s.dstHostUuid, values.get(s.dstHostUuid));
+        }
+        return null;
+    }
+
     private void migrateVm(final MigrateStruct s, final Completion completion) {
         final TaskProgressRange parentStage = getTaskStage();
         final TaskProgressRange MIGRATE_VM_STAGE = new TaskProgressRange(0, 90);
@@ -3504,6 +3534,26 @@ public class KVMHost extends HostBase implements Host {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-kvm-module-parameters-before-migrate";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return Objects.equals(srcHostUuid, dstHostUuid)
+                                || VmInstanceState.Stopped.toString().equals(s.vmState);
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ErrorCode error = checkKvmModuleParametersForMigration(s);
+                        if (error != null) {
+                            trigger.fail(error);
+                            return;
+                        }
+                        trigger.next();
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "clean-firmware-flash-before-migrate";
 
@@ -3759,6 +3809,7 @@ public class KVMHost extends HostBase implements Host {
 
     class MigrateStruct {
         String vmUuid;
+        String vmState;
         String dstHostMigrateIp;
         String strategy;
         Integer downTime;
@@ -3777,6 +3828,7 @@ public class KVMHost extends HostBase implements Host {
     private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
         MigrateStruct s = new MigrateStruct();
         s.vmUuid = msg.getVmInventory().getUuid();
+        s.vmState = msg.getVmInventory().getState();
         s.srcHostUuid = msg.getSrcHostUuid();
         s.dstHostUuid = msg.getDestHostInventory().getUuid();
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
@@ -6642,7 +6694,7 @@ public class KVMHost extends HostBase implements Host {
                     flow(createUpdateKvmAgentDependenciesFlow(info));
                 }
 
-                flow(createCollectHostFactsFlow(info));
+                flow(createCollectHostFactsFlow(info, false));
 
 
                 if (info.isNewAdded()) {
@@ -6767,7 +6819,8 @@ public class KVMHost extends HostBase implements Host {
     @Override
     protected Flow createPostConnectFlow(final ConnectHostInfo info) {
         if (info.isNewAdded() || !CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
-            return null;
+            // /host/connect can reload kvm_intel after the initial host facts were collected.
+            return createCollectHostFactsFlow(info, true);
         }
 
         return new NoRollbackFlow() {
@@ -6778,7 +6831,7 @@ public class KVMHost extends HostBase implements Host {
                 FlowChainBuilder.newSimpleFlowChain()
                         .setName(String.format("update-dependencies-after-connect-%s", self.getUuid()))
                         .then(createUpdateKvmAgentDependenciesFlow(info))
-                        .then(createCollectHostFactsFlow(info))
+                        .then(createCollectHostFactsFlow(info, true))
                         .done(new FlowDoneHandler(trigger) {
                             @Override
                             public void handle(Map data) {
@@ -6794,7 +6847,7 @@ public class KVMHost extends HostBase implements Host {
         };
     }
 
-    private NoRollbackFlow createCollectHostFactsFlow(final ConnectHostInfo info) {
+    private NoRollbackFlow createCollectHostFactsFlow(final ConnectHostInfo info, boolean afterConnect) {
         return new NoRollbackFlow() {
             String __name__ = "collect-kvm-host-facts";
 
@@ -6815,6 +6868,9 @@ public class KVMHost extends HostBase implements Host {
                                     return;
                                 }
 
+                                if (afterConnect) {
+                                    saveKvmModuleParameters(ret.getKvmModuleParameters());
+                                }
                                 saveKvmHostRelatedFacts(ret);
                                 saveGeneralHostHardwareFacts(ret);
 
@@ -6965,6 +7021,17 @@ public class KVMHost extends HostBase implements Host {
                 deleteCpuHistoryVOIfCpuFeatureMd5Change(ret.getCpuFeatureMd5());
             }
         };
+    }
+
+    @Transactional
+    private void saveKvmModuleParameters(Map<String, Boolean> parameters) {
+        if (parameters == null) {
+            KVMSystemTags.KVM_MODULE_EPT.deleteInherentTag(self.getUuid());
+            KVMSystemTags.KVM_MODULE_NESTED.deleteInherentTag(self.getUuid());
+            return;
+        }
+        recreateInherentTag(KVMSystemTags.KVM_MODULE_EPT, KVM_EPT_TOKEN, Objects.toString(parameters.get(KVM_EPT_TOKEN), "na"));
+        recreateInherentTag(KVMSystemTags.KVM_MODULE_NESTED, KVM_NESTED_TOKEN, Objects.toString(parameters.get(KVM_NESTED_TOKEN), "na"));
     }
 
     private void deleteCpuHistoryVOIfCpuFeatureMd5Change(String newMd5) {

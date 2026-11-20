@@ -5,6 +5,8 @@ import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
@@ -158,6 +160,8 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
             def hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             def rsp = new HostFactResponse()
+            rsp.cpuArchitecture = Q.New(HostVO.class).select(HostVO_.architecture).eq(HostVO_.uuid, hostUuid).findValue() ?: "x86_64"
+            boolean x86 = rsp.cpuArchitecture == "x86_64"
 
             rsp.osDistribution = "zstack"
             rsp.osRelease = "kvmSimulator"
@@ -169,11 +173,12 @@ class KVMSimulator implements Simulator {
             rsp.cpuGHz = "2.10"
             rsp.hostCpuModelName = "Broadwell @ 2.10GHz"
             rsp.ipmiAddress = "None"
-            rsp.eptFlag = "ept"
+            rsp.eptFlag = x86 ? "ept" : null
             rsp.libvirtCapabilities = ["incrementaldrivemirror", "blockcopynetworktarget"]
             rsp.powerSupplyModelName = ""
             rsp.powerSupplyManufacturer = ""
-            rsp.hvmCpuFlag = ""
+            rsp.hvmCpuFlag = x86 ? "vmx" : "vt"
+            rsp.kvmModuleParameters = x86 ? [ept: true, nested: true] : [:]
             rsp.cpuCache = "64.0,4096.0,16384.0"
             rsp.iscsiInitiatorName = "iqn.1994-05.com.redhat:" + hostUuid.substring(0, 12)
 
