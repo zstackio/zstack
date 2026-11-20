@@ -3582,6 +3582,19 @@ public class KVMHost extends HostBase implements Host {
                             cmd.setDisks(diskMigrationMap);
                         }
 
+                        KVMHostInventory srcHost = KVMHostInventory.valueOf(dbf.findByUuid(srcHostUuid, KVMHostVO.class));
+                        KVMHostInventory destHost = KVMHostInventory.valueOf(dbf.findByUuid(dstHostUuid, KVMHostVO.class));
+                        VmInstanceVO vm = dbf.findByUuid(vmUuid, VmInstanceVO.class);
+                        Map<String, VolumeTO> notMigrateDisks = new HashMap<>();
+                        for (VolumeInventory volume : VolumeInventory.valueOf(vm.getAllDiskVolumes())) {
+                            String srcInstallPath = VolumeTO.valueOf(volume, srcHost).getInstallPath();
+                            if (StringUtils.isEmpty(srcInstallPath) || (cmd.getDisks() != null && cmd.getDisks().containsKey(srcInstallPath))) {
+                                continue;
+                            }
+                            notMigrateDisks.put(srcInstallPath, VolumeTO.valueOf(volume, destHost, vm.getPlatform(), true));
+                        }
+                        cmd.setNotMigrateDisks(notMigrateDisks);
+
                         String migrateUrl = buildAgentUrl(
                                 migrateFromDestination ? dstHostMnIp : srcHostMnIp,
                                 KVMConstant.KVM_MIGRATE_VM_PATH);

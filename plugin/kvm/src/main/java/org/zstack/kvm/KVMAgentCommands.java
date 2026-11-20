@@ -4022,6 +4022,8 @@ public class KVMAgentCommands {
         private List<NicTO> nics;
         @GrayVersion(value = "5.0.0")
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
+        @GrayVersion(value = "5.6.0")
+        private Map<String, VolumeTO> notMigrateDisks;
         @GrayVersion(value = "5.0.0")
         private boolean reload;
         @GrayVersion(value = "5.0.0")
@@ -4030,6 +4032,14 @@ public class KVMAgentCommands {
         private boolean useTls;
         @GrayVersion(value = "5.5.12")
         private String srcHostManagementIp;
+
+        public Map<String, VolumeTO> getNotMigrateDisks() {
+            return notMigrateDisks;
+        }
+
+        public void setNotMigrateDisks(Map<String, VolumeTO> notMigrateDisks) {
+            this.notMigrateDisks = notMigrateDisks;
+        }
 
         public String getSrcHostManagementIp() {
             return srcHostManagementIp;
