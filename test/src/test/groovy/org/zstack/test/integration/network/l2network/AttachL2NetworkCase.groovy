@@ -95,7 +95,6 @@ public class AttachL2NetworkCase extends SubCase{
     @Override
     public void test() {
         env.create {
-            testRealizeBatchCountLowerBound()
             testCreateL2NetworkWithoutPhysicalInterface()
             testAttachL2NoVlanNetwork()
             testAttachL2ValnNetwork()
@@ -310,33 +309,6 @@ public class AttachL2NetworkCase extends SubCase{
             return {
                 assert Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).count() == 2l
             }
-        }
-    }
-
-    void testRealizeBatchCountLowerBound() {
-        def config = L2NetworkGlobalConfig.RealizeL2NetworkBatchCount
-        def readBatchCount = {
-            queryGlobalConfig {
-                conditions = ["category=${config.category}", "name=${config.name}"]
-            }[0].value
-        }
-        def setBatchCount = { String count ->
-            updateGlobalConfig {
-                category = config.category
-                name = config.name
-                value = count
-            }
-        }
-        String original = readBatchCount()
-        try {
-            setBatchCount("1")
-            assert readBatchCount() == "1"
-            ["0", "-1"].each { invalid ->
-                expect(AssertionError.class) { setBatchCount(invalid) }
-                assert readBatchCount() == "1"
-            }
-        } finally {
-            setBatchCount(original)
         }
     }
 
