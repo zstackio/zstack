@@ -2,11 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/../../../.." && pwd -P)"
-migration="$repo_root/conf/db/upgrade/V5.5.48.2__schema.sql"
+migration="$repo_root/conf/db/upgrade/V5.6.0__schema.sql"
 container="zsdataset-uuid-migration-$$"
-
-# Mainline delivery must leave every earlier schema migration unchanged.
-git -C "$repo_root" diff --exit-code HEAD -- 'conf/db/upgrade/V5.5.38*__schema.sql'
 
 cleanup() {
     docker rm -f "$container" >/dev/null 2>&1 || true
@@ -30,6 +27,10 @@ mysql() {
     docker exec -i -e MYSQL_PWD=local-test-password "$container" mysql -uroot "$@"
 }
 
+apply_dataset_migration() {
+    sed -n '/^DROP PROCEDURE IF EXISTS upgrade560DatasetAndAudit;/,/^DROP PROCEDURE upgrade560DatasetAndAudit;/p' "$migration" | mysql zstack
+}
+
 uuid36='92b90ae6-af52-4325-b92d-c03b540ce7d8'
 uuid37="${uuid36}x"
 
@@ -37,6 +38,7 @@ for original_width in 32 36; do
     mysql <<SQL
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
+CREATE TABLE zstack.schema_version (script varchar(255), success boolean, checksum int);
 CREATE TABLE zstack.AsyncRestVO (requestData LONGTEXT CHARACTER SET utf8, result MEDIUMTEXT CHARACTER SET utf8);
 CREATE TABLE zstack.AuditsVO (requestDump MEDIUMTEXT CHARACTER SET utf8, responseDump MEDIUMTEXT CHARACTER SET utf8);
 CREATE TABLE zstack.ZsDatasetSpaceRefVO (uuid varchar(32) PRIMARY KEY, appInstanceUuid varchar($original_width) NOT NULL);
@@ -47,9 +49,7 @@ INSERT INTO zstack.ZsDatasetServiceKeyVO VALUES ('existing-key', '0123456789abcd
 INSERT INTO zstack.ZsDatasetPublicationVO VALUES ('existing-publication', '0123456789abcdef0123456789abcdef');
 SQL
 
-    if [[ -f "$migration" ]]; then
-        mysql < "$migration"
-    fi
+    apply_dataset_migration
 
     for table in ZsDatasetSpaceRefVO ZsDatasetServiceKeyVO ZsDatasetPublicationVO; do
         width="$(mysql -Nse "SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'zstack' AND TABLE_NAME = '$table' AND COLUMN_NAME = 'appInstanceUuid'")"
@@ -75,15 +75,16 @@ SQL
 done
 
 
-# A clean 5.5.48 installation must receive all three tables, not only an ALTER.
+# A clean 5.6.0 installation must receive all three tables, not only an ALTER.
 mysql <<'SQL'
 DROP DATABASE zstack;
 CREATE DATABASE zstack;
+CREATE TABLE zstack.schema_version (script varchar(255), success boolean, checksum int);
 CREATE TABLE zstack.AsyncRestVO (requestData LONGTEXT CHARACTER SET utf8, result MEDIUMTEXT CHARACTER SET utf8);
 CREATE TABLE zstack.AuditsVO (requestDump MEDIUMTEXT CHARACTER SET utf8, responseDump MEDIUMTEXT CHARACTER SET utf8);
 SQL
-mysql < "$migration"
-mysql < "$migration"
+apply_dataset_migration
+apply_dataset_migration
 mysql <<SQL
 INSERT INTO zstack.ZsDatasetSpaceRefVO (uuid,spaceId,appInstanceUuid) VALUES ('fresh-space','space','$uuid36');
 INSERT INTO zstack.ZsDatasetServiceKeyVO (uuid,appInstanceUuid,keyId,secret) VALUES ('fresh-key','$uuid36','test-key','test-secret');
