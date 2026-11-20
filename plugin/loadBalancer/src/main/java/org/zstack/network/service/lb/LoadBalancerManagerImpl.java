@@ -961,8 +961,39 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         struct.getListenerServerGroupMap().put(l.getUuid(), groupInventories);
         }
 
-        List<String> listenerUuids = vo.getListeners().stream()
-                .map(LoadBalancerListenerVO::getUuid).collect(Collectors.toList());
+        if (activeNicUuids.isEmpty()) {
+            struct.setVmNics(new HashMap<String, VmNicInventory>());
+        } else {
+            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
+            nq.add(VmNicVO_.uuid, SimpleQuery.Op.IN, activeNicUuids);
+            List<VmNicVO> nicvos = nq.list();
+            Map<String, VmNicInventory> m = new HashMap<>();
+            for (VmNicVO n : nicvos) {
+                m.put(n.getUuid(), VmNicInventory.valueOf(n));
+            }
+            struct.setVmNics(m);
+        }
+
+        Map<String, List<String>> systemTags = new HashMap<>();
+        for (LoadBalancerListenerVO l : vo.getListeners()) {
+            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
+            q.select(SystemTagVO_.tag);
+            q.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, l.getUuid());
+            q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
+            systemTags.put(l.getUuid(), q.listValue());
+        }
+        struct.setTags(systemTags);
+
+        struct.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
+
+        loadDisabledBackendServers(struct);
+        return struct;
+    }
+
+    @Override
+    public void loadDisabledBackendServers(LoadBalancerStruct struct) {
+        List<String> listenerUuids = struct.getListeners().stream()
+                .map(LoadBalancerListenerInventory::getUuid).collect(Collectors.toList());
         if (!listenerUuids.isEmpty()) {
             List<LoadBalancerListenerServerGroupVmNicRefVO> stateRefs =
                     Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
@@ -1000,33 +1031,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                             ref.getServerIpId()))
                     .collect(Collectors.toSet()));
         }
-
-        if (activeNicUuids.isEmpty()) {
-            struct.setVmNics(new HashMap<String, VmNicInventory>());
-        } else {
-            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-            nq.add(VmNicVO_.uuid, SimpleQuery.Op.IN, activeNicUuids);
-            List<VmNicVO> nicvos = nq.list();
-            Map<String, VmNicInventory> m = new HashMap<>();
-            for (VmNicVO n : nicvos) {
-                m.put(n.getUuid(), VmNicInventory.valueOf(n));
-            }
-            struct.setVmNics(m);
-        }
-
-        Map<String, List<String>> systemTags = new HashMap<>();
-        for (LoadBalancerListenerVO l : vo.getListeners()) {
-            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
-            q.select(SystemTagVO_.tag);
-            q.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, l.getUuid());
-            q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
-            systemTags.put(l.getUuid(), q.listValue());
-        }
-        struct.setTags(systemTags);
-
-        struct.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
-
-        return struct;
     }
 
     @Override
