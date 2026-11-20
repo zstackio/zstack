@@ -224,6 +224,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsReconnectUsesConfigCredentials()
             testSyncPrimaryStorageCapacityConcurrently()
             testDefaultConfig()
+            testRenameConfiguredPool()
             testUpdateExternalPrimaryStorage()
             testPrepareHostsWhenAttachPrimaryStorageToCluster()
             testAttachPrimaryStorageFailsWhenPreparingUsableHostFails()
@@ -512,6 +513,33 @@ class ZbsPrimaryStorageCase extends SubCase {
 
     private static String mdsConfigFor(List<String> urls) {
         return JSONObjectUtil.toJsonString([mdsUrls: urls, logicalPoolName: "lpool1"])
+    }
+
+    void testRenameConfiguredPool() {
+        def parse = { new groovy.json.JsonSlurper().parseText(storedZbsConfig(ps.uuid)) }
+        // Do not include the persisted MDS connection strings in assertion failures.
+        def verifyStored = { expected ->
+            if (parse() != expected) throw new AssertionError("unexpected ZBS pool configuration")
+        }
+        def initial = parse()
+        def target = initial.pools.first()
+        def rename = { String logicalName, String alias ->
+            new UpdateExternalPrimaryStorageAction(uuid: ps.uuid, sessionId: adminSession(),
+                    config: groovy.json.JsonOutput.toJson([poolAlias: [logicalName: logicalName, aliasName: alias]])).call()
+        }
+        def expected = parse()
+        expected.pools.first().aliasName = "display-name"
+        try {
+            2.times {
+                rename(target.logicalName, "display-name").throwExceptionIfError()
+                verifyStored(expected)
+            }
+            assert rename("nonexistent-pool", "wrong-pool").error != null
+            verifyStored(expected)
+        } finally {
+            rename(target.logicalName, target.aliasName as String).throwExceptionIfError()
+        }
+        verifyStored(initial)
     }
 
     private String storedZbsConfig(String uuid) {

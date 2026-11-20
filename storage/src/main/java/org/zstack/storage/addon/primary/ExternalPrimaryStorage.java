@@ -289,8 +289,32 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
+    private boolean handleMetadataUpdate(APIUpdateExternalPrimaryStorageMsg msg, APIUpdateExternalPrimaryStorageEvent evt) {
+        if (msg.getConfig() == null) {
+            return false;
+        }
+        ExternalPrimaryStorageSvcBuilder builder = pluginRgty.getExtensionFromMap(externalVO.getIdentity(), ExternalPrimaryStorageSvcBuilder.class);
+        String stored = externalVO.getConfig();
+        Optional<String> updated = builder.applyMetadataUpdate(stored, msg.getConfig());
+        if (!updated.isPresent()) {
+            return false;
+        }
+        if (msg.getName() != null || msg.getDescription() != null || msg.getUrl() != null || msg.getDefaultProtocol() != null) {
+            evt.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10040, "a metadata update must be submitted separately"));
+        } else if (!compareAndSetConfig(msg.getOldConfig() == null ? stored : msg.getOldConfig(), stored, updated.get())) {
+            evt.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10040, "configuration of primary storage[%s] changed concurrently", msg.getUuid()));
+        } else {
+            evt.setInventory(dbf.reload(externalVO).toInventory());
+        }
+        bus.publish(evt);
+        return true;
+    }
+
     private void handle(APIUpdateExternalPrimaryStorageMsg msg) {
         APIUpdateExternalPrimaryStorageEvent evt = new APIUpdateExternalPrimaryStorageEvent(msg.getId());
+        if (handleMetadataUpdate(msg, evt)) {
+            return;
+        }
         if (msg.getName() != null) {
             externalVO.setName(msg.getName());
         }

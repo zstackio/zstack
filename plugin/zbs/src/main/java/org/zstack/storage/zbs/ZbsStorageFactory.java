@@ -1,6 +1,11 @@
 package org.zstack.storage.zbs;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.externalStorage.primary.ExternalStorageFencerType;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.addon.primary.*;
@@ -13,7 +18,9 @@ import org.zstack.utils.ssh.SshResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
@@ -95,6 +102,52 @@ public class ZbsStorageFactory implements ExternalPrimaryStorageSvcBuilder, Back
     @Override
     public List<String> getPreferBackupStorageTypes() {
         return new ArrayList<>(preferBackupStorageTypes);
+    }
+
+    @Override
+    public Optional<String> applyMetadataUpdate(String storedConfig, String requestConfig) {
+        JsonParser parser = new JsonParser();
+        JsonObject request = parser.parse(requestConfig).getAsJsonObject();
+        if (!request.has("poolAlias")) {
+            return Optional.empty();
+        }
+
+        JsonElement patch = request.get("poolAlias");
+        if (request.entrySet().size() != 1 || !patch.isJsonObject()) {
+            throw invalidPoolAlias();
+        }
+        JsonObject edit = patch.getAsJsonObject();
+        JsonElement name = edit.get("logicalName");
+        JsonElement alias = edit.get("aliasName");
+        if (edit.entrySet().size() != 2 || !isString(name) || StringUtils.isBlank(name.getAsString())
+                || alias == null || (!alias.isJsonNull() && !isString(alias))) {
+            throw invalidPoolAlias();
+        }
+
+        JsonObject config = parser.parse(storedConfig).getAsJsonObject();
+        if (config.has("pools") && config.get("pools").isJsonArray()) {
+            for (JsonElement element : config.getAsJsonArray("pools")) {
+                JsonObject pool = element.getAsJsonObject();
+                if (name.equals(pool.get("logicalName"))) {
+                    if (alias.isJsonNull()) {
+                        pool.remove("aliasName");
+                    } else {
+                        pool.add("aliasName", alias);
+                    }
+                    return Optional.of(config.toString());
+                }
+            }
+        }
+        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_ZBS_10022, "no configured ZBS pool named[%s]", name.getAsString()));
+    }
+
+    private static boolean isString(JsonElement value) {
+        return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
+    }
+
+    private static ApiMessageInterceptionException invalidPoolAlias() {
+        return new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_ZBS_10022,
+                "poolAlias requires a logicalName and a string or null aliasName"));
     }
 
     @Override
