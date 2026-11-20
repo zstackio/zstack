@@ -1,6 +1,10 @@
 package org.zstack.test.integration.core.database
 
+import org.hibernate.dialect.MySQLInnoDBDialect
 import org.hibernate.exception.ConstraintViolationException
+import org.hibernate.hql.spi.id.inline.InlineIdsOrClauseBuilder
+import org.hibernate.type.StringType
+import org.hibernate.type.spi.TypeConfiguration
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
@@ -37,6 +41,22 @@ class DatabaseWrapperCase extends SubCase {
         assert DBSourceUtils.waitDBConnected(5, 5)
         testQ()
         testSQLBatch()
+        testBulkIdentifierLiterals()
+    }
+
+    void testBulkIdentifierLiterals() {
+        def dialect = new MySQLInnoDBDialect()
+        def resolver = new TypeConfiguration().typeResolver
+        for (def sample : [[id: "normal-id", sql: "(uuid = 'normal-id')"],
+                           [id: "x' or '1'='1", sql: "(uuid = 'x'' or ''1''=''1')"],
+                           [id: "x\\' or '1'='1", sql: "(uuid = 'x\\\\'' or ''1''=''1')"],
+                           [id: "x' -- ", sql: "(uuid = 'x'' -- ')"],
+                           [id: "名称'一", sql: "(uuid = '名称''一')"]]) {
+            def builder = new InlineIdsOrClauseBuilder(dialect, StringType.INSTANCE, resolver,
+                    ["uuid"] as String[], [[sample.id] as Object[]])
+            assert builder.toStatement() == sample.sql:
+                    "Bulk identifier must remain one SQL literal: expected ${sample.sql}, got ${builder.toStatement()}"
+        }
     }
 
     void testQ() {
