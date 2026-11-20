@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.*;
+import java.util.function.UnaryOperator;
 
 public class PathUtil {
     private static final CLogger logger = Utils.getLogger(PathUtil.class);
@@ -330,6 +331,24 @@ public class PathUtil {
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
             outputStream.write(data);
             outputStream.flush();
+        }
+    }
+
+    public static void updateTextFile(Path file, UnaryOperator<String> update) throws IOException {
+        Path target = file.toRealPath();
+        String original = new String(Files.readAllBytes(target), StandardCharsets.UTF_8);
+        String updated = update.apply(original);
+        if (original.equals(updated)) {
+            return;
+        }
+
+        Path tmp = Files.createTempFile(target.getParent(), ".update-", ".tmp");
+        try {
+            Files.copy(target, tmp, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            Files.write(tmp, updated.getBytes(StandardCharsets.UTF_8));
+            Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(tmp);
         }
     }
 

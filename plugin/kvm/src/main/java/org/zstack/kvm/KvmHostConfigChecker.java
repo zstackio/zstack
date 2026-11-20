@@ -36,7 +36,20 @@ public class KvmHostConfigChecker implements AnsibleChecker {
     public boolean needDeploy() {
         return needDeployKsmCheck()
                 || needDeployReservePorts()
-                || needDeployResourceAssignment();
+                || needDeployResourceAssignment()
+                || needDeployLibvirtListeners();
+    }
+
+    private boolean needDeployLibvirtListeners() {
+        Ssh ssh = new Ssh().setUsername(username).setPrivateKey(privateKey)
+                .setPassword(password).setPort(sshPort).setHostname(targetIp);
+        ssh.sudoCommand("grep -E '^[[:blank:]]*(listen_tls|listen_tcp|auth_tcp)[[:blank:]]*=' /etc/libvirt/libvirtd.conf");
+        SshResult result = ssh.setTimeout(60).runAndClose();
+        if (result.isSshFailure() || result.getReturnCode() != 0) {
+            return true;
+        }
+        String options = result.getStdout();
+        return !options.equals(KVMHostUtils.configureLibvirtTls(options));
     }
 
     private boolean needDeployKsmCheck() {

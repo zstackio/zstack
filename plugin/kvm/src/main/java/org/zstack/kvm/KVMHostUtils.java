@@ -3,12 +3,14 @@ package org.zstack.kvm;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.db.Q;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -22,10 +24,14 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
 import javax.persistence.Tuple;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,12 +42,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by GuoYi on 4/16/20.
  */
 public class KVMHostUtils {
     private static final CLogger logger = CLoggerImpl.getLogger(KVMHostUtils.class);
+    private static final Path LIBVIRT_CONFIG_PATH =
+            Paths.get(AnsibleConstant.ROOT_DIR, "files", "kvm", "libvirtd.conf");
 
     // ZSTAC-84446: br_conn_all_ns is host-internal; exclude from TLS cert SAN
     // to keep check-flow and deploy-flow IP lists identical.
@@ -50,6 +60,30 @@ public class KVMHostUtils {
     public static final long LIBVIRT_RESTART_ECHO_TIMEOUT_VM_THRESHOLD = 100;
     public static final long LIBVIRT_RESTART_ECHO_TIMEOUT_PER_VM_SECONDS = 1;
     public static final long LIBVIRT_RESTART_ECHO_TIMEOUT_MAX_SECONDS = 180;
+
+    static synchronized void syncLibvirtListenerTemplate() {
+        try {
+            PathUtil.updateTextFile(LIBVIRT_CONFIG_PATH, KVMHostUtils::configureLibvirtTls);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Unable to update libvirt listener template " + LIBVIRT_CONFIG_PATH, e);
+        }
+    }
+
+    static String configureLibvirtTls(String config) {
+        boolean tlsEnabled = KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class);
+        config = setLibvirtOption(config, "listen_tls", tlsEnabled ? "1" : "0");
+        config = setLibvirtOption(config, "listen_tcp", tlsEnabled ? "0" : "1");
+        return tlsEnabled ? config : setLibvirtOption(config, "auth_tcp", "\"sasl\"");
+    }
+
+    private static String setLibvirtOption(String config, String name, String value) {
+        Pattern option = Pattern.compile("(?m)^(?<prefix>[ \\t]*" + name + "[ \\t]*=[ \\t]*)[^#\\s]+");
+        Matcher assignment = option.matcher(config);
+        if (assignment.find()) {
+            return assignment.replaceAll("${prefix}" + value);
+        }
+        return config + (config.isEmpty() || config.endsWith("\n") ? "" : "\n") + name + " = " + value + "\n";
+    }
 
     // Collect host IPv4 addresses; mirrors host_plugin.fact() filters and
     // applies EXCLUDED_INTERNAL_IPS so check and deploy share one source.
