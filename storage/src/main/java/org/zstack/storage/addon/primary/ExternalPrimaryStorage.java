@@ -1353,7 +1353,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void success(VolumeStats returnValue) {
                 reply.setInstallPath(returnValue.getInstallPath());
-                reply.setFormat(msg.getImage().getFormat());
+                reply.setFormat(returnValue.getFormat());
                 reply.setProtocol(externalVO.getDefaultProtocol());
                 bus.reply(msg, reply);
             }
