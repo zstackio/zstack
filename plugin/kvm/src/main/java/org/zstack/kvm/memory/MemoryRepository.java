@@ -688,7 +688,11 @@ public class MemoryRepository {
     /** The observed Host contradicts its applied desired configuration. */
     static boolean drifted(Map<String, Object> desired, Map<String, Object> observed) {
         Object control = desired.get("control"), observedControl = observed.get("control");
-        if ("drained".equals(control)) { return "active".equals(observedControl) || "paused".equals(observedControl); }
+        if ("drained".equals(control)) {
+            // A Host without a pool has nothing to drain and is held paused instead.
+            return "active".equals(observedControl) || "paused".equals(observedControl)
+                    && MemoryLifecycleHooks.hasPoolGeneration(GSON.toJson(observed));
+        }
         if ("paused".equals(control)) { return "active".equals(observedControl); }
         if (!"active".equals(control)) { return false; }
         // A service back on its packaged observe-only config (e.g. after a reinstall) or with reclaim
