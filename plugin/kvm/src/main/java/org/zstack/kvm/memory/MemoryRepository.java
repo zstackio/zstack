@@ -848,11 +848,17 @@ public class MemoryRepository {
         return transaction(em -> Q.New(HostVO.class).eq(HostVO_.uuid, host).isExists());
     }
 
-    /** The Unknown holds of a source, and the unreleased holds of VMs that no longer exist. */
+    /**
+     * The Unknown holds of a source, and the unreleased holds of VMs that no longer exist.
+     * A hold whose VM is migrating belongs to that migration: its preparation may pass
+     * through Unknown and settle it again.
+     */
     public List<MemoryMigrationVO> unknownOrOrphanedHolds(String sourceHost) {
         return transaction(em -> SQL.New("from MemoryMigrationVO m where (m.sourceHostUuid = :host or m.swapDirect = true and m.targetHostUuid = :host) and (m.status = :unknown"
+                + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid and v.state = :migrating)"
                 + " or m.status <> :released and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid))",
-                MemoryMigrationVO.class).param("host", sourceHost).param("unknown", "Unknown").param("released", RELEASED).list());
+                MemoryMigrationVO.class).param("host", sourceHost).param("unknown", "Unknown").param("released", RELEASED)
+                .param("migrating", VmInstanceState.Migrating).list());
     }
 
     /** The Preparing or Held holds of a source whose VM is not migrating. */

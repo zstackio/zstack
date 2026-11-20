@@ -14,6 +14,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +24,7 @@ import static org.zstack.kvm.memory.MemoryVmConfigurationMsg.Action.*;
 
 /** VM ResourceConfig application and live evidence, using existing Agent and VM lifecycle mechanisms. */
 final class MemoryVmConfiguration {
+    private static final CLogger logger = Utils.getLogger(MemoryVmConfiguration.class);
     private final CloudBus bus;
     private final ThreadFacade threads;
     private final MemoryRepository repository;
@@ -47,13 +50,26 @@ final class MemoryVmConfiguration {
         zram.installLocalUpdateExtension((config, uuid, type, oldValue, newValue) -> request(uuid, RECONCILE, null));
         zram.installLocalDeleteExtension((config, uuid, type, oldValue) -> request(uuid, RECONCILE, null));
         zram.installRuntimeStateReader(uuid -> readState(uuid, "zram"));
+        // A tenant must not take its VM out of the Host's reclaim, or split its merged pages.
         ResourceConfig ksm = configs.getResourceConfig("vmMemory.memory.backing.share.pages");
         if (ksm == null) { return; } // Optional commercial module; never invent a second KSM config.
+        // The running VM is changed before the value is saved: a failure leaves the
+        // configuration as it was, and the Agent checks and changes in one pass.
         ksm.installValidatorExtension((uuid, oldValue, newValue) -> {
-            if (!Objects.equals(oldValue, newValue)) { request(uuid, CHECK_KSM, Boolean.valueOf(newValue)); }
+            if (!Objects.equals(oldValue, newValue)) { request(uuid, APPLY_KSM, Boolean.valueOf(newValue)); }
         });
-        ksm.installLocalUpdateExtension((config, uuid, type, oldValue, newValue) -> request(uuid, APPLY_KSM, null));
-        ksm.installLocalDeleteExtension((config, uuid, type, oldValue) -> request(uuid, APPLY_KSM, null));
+        ksm.installLocalDeleteExtension((config, uuid, type, oldValue) -> {
+            try { request(uuid, APPLY_KSM, null); }
+            catch (GlobalConfigException failed) {
+                // The inherited value was not applied. Keep the VM's own value, which
+                // the running VM still has, so that the two do not differ.
+                if (oldValue != null) {
+                    try { config.updateValue(uuid, oldValue); }
+                    catch (RuntimeException e) { logger.warn(String.format("VM[%s] page sharing configuration was not restored", uuid), e); }
+                }
+                throw failed;
+            }
+        });
         ksm.installRuntimeStateReader(uuid -> readState(uuid, "ksm"));
     }
 
@@ -132,7 +148,8 @@ final class MemoryVmConfiguration {
             Map<String, Object> command = new LinkedHashMap<>();
             command.put("hostUuid", host); command.put("resourceUuid", msg.getVmUuid());
             command.put("operationUuid", Platform.getUuid());
-            command.put("vmMemoryState", msg.getAction() != RECONCILE);
+            // A binding needs only this VM's identity, not an observation of the whole Host.
+            command.put(msg.getAction() == RECONCILE ? "vmIdentity" : "vmMemoryState", true);
             manager.call(host, "state", command, observed -> {
                 try { applyObserved(msg, host, command, observed, done); }
                 catch (RuntimeException e) { finish(done, null, e.getMessage()); }
@@ -151,7 +168,7 @@ final class MemoryVmConfiguration {
         }
         String generation = MemoryLifecycleHooks.instanceGeneration(observed, msg.getVmUuid());
         if (msg.getAction() == READ) {
-            finish(done, runtimeState(msg.getVmUuid(), generation, observed.state), null); return;
+            finish(done, runtimeState(msg.getVmUuid(), host, generation, observed.state), null); return;
         }
         if (msg.getAction() != RECONCILE) {
             Object raw = observed.state.get("vmMemoryState");
@@ -165,14 +182,15 @@ final class MemoryVmConfiguration {
         }
         if (generation == null) { finish(done, null, "VM_IDENTITY_UNKNOWN"); return; }
         command.put("expectedInstanceGeneration", generation);
-        command.remove("vmMemoryState");
+        command.remove("vmMemoryState"); command.remove("vmIdentity");
         if (msg.getAction() == RECONCILE) {
             command.put("action", "bind");
             command.put("participation", "deny".equals(repository.vmReclaimMode(msg.getVmUuid())) ? "deny" : "allow");
         } else {
-            Boolean enabled = msg.getAction() == CHECK_KSM ? msg.getKsmEnabled() : repository.vmSharePages(msg.getVmUuid());
+            // A value being validated is not saved yet; a deleted one is read as inherited.
+            Boolean enabled = msg.getKsmEnabled() != null ? msg.getKsmEnabled() : repository.vmSharePages(msg.getVmUuid());
             if (enabled == null) { finish(done, null, "KSM_CONFIGURATION_UNSUPPORTED"); return; }
-            command.put("action", msg.getAction() == CHECK_KSM ? "check-ksm" : "set-ksm");
+            command.put("action", "set-ksm");
             command.put("ksmEnabled", enabled);
         }
         manager.call(host, "vm-efficiency", command, applied -> {
@@ -191,14 +209,19 @@ final class MemoryVmConfiguration {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> runtimeState(String vm, String generation, Map<String, Object> observed) {
+    private Map<String, Object> runtimeState(String vm, String host, String generation, Map<String, Object> observed) {
         Map<String, Object> result = new LinkedHashMap<>();
         String mode = repository.vmReclaimMode(vm);
         Boolean sharing = repository.vmSharePages(vm);
         Map<?, ?> vms = observed.get("vms") instanceof Map ? (Map<?, ?>) observed.get("vms") : Collections.emptyMap();
         Map<?, ?> actual = vms.get(vm) instanceof Map ? (Map<?, ?>) vms.get(vm) : Collections.emptyMap();
         Map<String, Object> zram = status("Unknown", "VM_IDENTITY_UNKNOWN");
-        if (generation != null) {
+        MemoryStateVO hostState = repository.state(host);
+        if (hostState == null || !MemoryLifecycleHooks.hasPoolGeneration(hostState.getState())) {
+            // The Host compresses no memory (not enabled, or another kind of Host):
+            // the VM's setting is kept and has nothing to act on.
+            zram = status("NotApplicable", "HOST_MEMORY_COMPRESSION_NOT_ENABLED");
+        } else if (generation != null) {
             boolean applied = generation.equals(actual.get("binding_generation")) && mode.equals(actual.get("binding_mode"));
             zram = status(applied ? "Applied" : "Pending", applied ? null : "BINDING_NOT_CONFIRMED");
             zram.put("actualValue", !generation.equals(actual.get("binding_generation")) ? null :
@@ -223,8 +246,22 @@ final class MemoryVmConfiguration {
             ksm.put("liveNoSharePages", proof.get("liveNoSharePages"));
             ksm.put("instanceGeneration", generation);
         }
+        if (Boolean.TRUE.equals(sharing) && "Applied".equals(ksm.get("state")) && Boolean.FALSE.equals(hostKsmEnabled(hostState))) {
+            // The Host merges no pages: what the VM allows has nothing to act on.
+            Object actualValue = ksm.get("actualValue");
+            ksm = status("NotApplicable", "HOST_KSM_NOT_ENABLED");
+            ksm.put("actualValue", actualValue); ksm.put("instanceGeneration", generation);
+        }
         ksm.put("configuredValue", sharing); result.put("ksm", ksm);
         return result;
+    }
+
+    /** The Host's own page-merging switch as it was last observed; null when it was not observed. */
+    private static Boolean hostKsmEnabled(MemoryStateVO state) {
+        if (state == null || state.getState() == null || state.getState().trim().isEmpty()) { return null; }
+        com.google.gson.JsonObject observed = MemoryObservationRules.readJson(state.getState(), com.google.gson.JsonObject.class,
+                "memory state is unreadable");
+        return MemorySummaryRules.boolObject(MemorySummaryRules.object(observed, "ksm"), "enabled");
     }
 
     static Map<String, Object> status(String value, String reason) {

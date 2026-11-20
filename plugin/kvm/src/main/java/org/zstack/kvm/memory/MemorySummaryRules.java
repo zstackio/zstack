@@ -348,7 +348,7 @@ public final class MemorySummaryRules {
     private static void increment(Map<String, Integer> counts, String key) {
         counts.put(key, counts.containsKey(key) ? counts.get(key) + 1 : 1);
     }
-    private static JsonObject object(JsonObject parent, String key) {
+    static JsonObject object(JsonObject parent, String key) {
         return parent != null && parent.has(key) && parent.get(key).isJsonObject()
                 ? parent.getAsJsonObject(key) : null;
     }
@@ -356,7 +356,7 @@ public final class MemorySummaryRules {
         return object != null && object.has(key) && object.get(key).isJsonPrimitive()
                 ? object.get(key).getAsString() : null;
     }
-    private static Boolean boolObject(JsonObject object, String key) {
+    static Boolean boolObject(JsonObject object, String key) {
         return object != null && object.has(key) && object.get(key).isJsonPrimitive()
                 && object.get(key).getAsJsonPrimitive().isBoolean()
                 ? object.get(key).getAsBoolean() : null;

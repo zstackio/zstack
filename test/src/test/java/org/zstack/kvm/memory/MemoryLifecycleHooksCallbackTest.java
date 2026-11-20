@@ -617,6 +617,32 @@ public class MemoryLifecycleHooksCallbackTest {
         assertNull(manager.bindCommand);
     }
 
+    @Test public void aBindingStillWaitingIsNotRequestedAgainByTheNextObservation() throws Exception {
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        List<Consumer<MemoryAgentResponse>> waiting = new ArrayList<>();
+        FakeManager manager = new FakeManager() {
+            @Override void reconcileVmConfiguration(String vm, Consumer<MemoryAgentResponse> callback) { waiting.add(callback); }
+        };
+        inject(hooks, "manager", manager);
+        inject(hooks, "repository", new FakeRepository() {
+            @Override public MemoryStateVO state(String host) {
+                MemoryStateVO state = new MemoryStateVO();
+                state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
+                return state;
+            }
+        });
+        MemoryAgentResponse response = new MemoryAgentResponse();
+        Map<String, Object> state = new HashMap<>(); state.put("inventoryComplete", true);
+        state.put("vms", Collections.singletonMap("vm-1", Collections.singletonMap("instanceGeneration", "new-instance")));
+        response.state = state;
+        hooks.reconcileObservedBindings("host-a", response);
+        hooks.reconcileObservedBindings("host-a", response);
+        assertEquals("the VM is busy: its binding is requested once", 1, waiting.size());
+        waiting.remove(0).accept(response("host-a", null));
+        hooks.reconcileObservedBindings("host-a", response);
+        assertEquals("an answered binding may be requested again", 1, waiting.size());
+    }
+
     private static MemoryAgentResponse response(String host, String generation) {
         MemoryAgentResponse response = new MemoryAgentResponse();
         response.operationUuid = "op-1"; response.status = "Succeeded";
@@ -690,6 +716,19 @@ public class MemoryLifecycleHooksCallbackTest {
         assertNull(hooks.directMigrationCommand("vm-1", "host-a", "host-b"));
     }
 
+    @Test public void anOrdinaryMigrationChosenByTheSourceAgentKeepsBothHoldsForTheirRelease() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.swapDirect = true; repository.hold.swapDirectState = "{}";
+        repository.hold.sourceHoldStatus = "Held"; repository.hold.targetHoldStatus = "Held";
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+        hooks.recordDirectMigrationResult("vm-1", Collections.singletonMap("operationUuid", "op-1"),
+                Collections.singletonMap("fallback", "SWAP_DIRECT_GUEST_MEMORY_UNSUPPORTED"), true);
+        assertTrue(repository.hold.swapDirectState.contains("SWAP_DIRECT_GUEST_MEMORY_UNSUPPORTED"));
+        assertTrue("the destination hold and its writeback quota are still released after the migration",
+                repository.hold.swapDirect);
+        assertEquals("Held", repository.hold.targetHoldStatus);
+    }
+
     @Test public void failedCounterWriteDoesNotFailTheCompletedMigrationCallback() throws Exception {
         FakeRepository repository = heldMigration();
         repository.hold.swapDirect = true; repository.hold.swapDirectState = "{}";
@@ -719,7 +758,11 @@ public class MemoryLifecycleHooksCallbackTest {
     }
 
     @Test public void directPreparationGrantsQuotaAfterBothPreflightsAndWaitsForItsResult() throws Exception {
-        for (boolean acceptBudget : new boolean[]{true, false}) {
+        // A complete scan is used as counted; a partial one is replaced by all swapped-out pages.
+        String[][] estimates = {{"native_get_pagemap", "625004"}, {"native_get_pagemap_partial", "1048576"}};
+        for (int round = 0; round < 4; round++) {
+            boolean acceptBudget = round < 2;
+            String[] estimate = estimates[round % 2];
             FakeRepository repository = heldMigration();
             repository.hold.swapDirect = true;
             repository.hold.sourceHoldStatus = "Held";
@@ -735,7 +778,7 @@ public class MemoryLifecycleHooksCallbackTest {
                             info.put("supported", true); info.put("protocol", 1); info.put("hostUuid", host);
                             info.put("poolGeneration", command.get("poolGeneration")); info.put("compressor", "lzo-rle");
                             info.put("memoryBytes", "8589934592"); info.put("coldBytes", "4294967296");
-                            if ("host-a".equals(host)) { info.put("backingPages", "625004"); }
+                            if ("host-a".equals(host)) { info.put("backingPages", "625004"); info.put("backingEstimate", estimate[0]); }
                             answer.state.put("swapDirect", info);
                         }
                     } else if ("migration-hold".equals(action)) {
@@ -743,7 +786,7 @@ public class MemoryLifecycleHooksCallbackTest {
                         if (command.containsKey("writebackPages")) {
                             calls.add("quota");
                             assertNotNull(repository.hold.swapDirectState);
-                            assertEquals("625004", command.get("writebackPages"));
+                            assertEquals(estimate[1], command.get("writebackPages"));
                             if (!acceptBudget) { callback.accept(null); return; }
                         } else { calls.add("hold"); }
                     }
@@ -1036,6 +1079,21 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("allow", f.manager.bindCommand.get("participation"));
     }
 
+    @Test public void aBindingReadsOnlyTheVmIdentityAndPageSharingAppliesAValueNotSavedYet() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.RECONCILE)); f.runQueued();
+        assertEquals(Boolean.TRUE, f.stateCommand.get("vmIdentity"));
+        assertFalse("a binding does not observe the whole Host", f.stateCommand.containsKey("vmMemoryState"));
+        f.repository.sharePages = true;
+        MemoryVmConfigurationMsg apply = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        apply.setKsmEnabled(false);
+        f.coordinator.handle(apply); f.runQueued();
+        assertEquals(Boolean.TRUE, f.stateCommand.get("vmMemoryState"));
+        assertEquals("set-ksm", f.ksmCommand.get("action"));
+        assertEquals("the value under validation, not the saved one", Boolean.FALSE, f.ksmCommand.get("ksmEnabled"));
+        assertFalse(f.ksmCommand.containsKey("vmIdentity"));
+    }
+
     @Test public void vmReadStateRequiresMatchingInstanceAndQmpEvidence() {
         VmConfigurationFixture f = new VmConfigurationFixture();
         f.repository.reclaimMode = "deny"; f.repository.sharePages = false;
@@ -1049,6 +1107,29 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("Unknown", ((Map<?, ?>) f.reply.getState().get("ksm")).get("state"));
         assertEquals("Pending", ((Map<?, ?>) f.reply.getState().get("zram")).get("state"));
         assertNull(f.manager.bindCommand);
+        // On a Host that compresses no memory the VM's setting has nothing to act on.
+        f.repository.hostsWithoutPool.add("host-a"); f.repository.hostsWithoutPool.add("host-b");
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.READ));
+        assertEquals("NotApplicable", ((Map<?, ?>) f.reply.getState().get("zram")).get("state"));
+        assertEquals(false, ((Map<?, ?>) f.reply.getState().get("zram")).get("configuredValue"));
+    }
+
+    @Test public void vmSharingIsNotApplicableOnAHostThatMergesNoPages() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.sharePages = true;
+        f.proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", true)));
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.READ));
+        assertEquals("Applied", ((Map<?, ?>) f.reply.getState().get("ksm")).get("state"));
+        f.repository.hostObservations.put("host-a", "{\"zram\":{\"poolGeneration\":\"pool-1\"},\"ksm\":{\"enabled\":false}}");
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.READ));
+        Map<?, ?> ksm = (Map<?, ?>) f.reply.getState().get("ksm");
+        assertEquals("NotApplicable", ksm.get("state")); assertEquals("HOST_KSM_NOT_ENABLED", ksm.get("reasonCode"));
+        assertEquals(true, ksm.get("configuredValue"));
+        // A VM kept out of merging is out of it on any Host.
+        f.repository.sharePages = false;
+        f.proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", false)));
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.READ));
+        assertEquals("Applied", ((Map<?, ?>) f.reply.getState().get("ksm")).get("state"));
     }
 
     @Test public void vmConfigurationDoesNotModifyAnUnknownOrReplacedVm() {
@@ -1094,13 +1175,16 @@ public class MemoryLifecycleHooksCallbackTest {
         int readCalls;
         long readTimeout;
         boolean readFailure;
+        Map<String, Object> stateCommand, ksmCommand;
         final FakeManager manager = new FakeManager() {
             @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
                 if (!"state".equals(action)) {
+                    if ("set-ksm".equals(command.get("action"))) { ksmCommand = new HashMap<>(command); }
                     super.call(host, action, command, answer -> {
                         answer.operationUuid = (String) command.get("operationUuid"); callback.accept(answer);
                     }); return;
                 }
+                stateCommand = new HashMap<>(command);
                 MemoryAgentResponse observed = response(host, "current-instance");
                 observed.state.put("vms", Collections.singletonMap("vm-1", vm));
                 observed.state.put("vmMemoryState", proof);

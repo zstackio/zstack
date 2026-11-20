@@ -6,7 +6,7 @@ import java.util.Map;
 
 /** Internal VM-owner routing; all writes share the VM lifecycle queue. */
 public class MemoryVmConfigurationMsg extends NeedReplyMessage {
-    public enum Action { READ, RECONCILE, CHECK_KSM, APPLY_KSM }
+    public enum Action { READ, RECONCILE, APPLY_KSM }
     private String vmUuid;
     private Action action;
     private Boolean ksmEnabled;
