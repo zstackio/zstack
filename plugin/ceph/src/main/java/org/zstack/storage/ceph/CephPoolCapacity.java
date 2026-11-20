@@ -21,6 +21,7 @@ public class CephPoolCapacity {
         Long availableCapacity;
         Long usedCapacity;
         Long size;
+        public Long snapshotUsedBytes;
 
         public OsdCapacity(){}
         public OsdCapacity(Long availableCapacity, Long usedCapacity, Long size) {

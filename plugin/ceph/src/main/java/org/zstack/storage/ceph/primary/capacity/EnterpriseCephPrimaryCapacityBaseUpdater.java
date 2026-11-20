@@ -1,26 +1,35 @@
 package org.zstack.storage.ceph.primary.capacity;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.storage.ceph.CephCapacity;
 import org.zstack.storage.ceph.CephPoolCapacity;
 import org.zstack.storage.ceph.primary.*;
+import org.zstack.storage.primary.PrimaryStorageCapacityRecalculator;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -32,8 +41,12 @@ import static java.util.stream.Collectors.groupingBy;
 public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPrimaryCapacityUpdater {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
 
     private static final CLogger logger = Utils.getLogger(EnterpriseCephPrimaryCapacityBaseUpdater.class);
+    private static final Cache<String, Boolean> recentSnapshotCapacityRecalculations =
+            CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build();
 
     @Override
     public void update(CephCapacity cephCapacity) {
@@ -127,10 +140,33 @@ public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPr
                 }
 
                 osdHelper.fillCapacityFromPool();
-                if (osdGroupChanged) {
+                Long snapshotsTotalSize = cephCapacity.isXsky()
+                        ? osdHelper.updateSnapshotsTotalSize(cephCapacity, pools) : null;
+                if (snapshotsTotalSize != null && cephPs.getStatus() == PrimaryStorageStatus.Connected
+                        && shouldRecalculateSnapshotCapacity(cephPs.getUuid())) {
+                    PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator();
+                    recalculator.psUuids = Collections.singletonList(cephPs.getUuid());
+                    recalculator.recalculate();
+                } else if (osdGroupChanged) {
                     osdHelper.recalculateAvailableCapacity();
                 }
             }
         }.execute();
+    }
+
+    private boolean shouldRecalculateSnapshotCapacity(String primaryStorageUuid) {
+        if (!destMaker.isManagedByUs(primaryStorageUuid)
+                || recentSnapshotCapacityRecalculations.asMap().putIfAbsent(primaryStorageUuid, true) != null) {
+            return false;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) {
+                    recentSnapshotCapacityRecalculations.invalidate(primaryStorageUuid);
+                }
+            }
+        });
+        return true;
     }
 }

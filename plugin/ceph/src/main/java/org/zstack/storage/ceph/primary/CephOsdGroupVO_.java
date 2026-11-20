@@ -12,6 +12,7 @@ public class CephOsdGroupVO_ extends StorageCapacityAO_ {
     public static volatile SingularAttribute<CephOsdGroupVO, String> primaryStorageUuid;
     public static volatile SingularAttribute<CephOsdGroupVO, String> osds;
     public static volatile SingularAttribute<CephOsdGroupVO, Long> availableCapacity;
+    public static volatile SingularAttribute<CephOsdGroupVO, Long> snapshotsTotalSize;
     public static volatile SingularAttribute<CephOsdGroupVO, Long> availablePhysicalCapacity;
     public static volatile SingularAttribute<CephOsdGroupVO, Timestamp> createDate;
     public static volatile SingularAttribute<CephOsdGroupVO, Timestamp> lastOpDate;
