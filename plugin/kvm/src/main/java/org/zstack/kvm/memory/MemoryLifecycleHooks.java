@@ -98,6 +98,22 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         });
     }
 
+    /**
+     * The source's written-back pages. Only a complete scan, or a pool without a writeback
+     * disk, counts them exactly; a partial or refused scan is replaced by its upper bound:
+     * every page the source has swapped out.
+     */
+    static Object writebackPages(Map<?, ?> sourceState) {
+        if (sourceState == null) { return null; }
+        Object pages = sourceState.get("backingPages");
+        Object quality = sourceState.get("backingEstimate");
+        if (!"native_get_pagemap".equals(quality) && !"no_backing_device".equals(quality)) {
+            try { pages = String.valueOf(Long.parseLong(String.valueOf(sourceState.get("coldBytes"))) / 4096); }
+            catch (NumberFormatException unknown) { /* keep the estimate */ }
+        }
+        return pages;
+    }
+
     static boolean hasPoolGeneration(String raw) {
         if (raw == null || raw.trim().isEmpty()) { return false; }
         com.google.gson.JsonElement element = MemoryObservationRules.readJson(raw, com.google.gson.JsonElement.class,
@@ -314,6 +330,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         if (!source) {
             query.put("swapDirectMemoryBytes", sourceInfo.get("memoryBytes"));
             query.put("swapDirectColdBytes", sourceInfo.get("coldBytes"));
+            Object pages = writebackPages(sourceInfo);
+            if (pages != null) { query.put("swapDirectWritebackPages", pages); }
         }
         query.put("swapDirectPreflight", true); query.put("swapDirectSource", source);
         query.put("poolGeneration", source ? hold.poolGeneration : hold.targetPoolGeneration);
@@ -409,14 +427,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         command.put("holdAction", action); command.put("poolGeneration", pool);
         if (!source && "acquire".equals(action) && hold.swapDirectState != null) {
             Map<?, ?> prepared = new Gson().fromJson(hold.swapDirectState, Map.class);
-            Map<?, ?> sourceState = (Map<?, ?>) prepared.get("source");
-            Object pages = sourceState == null ? null : sourceState.get("backingPages");
-            // Only a complete scan counts the written-back pages. A partial or refused
-            // one is replaced by its upper bound: every page the source has swapped out.
-            if (sourceState != null && !"native_get_pagemap".equals(sourceState.get("backingEstimate"))) {
-                try { pages = String.valueOf(Long.parseLong(String.valueOf(sourceState.get("coldBytes"))) / 4096); }
-                catch (NumberFormatException unknown) { /* keep the estimate */ }
-            }
+            Object pages = writebackPages((Map<?, ?>) prepared.get("source"));
             if (pages != null) { command.put("writebackPages", pages); }
         }
         manager.call(host, "migration-hold", command, response -> {

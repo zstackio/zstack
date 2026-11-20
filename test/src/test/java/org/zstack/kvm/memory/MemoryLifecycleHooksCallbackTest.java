@@ -758,11 +758,13 @@ public class MemoryLifecycleHooksCallbackTest {
     }
 
     @Test public void directPreparationGrantsQuotaAfterBothPreflightsAndWaitsForItsResult() throws Exception {
-        // A complete scan is used as counted; a partial one is replaced by all swapped-out pages.
-        String[][] estimates = {{"native_get_pagemap", "625004"}, {"native_get_pagemap_partial", "1048576"}};
-        for (int round = 0; round < 4; round++) {
-            boolean acceptBudget = round < 2;
-            String[] estimate = estimates[round % 2];
+        // A complete scan is used as counted, and so is a pool without a writeback disk;
+        // a partial scan is replaced by all swapped-out pages.
+        String[][] estimates = {{"native_get_pagemap", "625004"}, {"native_get_pagemap_partial", "1048576"},
+                {"no_backing_device", "0"}};
+        for (int round = 0; round < 6; round++) {
+            boolean acceptBudget = round < 3;
+            String[] estimate = estimates[round % 3];
             FakeRepository repository = heldMigration();
             repository.hold.swapDirect = true;
             repository.hold.sourceHoldStatus = "Held";
@@ -778,7 +780,13 @@ public class MemoryLifecycleHooksCallbackTest {
                             info.put("supported", true); info.put("protocol", 1); info.put("hostUuid", host);
                             info.put("poolGeneration", command.get("poolGeneration")); info.put("compressor", "lzo-rle");
                             info.put("memoryBytes", "8589934592"); info.put("coldBytes", "4294967296");
-                            if ("host-a".equals(host)) { info.put("backingPages", "625004"); info.put("backingEstimate", estimate[0]); }
+                            if ("host-a".equals(host)) {
+                                info.put("backingPages", "no_backing_device".equals(estimate[0]) ? "0" : "625004");
+                                info.put("backingEstimate", estimate[0]);
+                            } else {
+                                // the destination check is told how many written-back pages are coming
+                                assertEquals(estimate[1], command.get("swapDirectWritebackPages"));
+                            }
                             answer.state.put("swapDirect", info);
                         }
                     } else if ("migration-hold".equals(action)) {
