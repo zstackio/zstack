@@ -2913,6 +2913,8 @@
   "ORG_ZSTACK_PCIDEVICE_10088": "PCI device[uuid:%s, type:%s] does not support the ibDisplayName system tag in UpdatePciDevice",
   "ORG_ZSTACK_PCIDEVICE_10089": "PCI device[uuid:%s] update accepts only one ibDisplayName system tag",
   "ORG_ZSTACK_PCIDEVICE_10090": "PCI device[uuid:%s] display name must contain 1 to %s characters after trimming",
+  "ORG_ZSTACK_PCIDEVICE_10091": "PCI device[uuid:%s] no longer exists",
+  "ORG_ZSTACK_PCIDEVICE_10092": "PCI device[uuid:%s] cannot be attached in its current virtualization status[%s]",
   "ORG_ZSTACK_AI_CONTAINER_10023": "Invalid Kubernetes deployment YAML: %s",
   "ORG_ZSTACK_AI_CONTAINER_10020": "failed to patch Kubernetes deployment %s to terminate all pods",
   "ORG_ZSTACK_AI_CONTAINER_10025": "model service instance group %s not found in the database",
