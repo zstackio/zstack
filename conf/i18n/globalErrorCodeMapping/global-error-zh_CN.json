@@ -2920,6 +2920,7 @@
   "ORG_ZSTACK_PCIDEVICE_10095": "仅管理员可以通过卸载恢复预留中的 IB 设备[uuid:%s]",
   "ORG_ZSTACK_PCIDEVICE_10096": "无法恢复预留中的 IB 设备[uuid:%s]：预留开始时间未知",
   "ORG_ZSTACK_PCIDEVICE_10097": "无法恢复预留中的 IB 设备[uuid:%s]：预留时间必须超过 %s 分钟",
+  "ORG_ZSTACK_PCIDEVICE_10098": "创建或恢复内存快照前，请先卸载云主机[uuid:%s]上的全部 IB 设备",
   "ORG_ZSTACK_AI_CONTAINER_10023": "无效的K8s部署YAML: %s",
   "ORG_ZSTACK_AI_CONTAINER_10020": "失败将 Kubernetes 部署 %s 中的所有 Pod 删除",
   "ORG_ZSTACK_AI_CONTAINER_10025": "模型服务实例组 %s 在数据库中未找到",

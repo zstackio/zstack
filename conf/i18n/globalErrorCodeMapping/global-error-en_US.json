@@ -2920,6 +2920,7 @@
   "ORG_ZSTACK_PCIDEVICE_10095": "Only an administrator can recover reserved IB device[uuid:%s] by detaching it",
   "ORG_ZSTACK_PCIDEVICE_10096": "Cannot recover reserved IB device[uuid:%s]: reservation time is unknown",
   "ORG_ZSTACK_PCIDEVICE_10097": "Cannot recover reserved IB device[uuid:%s] before its reservation has lasted more than %s minutes",
+  "ORG_ZSTACK_PCIDEVICE_10098": "please detach all IB devices from vm[uuid:%s] before creating or reverting a memory snapshot",
   "ORG_ZSTACK_AI_CONTAINER_10023": "Invalid Kubernetes deployment YAML: %s",
   "ORG_ZSTACK_AI_CONTAINER_10020": "failed to patch Kubernetes deployment %s to terminate all pods",
   "ORG_ZSTACK_AI_CONTAINER_10025": "model service instance group %s not found in the database",
