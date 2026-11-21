@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IbDeviceVO` (
     `bindingSource` varchar(32) NOT NULL DEFAULT 'Unknown',
     `collectionStatus` varchar(32) NOT NULL DEFAULT 'Unknown',
     `lastCollectedAt` timestamp NULL DEFAULT NULL,
+    `reservedAt` timestamp NULL DEFAULT NULL,
     `collectionError` text DEFAULT NULL,
     `hostDriver` varchar(255) DEFAULT NULL,
     `hostRecoveryError` mediumtext DEFAULT NULL,
@@ -18,6 +19,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IbDeviceVO` (
 -- Preserve recovery evidence when this script is applied to an existing IB table.
 CALL ADD_COLUMN('IbDeviceVO', 'hostDriver', 'varchar(255)', 1, NULL);
 CALL ADD_COLUMN('IbDeviceVO', 'hostRecoveryError', 'mediumtext', 1, NULL);
+
+-- Existing reservations have no reliable start time; leave them unknown.
+CALL ADD_COLUMN('IbDeviceVO', 'reservedAt', 'timestamp NULL', 1, NULL);
 
 START TRANSACTION;
 
