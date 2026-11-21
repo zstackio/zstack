@@ -1955,6 +1955,13 @@ public class KVMAgentCommands {
     public static class CleanVmFirmwareFlashCmd extends AgentCommand {
         @GrayVersion(value = "5.0.0")
         public String vmUuid;
+        @GrayVersion(value = "5.6.0")
+        public boolean cleanupInactiveDomain;
+    }
+
+    public static class CleanVmFirmwareFlashRsp extends AgentResponse {
+        @GrayVersion(value = "5.6.0")
+        public boolean cleanupCompleted;
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {

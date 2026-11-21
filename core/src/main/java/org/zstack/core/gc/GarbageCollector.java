@@ -109,8 +109,11 @@ public abstract class GarbageCollector {
             return;
         }
 
-        vo.setStatus(GCStatus.Idle);
-        dbf.update(vo);
+        SQL.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.uuid, uuid)
+                .notEq(GarbageCollectorVO_.status, GCStatus.Done)
+                .set(GarbageCollectorVO_.status, GCStatus.Idle)
+                .update();
     }
 
     protected String buildContext() {
@@ -191,9 +194,13 @@ public abstract class GarbageCollector {
         }
 
         uuid = vo.getUuid();
-        vo.setStatus(GCStatus.Idle);
-        vo.setManagementNodeUuid(Platform.getManagementServerId());
-        dbf.update(vo);
+        // A stale HA snapshot must not reopen or recreate a completed job.
+        SQL.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.uuid, uuid)
+                .notEq(GarbageCollectorVO_.status, GCStatus.Done)
+                .set(GarbageCollectorVO_.status, GCStatus.Idle)
+                .set(GarbageCollectorVO_.managementNodeUuid, Platform.getManagementServerId())
+                .update();
 
         gcMgr.registerGC(this);
     }
