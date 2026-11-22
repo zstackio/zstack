@@ -13,6 +13,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.vm.*;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
@@ -30,6 +31,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     private static final CLogger logger = Utils.getLogger(MemoryLifecycleHooks.class);
     @Autowired private MemoryRepository repository;
     @Autowired private MemoryOptimizationManager manager;
+    @Autowired private ResourceConfigFacade rcf;
     private final Map<String, String> lifecycleGenerations = new ConcurrentHashMap<>();
     private final MemoryBatchCursor bindingCursor = new MemoryBatchCursor();
     /** VMs whose binding request is still waiting in the VM's queue or at the Agent. */
@@ -198,12 +200,20 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         }
     }
 
+    /** An operator may turn cold-page direct migration off for a cluster or a host. */
+    private boolean directDisabled(String host) {
+        return !Boolean.TRUE.equals(rcf.getResourceConfigValue(MemoryStandardGlobalConfig.SWAP_DIRECT_ENABLED, host, Boolean.class));
+    }
+
     /** Select only after the actual storage/direction parameters are known, before sending migrate. */
     public void prepareMigrationCommand(MigrateVmCmd cmd, String source, String target, Completion completion) {
         final long started = System.nanoTime();
-        String rejection = directCapabilityRejection(source);
-        if (rejection != null) { rejection = "SOURCE " + rejection; }
-        else {
+        String rejection = directDisabled(source) || directDisabled(target) ? "SWAP_DIRECT_DISABLED" : null;
+        if (rejection == null) {
+            rejection = directCapabilityRejection(source);
+            if (rejection != null) { rejection = "SOURCE " + rejection; }
+        }
+        if (rejection == null) {
             rejection = directCapabilityRejection(target);
             if (rejection != null) { rejection = "TARGET " + rejection; }
         }
@@ -330,6 +340,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         if (!source) {
             query.put("swapDirectMemoryBytes", sourceInfo.get("memoryBytes"));
             query.put("swapDirectColdBytes", sourceInfo.get("coldBytes"));
+            if (sourceInfo.get("coldPoolBytes") != null) { query.put("swapDirectColdPoolBytes", sourceInfo.get("coldPoolBytes")); }
             Object pages = writebackPages(sourceInfo);
             if (pages != null) { query.put("swapDirectWritebackPages", pages); }
         }

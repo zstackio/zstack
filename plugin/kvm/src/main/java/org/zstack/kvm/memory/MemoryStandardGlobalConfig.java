@@ -3,6 +3,7 @@ package org.zstack.kvm.memory;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
+import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.cluster.ClusterVO;
@@ -42,4 +43,9 @@ public class MemoryStandardGlobalConfig {
     @GlobalConfigDef(defaultValue = EMPTY, description = "Writeback backend resource UUID; host scope only")
     @BindResourceConfig({HostVO.class})
     public static GlobalConfig WRITEBACK_BACKEND_RESOURCE = new GlobalConfig(CATEGORY, "memory.writeback.backendResourceUuid");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", description = "Migrate cold pages directly between ZRAM pools; false always migrates the ordinary way")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig SWAP_DIRECT_ENABLED = new GlobalConfig(CATEGORY, "memory.swapDirect.enabled");
 }

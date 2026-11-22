@@ -830,7 +830,18 @@ public class MemoryLifecycleHooksCallbackTest {
         MigrateVmCmd cmd = new MigrateVmCmd(); cmd.setVmUuid("vm-1"); cmd.setXbzrle(xbzrle); return cmd;
     }
 
-    private static boolean[] selectMigration(MemoryLifecycleHooks hooks, MigrateVmCmd cmd) {
+    private static boolean[] selectMigration(MemoryLifecycleHooks hooks, MigrateVmCmd cmd) throws Exception {
+        return selectMigration(hooks, cmd, Collections.emptySet());
+    }
+
+    /** Hosts in {@code directOff} have cold-page direct migration turned off, through their cluster or themselves. */
+    private static boolean[] selectMigration(MemoryLifecycleHooks hooks, MigrateVmCmd cmd, Set<String> directOff) throws Exception {
+        inject(hooks, "rcf", Proxy.newProxyInstance(org.zstack.resourceconfig.ResourceConfigFacade.class.getClassLoader(),
+                new Class<?>[]{org.zstack.resourceconfig.ResourceConfigFacade.class}, (proxy, method, args) -> {
+                    assertEquals("getResourceConfigValue", method.getName());
+                    assertSame(MemoryStandardGlobalConfig.SWAP_DIRECT_ENABLED, args[0]);
+                    return !directOff.contains((String) args[1]);
+                }));
         boolean[] result = new boolean[2];
         hooks.prepareMigrationCommand(cmd, "host-a", "host-b", new org.zstack.header.core.Completion(null) {
             @Override public void success() { result[0] = true; }
@@ -863,6 +874,25 @@ public class MemoryLifecycleHooksCallbackTest {
                     assertTrue(repository.hold.reason, repository.hold.reason.startsWith("host-a".equals(rejectedHost) ? "SOURCE " : "TARGET "));
                 }
             }
+        }
+    }
+
+    @Test public void directMigrationTurnedOffOnEitherHostMigratesTheOrdinaryWayWithoutAgentCalls() throws Exception {
+        for (String off : Arrays.asList("host-a", "host-b")) {
+            FakeRepository repository = heldMigration(); repository.hold.sourceHoldStatus = "Held";
+            for (String host : Arrays.asList("host-a", "host-b")) { repository.hostObservations.put(host, directHostObservation("boot", "pool-1", true)); }
+            MemoryLifecycleHooks hooks = new MemoryLifecycleHooks(); inject(hooks, "repository", repository);
+            inject(hooks, "manager", new FakeManager() {
+                @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                    fail("a migration with direct migration turned off must not issue an Agent RPC: " + action);
+                }
+            });
+            MigrateVmCmd cmd = migrationCommand(true);
+            assertArrayEquals(new boolean[]{true, false}, selectMigration(hooks, cmd, Collections.singleton(off)));
+            assertNull(cmd.getSwapDirect()); assertTrue(cmd.isXbzrle());
+            assertFalse(repository.hold.swapDirect); assertEquals("Held", repository.hold.sourceHoldStatus);
+            assertNull(repository.hold.targetHoldStatus);
+            assertEquals("SWAP_DIRECT_DISABLED", repository.hold.reason);
         }
     }
 

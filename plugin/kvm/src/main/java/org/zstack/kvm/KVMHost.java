@@ -3585,7 +3585,14 @@ public class KVMHost extends HostBase implements Host {
                                     @Override
                                     public void success(MigrateVmResponse ret) {
                                         memoryLifecycleHooks.recordDirectMigrationResult(vmUuid, cmd.getSwapDirect(), ret.getSwapDirect(), true);
-                                        if (!ret.isSuccess()) {
+                                        boolean directFailed = cmd.getSwapDirect() != null
+                                                && (ret.getSwapDirect() == null || ret.getSwapDirect().get("fallback") == null);
+                                        if (!ret.isSuccess() && directFailed) {
+                                            // Failed after the cold-page direct transfer began: name it, and tell how to avoid it.
+                                            trigger.fail(err(ORG_ZSTACK_KVM_10163, HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
+                                                    "Cold-page direct migration of VM [uuid:%s] from host [uuid:%s, ip:%s] to host [ip:%s] failed: %s. The VM is still running on the source host. If it fails again, set memory.swapDirect.enabled to false for the cluster or host and migrate again; the VM will then migrate the ordinary way.",
+                                                    vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()));
+                                        } else if (!ret.isSuccess()) {
                                             ErrorCode err = err(ORG_ZSTACK_KVM_10063, HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
                                                     "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
                                                     vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()

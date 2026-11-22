@@ -1470,6 +1470,7 @@
   "ORG_ZSTACK_IAM2SCRIPT_10004": "Run iam2 script failed. Please check if the required cloud computing environment is properly set up.",
   "ORG_ZSTACK_VMWARE_10041": "The target host does not support virtual machine management. Please ensure the destination host is an ESX or vSphere host.",
   "ORG_ZSTACK_KVM_10161": "Unexpected VNC port number[%d] for virtual machine [uuid:%s]",
+  "ORG_ZSTACK_KVM_10163": "Cold-page direct migration of VM [uuid:%s] from host [uuid:%s, ip:%s] to host [ip:%s] failed: %s. The VM is still running on the source host. If it fails again, set memory.swapDirect.enabled to false for the cluster or host and migrate again; the VM will then migrate the ordinary way.",
   "ORG_ZSTACK_IAM2SCRIPT_10009": "The number of parameters exceeds the allowed limit.",
   "ORG_ZSTACK_IAM2SCRIPT_10008": "The script does not contain any code. Please ensure your input includes valid Java code.",
   "ORG_ZSTACK_SDNCONTROLLER_10000": "Cannot create SDN L2 network due to missing SDN Controller UUID in systemTags of API request. Please ensure the SDN Controller UUID is correctly specified.",
