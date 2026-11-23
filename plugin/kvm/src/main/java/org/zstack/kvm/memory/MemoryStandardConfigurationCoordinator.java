@@ -62,6 +62,23 @@ public final class MemoryStandardConfigurationCoordinator {
         }
     }
 
+    /**
+     * Why a Host's effective ZRAM capacity can never be applied, or null. A blank logical capacity is the
+     * service default, half of the Host's MemTotal; a blank RAM limit follows the logical capacity.
+     */
+    static String capacityRefusal(Long logical, Long ramLimit, Long hostMemory) {
+        if (ramLimit == null) { return null; }
+        Long envelope = logical;
+        if (envelope == null) {
+            if (hostMemory == null || hostMemory <= 0) { return null; }
+            envelope = hostMemory / 2 / 4096 * 4096;
+        }
+        if (ramLimit <= envelope) { return null; }
+        return String.format("%s (%d) cannot exceed the ZRAM logical capacity (%d%s)",
+                MemoryStandardField.ZRAM_RAM_LIMIT.path(), ramLimit, envelope,
+                logical == null ? ", the default half of the Host memory" : "");
+    }
+
     /** The prepared backend is recorded by PrepareHostMemoryWritebackBackend, not set as configuration. */
     public static void requireConfigurable(MemoryStandardField field) {
         if (field == MemoryStandardField.WRITEBACK_BACKEND_RESOURCE || field == MemoryStandardField.WRITEBACK_BACKEND_CAPACITY) {
@@ -79,7 +96,7 @@ public final class MemoryStandardConfigurationCoordinator {
                 throw new GlobalConfigException("A valid Cloud License is required for memory configuration changes");
             }
         }
-        String refusal = repository.standardChangeRefusal(field, resourceUuid);
+        String refusal = repository.standardChangeRefusal(field, resourceUuid, newValue);
         if (refusal != null) { throw new GlobalConfigException(refusal); }
     }
 
