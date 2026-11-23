@@ -28,6 +28,14 @@ public class HostMemoryStateInventory  {
         return this.featureState;
     }
 
+    public java.lang.String zramState;
+    public void setZramState(java.lang.String zramState) {
+        this.zramState = zramState;
+    }
+    public java.lang.String getZramState() {
+        return this.zramState;
+    }
+
     public java.lang.String reason;
     public void setReason(java.lang.String reason) {
         this.reason = reason;
