@@ -46,6 +46,10 @@ public final class MemoryObservationRules {
             nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"), field(previousKsm, "serviceState"));
             nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"), field(previousKsm, "tunedServiceState"));
         }
+        if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))) {
+            nativeServiceEvent(result, host, "zram", field(state.get("zram"), "serviceState"),
+                    field(previous == null ? null : previous.get("zram"), "serviceState"));
+        }
         Map<?, ?> status = map(field(state.get("zram"), "status"));
         if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
                 && Boolean.TRUE.equals(field(desired.get("writeback"), "enabled"))
