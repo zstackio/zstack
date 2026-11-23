@@ -333,6 +333,7 @@ public class SourceClassMap {
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
 			put("org.zstack.header.keyprovider.CertificateInfo", "org.zstack.sdk.CertificateInfo");
 			put("org.zstack.header.keyprovider.KeyProviderInventory", "org.zstack.sdk.KeyProviderInventory");
+			put("org.zstack.header.keyprovider.KeyProviderRelatedVmInventory", "org.zstack.sdk.KeyProviderRelatedVmInventory");
 			put("org.zstack.header.keyprovider.KmsIdentityInventory", "org.zstack.sdk.KmsIdentityInventory");
 			put("org.zstack.header.keyprovider.KmsInventory", "org.zstack.sdk.KmsInventory");
 			put("org.zstack.header.keyprovider.NkpInventory", "org.zstack.sdk.NkpInventory");
@@ -1251,6 +1252,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
 			put("org.zstack.sdk.KeyProviderInventory", "org.zstack.header.keyprovider.KeyProviderInventory");
+			put("org.zstack.sdk.KeyProviderRelatedVmInventory", "org.zstack.header.keyprovider.KeyProviderRelatedVmInventory");
 			put("org.zstack.sdk.KmsIdentityInventory", "org.zstack.header.keyprovider.KmsIdentityInventory");
 			put("org.zstack.sdk.KmsInventory", "org.zstack.header.keyprovider.KmsInventory");
 			put("org.zstack.sdk.KoAlSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.koal.KoAlSecretResourcePoolInventory");
