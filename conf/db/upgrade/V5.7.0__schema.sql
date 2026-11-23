@@ -7,7 +7,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IbDeviceVO` (
     `bindingSource` varchar(32) NOT NULL DEFAULT 'Unknown',
     `collectionStatus` varchar(32) NOT NULL DEFAULT 'Unknown',
     `lastCollectedAt` timestamp NULL DEFAULT NULL,
+    `reservedAt` timestamp NULL DEFAULT NULL,
     `collectionError` text DEFAULT NULL,
+    `hostDriver` varchar(255) DEFAULT NULL,
+    `hostRecoveryError` mediumtext DEFAULT NULL,
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkIbDeviceVOPciDeviceVO` FOREIGN KEY (`uuid`)
         REFERENCES `zstack`.`PciDeviceVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
