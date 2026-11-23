@@ -678,6 +678,7 @@ public class MemoryRepository {
         }
         row.setReason(trim(reason));
         row.setFeatureState(featureState(observed, zramWanted && zramSupported(observed) ? ZramExpectation.RUNNING : ZramExpectation.NONE));
+        row.setZramState(zramState(observed, desired, row.getStatus()));
         row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), state.getStatus(), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
         if (created) { em.persist(row); }
@@ -747,6 +748,27 @@ public class MemoryRepository {
         return ksm instanceof Boolean && observedKsm instanceof Boolean && !ksm.equals(observedKsm);
     }
 
+    /**
+     * Whether ZRAM itself works on the Host, apart from KSM (featureState) and from the delivery of the
+     * configuration (status). The first that holds: Unsupported, Disabled, Failed, Unknown, Drained, Paused,
+     * Preparing (no pool yet), Inactive (a pool that does not reclaim), Active.
+     */
+    static String zramState(Map<String, Object> observed, Map<String, Object> desired, String status) {
+        if (!observed.isEmpty() && !zramSupported(observed)) { return "Unsupported"; }
+        if (desired == null) { return "Unknown"; }
+        if (!Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))) { return "Disabled"; }
+        if ("Failed".equals(status)) { return "Failed"; }
+        if (observed.isEmpty()) { return "Unknown"; }
+        Object control = observed.get("control");
+        if ("drained".equals(control)) { return "Drained"; }
+        if ("paused".equals(control)) { return "Paused"; }
+        Object zram = observed.get("zram");
+        if (!"active".equals(field(zram, "serviceState"))) { return "Unknown"; }
+        if (field(zram, "poolGeneration") == null) { return "Preparing"; }
+        if ("observe".equals(field(zram, "mode")) || !Boolean.TRUE.equals(field(zram, "efficiencyEnabled"))) { return "Inactive"; }
+        return "Active";
+    }
+
     static String featureState(Map<String, Object> observed, ZramExpectation zram) {
         if (observed.isEmpty()) { return "Unknown"; }
         Map<?, ?> capabilities = map(observed.get("capabilities"));
@@ -798,7 +820,7 @@ public class MemoryRepository {
             if (row == null) {
                 if (job == null) { return null; }
                 row = new HostMemoryStateVO(); row.setHostUuid(host);
-                row.setStatus("Applying"); row.setFeatureState("Unknown"); row.setActiveJobUuid(job);
+                row.setStatus("Applying"); row.setFeatureState("Unknown"); row.setZramState("Unknown"); row.setActiveJobUuid(job);
                 row.setAllowedActions(JSONObjectUtil.toJsonString(Collections.singletonList("query")));
                 em.persist(row);
                 return null;
