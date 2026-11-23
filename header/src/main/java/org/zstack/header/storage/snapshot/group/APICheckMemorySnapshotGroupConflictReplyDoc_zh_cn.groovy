@@ -10,7 +10,7 @@ doc {
 	ref {
 		name "vmNicConflict"
 		path "org.zstack.header.storage.snapshot.group.APICheckMemorySnapshotGroupConflictReply.vmNicConflict"
-		desc "与快照组网卡存档存在 IP 或 MAC 重复的网卡列表；没有检测到冲突时为空列表。冲突云主机不可见时隐藏其身份及网卡内部名称。"
+		desc "存档网卡在对应三层网络中的 IP 占用或跨网络 MAC 冲突列表。无冲突时返回空列表。未关联云主机网卡的占用仅返回 IP，冲突云主机不可见时隐藏其身份及网卡内部名称。"
 		type "List"
 		since "5.5.38"
 		clz VmNicConflictEntry.class
