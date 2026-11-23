@@ -10,6 +10,7 @@ public class HostMemoryStateVO_ {
     public static volatile SingularAttribute<HostMemoryStateVO, String> hostUuid;
     public static volatile SingularAttribute<HostMemoryStateVO, String> status;
     public static volatile SingularAttribute<HostMemoryStateVO, String> featureState;
+    public static volatile SingularAttribute<HostMemoryStateVO, String> zramState;
     public static volatile SingularAttribute<HostMemoryStateVO, String> reason;
     public static volatile SingularAttribute<HostMemoryStateVO, String> allowedActions;
     public static volatile SingularAttribute<HostMemoryStateVO, String> activeJobUuid;

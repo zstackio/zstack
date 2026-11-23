@@ -21,6 +21,11 @@ public class HostMemoryStateVO {
     public String getFeatureState() { return featureState; }
     public void setFeatureState(String value) { featureState = value; }
 
+    @Column(length = 32)
+    private String zramState;
+    public String getZramState() { return zramState; }
+    public void setZramState(String value) { zramState = value; }
+
     @Column(length = 2048)
     private String reason;
     public String getReason() { return reason; }
