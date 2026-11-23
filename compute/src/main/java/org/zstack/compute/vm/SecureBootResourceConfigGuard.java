@@ -8,7 +8,10 @@ import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -26,6 +29,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10336;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10337;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10338;
 
 public class SecureBootResourceConfigGuard implements Component, GlobalApiMessageInterceptor {
     private static final List<VmInstanceState> ALLOWED_STATES = Arrays.asList(VmInstanceState.Created, VmInstanceState.Stopped);
@@ -81,6 +85,26 @@ public class SecureBootResourceConfigGuard implements Component, GlobalApiMessag
                     GlobalConfig.produceIdentity(config.getCategory(), config.getName()), config.getValue()));
         }
         return msg;
+    }
+
+    public static ErrorCode checkCreateArchitecture(VmInstanceInventory vm, String clusterUuid, ResourceConfigFacade rcf) {
+        if (ImageArchitecture.x86_64.toString().equals(vm.getArchitecture())) {
+            return null;
+        }
+
+        ResourceConfig config = rcf.getResourceConfig(VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT.getIdentity());
+        // With automatic placement the selected cluster can override the global default.
+        String sourceUuid = config.resourceConfigCreated(vm.getUuid()) ? vm.getUuid() : clusterUuid;
+        if (sourceUuid == null || !Boolean.TRUE.equals(config.getResourceConfigValue(sourceUuid, Boolean.class))) {
+            return null;
+        }
+
+        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
+        if (!VmTpmManager.isUefiBootMode(bootMode)) {
+            return null;
+        }
+        return operr(ORG_ZSTACK_COMPUTE_VM_10338, "Secure Boot requires an x86_64 VM, but vm[uuid:%s] has architecture %s",
+                vm.getUuid(), vm.getArchitecture());
     }
 
     private void validateBootMode(String resourceUuid, String identity, String value) {
