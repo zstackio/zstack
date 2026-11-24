@@ -101,7 +101,7 @@ class CleanRestAPIVOCase extends SubCase{
 
                 def completed
                 retryInSecs {
-                    completed = restApiImpl.getResult(initial.uuid)
+                    completed = restApiImpl.getResult(initial.uuid, session.uuid)
                     assert completed?.state == "Done" : "real API event must complete the legacy result row"
                 }
                 Map result = json.parseText(completed.result) as Map

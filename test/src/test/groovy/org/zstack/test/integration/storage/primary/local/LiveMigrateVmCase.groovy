@@ -72,8 +72,10 @@ class LiveMigrateVmCase extends SubCase {
         String dstHostUuid = srcHostUuid == host1.uuid ? host2.uuid : host1.uuid
         String originPlatform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                 .select(VmInstanceVO_.platform).findValue()
+        String originalAllowLiveMigration = LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value()
 
         try {
+            LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue("true")
             SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .set(VmInstanceVO_.platform, ImagePlatform.Windows.toString())
                     .update()
@@ -88,6 +90,7 @@ class LiveMigrateVmCase extends SubCase {
                 assert delegate.details.contains(vm.uuid)
             }
         } finally {
+            LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(originalAllowLiveMigration)
             SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .set(VmInstanceVO_.platform, originPlatform)
                     .update()
