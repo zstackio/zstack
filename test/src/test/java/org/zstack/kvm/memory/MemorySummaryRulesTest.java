@@ -424,4 +424,42 @@ public class MemorySummaryRulesTest {
         assertNull(result.getKsmZeroBytes()); assertNull(result.getTotalSavedEstimateBytes());
         assertFalse(result.getCurrentStatus().containsKey("error"));
     }
+
+    private MemoryStateVO zeroPages(String host, String zeroQuality, Long zeroBytes) {
+        return current(host, now, "{\"savings\":{\"formulaVersion\":\"mechanism-estimate-v1\","
+                + "\"quality\":\"Partial\",\"sampleTime\":300000,\"ksmOrdinaryBytes\":100,"
+                + (zeroBytes == null ? "" : "\"ksmZeroBytes\":" + zeroBytes + ",")
+                + "\"metricQuality\":{\"ksm_ordinary\":\"observed\",\"ksm_zero\":\"" + zeroQuality + "\","
+                + "\"ksm_total\":\"partial\"}}}");
+    }
+
+    private Map<String, Object> zeroCoverage(List<String> hosts, MemoryStateVO... rows) {
+        return MemorySummaryRules.summarize(hosts, Arrays.asList(rows), now).getMetricCoverage().get("ksmZeroBytes");
+    }
+
+    @Test public void zeroPagesOfAScopeWhereNoHostCanCountThemAreUnsupported() {
+        MemorySummaryInventory result = MemorySummaryRules.summarize(Arrays.asList("a", "b"),
+                Arrays.asList(zeroPages("a", "unsupported", null), zeroPages("b", "unsupported", null)), now);
+        Map<String, Object> zero = result.getMetricCoverage().get("ksmZeroBytes");
+        assertEquals("Unsupported", zero.get("quality"));
+        assertEquals(0, zero.get("coveredHosts"));
+        assertNull(result.getKsmZeroBytes());
+        // Ordinary sharing is still counted, the KSM subtotal is not complete.
+        assertEquals(Long.valueOf(200), result.getKsmOrdinaryBytes());
+        assertEquals("Fresh", result.getMetricCoverage().get("ksmOrdinaryBytes").get("quality"));
+        assertEquals("Missing", result.getMetricCoverage().get("ksmTotalBytes").get("quality"));
+    }
+
+    @Test public void zeroPagesCountedOnSomeHostsArePartialAndOtherwiseMissing() {
+        MemorySummaryInventory partial = MemorySummaryRules.summarize(Arrays.asList("a", "b"),
+                Arrays.asList(zeroPages("a", "unsupported", null), zeroPages("b", "observed", 20L)), now);
+        assertEquals("Partial", partial.getMetricCoverage().get("ksmZeroBytes").get("quality"));
+        assertEquals(1, partial.getMetricCoverage().get("ksmZeroBytes").get("coveredHosts"));
+        assertEquals(Long.valueOf(20), partial.getKsmZeroBytes());
+        // Unsupported with a sample still to come, or one that failed, is no complete statistic.
+        assertEquals("Missing", zeroCoverage(Arrays.asList("a", "b"), zeroPages("a", "unsupported", null)).get("quality"));
+        assertEquals("Missing", zeroCoverage(Arrays.asList("a", "b"),
+                zeroPages("a", "unsupported", null), zeroPages("b", "missing", null)).get("quality"));
+        assertEquals("Missing", zeroCoverage(Collections.emptyList()).get("quality"));
+    }
 }
