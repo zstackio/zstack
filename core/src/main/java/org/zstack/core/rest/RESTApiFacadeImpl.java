@@ -13,6 +13,7 @@ import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -159,7 +160,10 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         vo.setUuid(msg.getId());
         vo.setApiMessageName(msg.getMessageName());
         vo.setState(RestAPIState.Processing);
-        SessionInventory owner = getValidSession(msg.getSession() == null ? null : msg.getSession().getUuid());
+        // Session validation logs out expired sessions. Leave that to the API handling the request.
+        SessionVO owner = msg.getSession() == null ? null : SQL.New(
+                "select s from SessionVO s where s.uuid = :uuid and s.expiredDate >= CURRENT_TIMESTAMP", SessionVO.class)
+                .param("uuid", msg.getSession().getUuid()).find();
         if (owner != null) {
             vo.setOwnerAccountUuid(owner.getAccountUuid());
             vo.setOwnerUserUuid(owner.getUserUuid());
