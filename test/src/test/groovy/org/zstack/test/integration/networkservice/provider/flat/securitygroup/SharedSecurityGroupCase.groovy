@@ -1,6 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.flat.securitygroup
 
 import org.springframework.util.ReflectionUtils
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.cascade.CascadeConstant
 import org.zstack.core.cascade.CascadeFacade
 import org.zstack.core.cloudbus.CloudBus
@@ -13,6 +14,7 @@ import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.identity.SharedResourceVO_
+import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
 import org.zstack.header.vm.VmNicVO_
@@ -88,6 +90,8 @@ class SharedSecurityGroupCase extends SubCase {
         testPublicShareAndReduceScope()
         testDeleteFailureIsReported()
         testDeleteSharedAndOrdinaryGroups()
+        testAttachUsesOnlyTargetNetworkSelection()
+        testAttachPreservesOtherL3SystemTag()
     }
 
     @Override
@@ -904,6 +908,112 @@ class SharedSecurityGroupCase extends SubCase {
             resourceUuids = [secondL3Uuid]
             accountUuids = [accounts.B.uuid]
         }
+    }
+
+    void testAttachUsesOnlyTargetNetworkSelection() {
+        String deferredL3Uuid = createTestNetwork("deferred-security-network", "192.168.230", true)
+        String rootImageUuid = env.inventoryByName("image").uuid
+        String offeringUuid = env.inventoryByName("instanceOffering").uuid
+        String tenantSessionId = sessions.A.uuid
+        SecurityGroupInventory deferredGroup = createSecurityGroup { name = "deferred-security-group" }
+        setSecurityGroupSharing {
+            securityGroupUuid = deferredGroup.uuid
+            mode = "Specified"
+            accountUuids = [accounts.A.uuid]
+        }
+        shareResource {
+            resourceUuids = [deferredL3Uuid, secondL3Uuid, rootImageUuid, offeringUuid]
+            accountUuids = [accounts.A.uuid]
+            toPublic = false
+        }
+
+        String deferredSelection = "l3::${deferredL3Uuid}::SecurityGroupUuids::${deferredGroup.uuid}"
+        String deferredPolicy = "l3::${deferredL3Uuid}::securityGroupIngressPolicy::DENY::securityGroupEgressPolicy::DENY"
+        VmInstanceInventory vm = createVmInstance {
+            name = "deferred-security-selection"
+            imageUuid = rootImageUuid
+            instanceOfferingUuid = offeringUuid
+            l3NetworkUuids = [deferredL3Uuid]
+            strategy = VmCreationStrategy.JustCreate.toString()
+            systemTags = [deferredSelection, deferredPolicy]
+            sessionId = tenantSessionId
+        }
+
+        // Removing the service before first start leaves the original selection pending.
+        def provider = queryNetworkServiceProvider { conditions = ["type=SecurityGroup"] }[0]
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = deferredL3Uuid
+            networkServices = [(provider.uuid): ["SecurityGroup"]]
+        }
+        startVmInstance {
+            uuid = vm.uuid
+            sessionId = tenantSessionId
+        }
+
+        assert VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm.uuid) == [deferredSelection]
+        assert VmSystemTags.SECURITY_GROUP_POLICY.getTags(vm.uuid) == [deferredPolicy]
+
+        setSecurityGroupSharing {
+            securityGroupUuid = deferredGroup.uuid
+            mode = "None"
+        }
+        VmInstanceInventory attached = attachL3NetworkToVm {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = secondL3Uuid
+            systemTags = ["l3::${secondL3Uuid}::SecurityGroupUuids::${ownGroup.uuid}".toString(),
+                          "l3::${secondL3Uuid}::securityGroupIngressPolicy::ALLOW::securityGroupEgressPolicy::DENY".toString()]
+            sessionId = tenantSessionId
+        }
+
+        VmNicInventory newNic = attached.vmNics.find { it.l3NetworkUuid == secondL3Uuid }
+        assert newNic != null
+
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmInstanceUuid, vm.uuid).list()
+        assert refs.size() == 1
+        VmNicSecurityGroupRefVO ref = refs[0]
+        assert ref.vmNicUuid == newNic.uuid
+        assert ref.securityGroupUuid == ownGroup.uuid
+
+        def policies = queryVmNicSecurityPolicy { conditions = ["vmNicUuid=${newNic.uuid}"] }
+        assert policies.size() == 1
+        assert policies[0].ingressPolicy == "ALLOW"
+        assert policies[0].egressPolicy == "DENY"
+
+        assert VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm.uuid) == [deferredSelection]
+        assert VmSystemTags.SECURITY_GROUP_POLICY.getTags(vm.uuid) == [deferredPolicy]
+    }
+
+    void testAttachPreservesOtherL3SystemTag() {
+        String tenantSessionId = sessions.B.uuid
+        SecurityGroupInventory group = createSecurityGroup {
+            name = "stored-security-selection"
+            sessionId = tenantSessionId
+        }
+        shareResource {
+            resourceUuids = [secondL3Uuid]
+            accountUuids = [accounts.B.uuid]
+            toPublic = false
+        }
+
+        String storedSelection = "l3::${l3Uuid}::SecurityGroupUuids::${group.uuid}"
+        createSystemTag {
+            resourceUuid = vmB.uuid
+            resourceType = VmInstanceVO.simpleName
+            tag = storedSelection
+            sessionId = tenantSessionId
+        }
+        VmInstanceInventory attached = attachL3NetworkToVm {
+            vmInstanceUuid = vmB.uuid
+            l3NetworkUuid = secondL3Uuid
+            systemTags = ["l3::${secondL3Uuid}::SecurityGroupUuids::${group.uuid}".toString()]
+            sessionId = tenantSessionId
+        }
+
+        VmNicInventory newNic = attached.vmNics.find { it.l3NetworkUuid == secondL3Uuid }
+        assert newNic != null
+        assert bound(group.uuid, newNic.uuid)
+        assert !bound(group.uuid, vmB.vmNics[0].uuid)
+        assert VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmB.uuid) == [storedSelection]
     }
 
     void testDeleteFailureIsReported() {
