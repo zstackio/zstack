@@ -27,9 +27,9 @@ import java.util.List;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10336;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10337;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10338;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10372;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10373;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10374;
 
 public class SecureBootResourceConfigGuard implements Component, GlobalApiMessageInterceptor {
     private static final List<VmInstanceState> ALLOWED_STATES = Arrays.asList(VmInstanceState.Created, VmInstanceState.Stopped);
@@ -103,7 +103,7 @@ public class SecureBootResourceConfigGuard implements Component, GlobalApiMessag
         if (!VmTpmManager.isUefiBootMode(bootMode)) {
             return null;
         }
-        return operr(ORG_ZSTACK_COMPUTE_VM_10338, "Secure Boot requires an x86_64 VM, but vm[uuid:%s] has architecture %s",
+        return operr(ORG_ZSTACK_COMPUTE_VM_10374, "Secure Boot requires an x86_64 VM, but vm[uuid:%s] has architecture %s",
                 vm.getUuid(), vm.getArchitecture());
     }
 
@@ -115,7 +115,7 @@ public class SecureBootResourceConfigGuard implements Component, GlobalApiMessag
 
         String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(resourceUuid, VmSystemTags.BOOT_MODE_TOKEN);
         if (!VmTpmManager.isUefiBootMode(bootMode)) {
-            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10337,
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10373,
                     "cannot enable Secure Boot on vm[uuid:%s], UEFI boot mode is required", resourceUuid));
         }
     }
@@ -138,7 +138,7 @@ public class SecureBootResourceConfigGuard implements Component, GlobalApiMessag
 
         VmInstanceState state = vmStateOf(msg.getResourceUuid());
         if (state != null && !ALLOWED_STATES.contains(state)) {
-            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10336,
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10372,
                     "cannot delete %s of vm[uuid:%s] in state %s, the vm must be in state %s",
                     VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT.getCanonicalName(), msg.getResourceUuid(), state, ALLOWED_STATES));
         }

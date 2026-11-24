@@ -309,13 +309,13 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         sender.send(cmd, READ_VM_HOST_FILE_PATH, wrapper -> {
             KVMAgentCommands.ReadVmHostFileContentResponse readRsp = wrapper.getResponse(KVMAgentCommands.ReadVmHostFileContentResponse.class);
             return readRsp.isSuccess() ? null :
-                    operr(ORG_ZSTACK_KVM_10163, "failed to read file content response: %s", readRsp.getError());
+                    operr(ORG_ZSTACK_KVM_10165, "failed to read file content response: %s", readRsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
             public void success(KvmResponseWrapper wrapper) {
                 KVMAgentCommands.ReadVmHostFileContentResponse readRsp = wrapper.getResponse(KVMAgentCommands.ReadVmHostFileContentResponse.class);
                 if (!readRsp.isSuccess()) {
-                    reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    reply.setError(operr(ORG_ZSTACK_KVM_10165,
                             "failed to read file content response: %s", readRsp.getError()));
                     bus.reply(msg, reply);
                     return;
@@ -369,7 +369,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                 continue;
             }
             if (to.getError() != null) {
-                errors.add(operr(ORG_ZSTACK_KVM_10163, "failed to read file %s: %s", path, to.getError())
+                errors.add(operr(ORG_ZSTACK_KVM_10165, "failed to read file %s: %s", path, to.getError())
                         .withOpaque("path", path));
                 continue;
             }
@@ -442,14 +442,14 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
             return null;
         }
 
-        return operr(ORG_ZSTACK_KVM_10163, "failed to read file content from host[uuid=%s]", msg.getHostUuid())
+        return operr(ORG_ZSTACK_KVM_10165, "failed to read file content from host[uuid=%s]", msg.getHostUuid())
                 .causedBy(errors);
     }
 
     private ErrorCode syncToBackupFiles(SyncVmHostFilesFromHostMsg msg,
                                         KVMAgentCommands.ReadVmHostFileContentResponse readRsp) {
         if (msg.getBackupResourceUuid() == null || msg.getBackupResourceUuid().isEmpty()) {
-            return operr(ORG_ZSTACK_KVM_10163, "backupResourceUuid is required when syncToBackup is true");
+            return operr(ORG_ZSTACK_KVM_10165, "backupResourceUuid is required when syncToBackup is true");
         }
 
         // Query the source VmHostFileVO records for afterBackup callback
@@ -470,13 +470,13 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                 continue;
             }
             if (to.getError() != null) {
-                errors.add(operr(ORG_ZSTACK_KVM_10163,
+                errors.add(operr(ORG_ZSTACK_KVM_10165,
                         "failed to read backup file %s: %s", to.getPath(), to.getError())
                         .withOpaque("path", to.getPath()));
                 continue;
             }
             if (to.getContentBase64() == null) {
-                errors.add(operr(ORG_ZSTACK_KVM_10163, "backup file %s returns empty content", to.getPath())
+                errors.add(operr(ORG_ZSTACK_KVM_10165, "backup file %s returns empty content", to.getPath())
                         .withOpaque("path", to.getPath()));
                 continue;
             }
@@ -550,7 +550,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
             return null;
         }
 
-        return operr(ORG_ZSTACK_KVM_10163, "failed to read backup file content from host[uuid=%s]", msg.getHostUuid())
+        return operr(ORG_ZSTACK_KVM_10165, "failed to read backup file content from host[uuid=%s]", msg.getHostUuid())
                 .causedBy(errors);
     }
 
@@ -683,7 +683,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                                     msg.getSrcVmUuid(), details));
                             trigger.next();
                         } else {
-                            trigger.fail(operr(ORG_ZSTACK_KVM_10163, "failed to sync host file for VM[uuid=%s]", msg.getSrcVmUuid())
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10165, "failed to sync host file for VM[uuid=%s]", msg.getSrcVmUuid())
                                     .causedBy(errorCodeList));
                         }
                     }
@@ -868,7 +868,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                 .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
                 .findTuple();
         if (tuple == null) {
-            reply.setError(operr(ORG_ZSTACK_KVM_10163, "VM instance [uuid:%s] not found", msg.getVmInstanceUuid()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10165, "VM instance [uuid:%s] not found", msg.getVmInstanceUuid()));
             bus.reply(msg, reply);
             return;
         }
@@ -878,7 +878,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
             hostUuid = tuple.get(1, String.class);
         }
         if (hostUuid == null) {
-            reply.setError(operr(ORG_ZSTACK_KVM_10163, "VM instance [uuid:%s] has no host", msg.getVmInstanceUuid()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10165, "VM instance [uuid:%s] has no host", msg.getVmInstanceUuid()));
             bus.reply(msg, reply);
             return;
         }
@@ -968,7 +968,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                     sender.send(cmd, WRITE_VM_HOST_FILE_PATH, wrapper -> {
                         KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
                         return writeRsp.isSuccess() ? null :
-                                operr(ORG_ZSTACK_KVM_10163,
+                                operr(ORG_ZSTACK_KVM_10165,
                                         "failed to write/delete host file response: %s", writeRsp.getError());
                     }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                         @Override
@@ -980,7 +980,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            trigger.fail(operr(ORG_ZSTACK_KVM_10163, "failed to restore host files for VM[uuid:%s]", msg.getVmInstanceUuid())
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10165, "failed to restore host files for VM[uuid:%s]", msg.getVmInstanceUuid())
                                     .causedBy(errorCode));
                         }
                     });
@@ -1097,7 +1097,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         sender.send(cmd, BACKUP_VM_HOST_FILE_PATH, wrapper -> {
             KVMAgentCommands.BackupVmHostFileResponse rsp = wrapper.getResponse(KVMAgentCommands.BackupVmHostFileResponse.class);
             return rsp.isSuccess() ? null :
-                    operr(ORG_ZSTACK_KVM_10163, "failed to backup vm host file on hypervisor[hostUuid=%s]", msg.getHostUuid())
+                    operr(ORG_ZSTACK_KVM_10165, "failed to backup vm host file on hypervisor[hostUuid=%s]", msg.getHostUuid())
                             .withOpaque("host.uuid", msg.getHostUuid())
                             .withOpaque("agent.error", rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
@@ -1163,7 +1163,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         new KvmCommandSender(hostUuid).send(cmd, WRITE_VM_HOST_FILE_PATH, wrapper -> {
             KVMAgentCommands.WriteVmHostFileContentResponse rsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
             return rsp.isSuccess() ? null :
-                    operr(ORG_ZSTACK_KVM_10163, "failed to delete host file[path=%s] on host[uuid=%s]: %s",
+                    operr(ORG_ZSTACK_KVM_10165, "failed to delete host file[path=%s] on host[uuid=%s]: %s",
                             path, hostUuid, rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1189,7 +1189,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                     logger.warn(String.format("force delete VmHostBackupFile[uuid:%s] ignored cleanup error: %s",
                             backup.getUuid(), e.getMessage()), e);
                 } else {
-                    reply.setError(operr(ORG_ZSTACK_KVM_10163, "failed to delete VmHostBackupFile[uuid:%s]: %s",
+                    reply.setError(operr(ORG_ZSTACK_KVM_10165, "failed to delete VmHostBackupFile[uuid:%s]: %s",
                             backup.getUuid(), e.getMessage()));
                 }
             }
@@ -1216,7 +1216,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                         .eq(VmHostBackupFileVO_.resourceUuid, resourceUuid)
                         .select(VmHostBackupFileVO_.type).listValues();
                 if (!savedTypes.containsAll(requiredTypes)) {
-                    completion.fail(operr(ORG_ZSTACK_KVM_10163,
+                    completion.fail(operr(ORG_ZSTACK_KVM_10165,
                             "cannot save all host state for VM[uuid:%s] to resource[uuid:%s], required:%s, saved:%s",
                             vmUuid, resourceUuid, requiredTypes, savedTypes));
                     return;

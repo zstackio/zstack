@@ -14,7 +14,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10163;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10165;
 
 public class DummyVmHostFileManager implements VmHostFileManager {
     private static final CLogger logger = Utils.getLogger(DummyVmHostFileManager.class);
@@ -23,7 +23,7 @@ public class DummyVmHostFileManager implements VmHostFileManager {
     public void backupVmHostFiles(String vmUuid, String resourceUuid, Completion completion) {
         if (Q.New(VmHostFileVO.class).eq(VmHostFileVO_.vmInstanceUuid, vmUuid).isExists()
                 || Q.New(TpmVO.class).eq(TpmVO_.vmInstanceUuid, vmUuid).isExists()) {
-            completion.fail(operr(ORG_ZSTACK_KVM_10163,
+            completion.fail(operr(ORG_ZSTACK_KVM_10165,
                     "VM[uuid:%s] requires a host file backup manager for resource[uuid:%s]",
                     vmUuid, resourceUuid));
             return;

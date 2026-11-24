@@ -199,7 +199,7 @@ public class KvmTpmManager extends AbstractService {
 
     private void handle(AddTpmMsg msg) {
         if (msg.getKeyProviderUuid() != null && msg.getResourceUuidKeyFrom() != null) {
-            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163,
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10165,
                     "keyProviderUuid and resourceUuidKeyFrom cannot be set at the same time"));
         }
 
@@ -269,7 +269,7 @@ public class KvmTpmManager extends AbstractService {
                             .find();
 
                     if (!SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
-                        trigger.fail(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                        trigger.fail(err(ORG_ZSTACK_KVM_10165, VM_STATE_ERROR,
                                 "The current VM state does not support adding TPM operations")
                                 .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
                         return;
@@ -280,7 +280,7 @@ public class KvmTpmManager extends AbstractService {
             .then(Flow.of("check-tpm-not-exists")
                 .handle(trigger -> {
                     if (VmTpmManager.findTpmUuidForVmOrNull(context.vmInstanceUuid) != null) {
-                        trigger.fail(err(ORG_ZSTACK_KVM_10163, TPM_ALREADY_EXISTS, "tpm device already exists"));
+                        trigger.fail(err(ORG_ZSTACK_KVM_10165, TPM_ALREADY_EXISTS, "tpm device already exists"));
                         return;
                     }
                     trigger.next();
@@ -417,7 +417,7 @@ public class KvmTpmManager extends AbstractService {
                             .find();
 
                     if (!SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
-                        trigger.fail(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                        trigger.fail(err(ORG_ZSTACK_KVM_10165, VM_STATE_ERROR,
                                 "The current VM state does not support removing TPM operations")
                                 .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
                         return;
@@ -462,7 +462,7 @@ public class KvmTpmManager extends AbstractService {
                         new KvmCommandSender(hostUuid).send(cmd, KVMConstant.WRITE_VM_HOST_FILE_PATH, wrapper -> {
                             KVMAgentCommands.WriteVmHostFileContentResponse rsp =
                                     wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
-                            return rsp.isSuccess() ? null : operr(ORG_ZSTACK_KVM_10163, "failed to delete host files on host[uuid=%s]", hostUuid);
+                            return rsp.isSuccess() ? null : operr(ORG_ZSTACK_KVM_10165, "failed to delete host files on host[uuid=%s]", hostUuid);
                         }, new ReturnValueCompletion<KvmResponseWrapper>(whileCompletion) {
                             @Override
                             public void success(KvmResponseWrapper wrapper) {
@@ -661,7 +661,7 @@ public class KvmTpmManager extends AbstractService {
                             trigger.next();
                             return;
                         }
-                        trigger.fail(operr(ORG_ZSTACK_KVM_10163, "Failed to clone encrypted resource key")
+                        trigger.fail(operr(ORG_ZSTACK_KVM_10165, "Failed to clone encrypted resource key")
                                 .withOpaque("src.tpm.uuid", originTpmUuid)
                                 .causedBy(errorCodeList));
                     }
@@ -961,7 +961,7 @@ public class KvmTpmManager extends AbstractService {
                         if (context.errorsOnSendCmd.getCauses().size() == 1) {
                             trigger.fail(context.errorsOnSendCmd.getCauses().get(0));
                         } else {
-                            trigger.fail(operr(ORG_ZSTACK_KVM_10163, "failed to delete TPM files on multiple hosts")
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10165, "failed to delete TPM files on multiple hosts")
                                     .withOpaque("vm.uuid", vmUuid)
                                     .causedBy(context.errorsOnSendCmd.getCauses()));
                         }
@@ -1211,7 +1211,7 @@ public class KvmTpmManager extends AbstractService {
     }
 
     private void handle(APIUpdateTpmMsg msg) {
-        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, NOT_SUPPORTED,
+        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10165, NOT_SUPPORTED,
                 "UpdateTpm is not supported in current version"));
     }
 }

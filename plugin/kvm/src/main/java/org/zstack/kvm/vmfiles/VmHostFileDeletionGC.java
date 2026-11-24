@@ -74,7 +74,7 @@ public class VmHostFileDeletionGC extends EventBasedGarbageCollector {
         }
 
         if (status != HostStatus.Connected) {
-            completion.fail(operr(ORG_ZSTACK_KVM_10163, "the host[uuid:%s] is not connected", hostUuid));
+            completion.fail(operr(ORG_ZSTACK_KVM_10165, "the host[uuid:%s] is not connected", hostUuid));
             return;
         }
 

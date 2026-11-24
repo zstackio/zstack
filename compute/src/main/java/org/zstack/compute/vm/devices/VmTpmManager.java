@@ -51,7 +51,7 @@ import static org.zstack.header.tpm.TpmErrors.VM_STATE_ERROR;
 import static org.zstack.header.vm.additions.VmHostFileType.NvRam;
 import static org.zstack.header.vm.additions.VmHostFileType.TpmState;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10163;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10165;
 
 public class VmTpmManager {
     private static final CLogger logger = Utils.getLogger(VmTpmManager.class);
@@ -88,13 +88,13 @@ public class VmTpmManager {
                     em.refresh(vm, LockModeType.PESSIMISTIC_WRITE);
                 }
                 if (vm == null) {
-                    throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                    throw new OperationFailureException(err(ORG_ZSTACK_KVM_10165, VM_STATE_ERROR,
                             "VM[uuid:%s] no longer exists for adding TPM", vmUuid));
                 }
                 if (requireStopped) {
                     String rootUuid = vm.getRootVolumeUuid();
                     if (rootUuid == null) {
-                        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10165, VM_STATE_ERROR,
                                 "VM[uuid:%s] has no root volume for adding TPM", vmUuid));
                     }
                     // Cold migration's status UPDATE competes for this root row.
@@ -104,13 +104,13 @@ public class VmTpmManager {
                     }
                     if (root == null || root.getStatus() != VolumeStatus.Ready
                             || !SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
-                        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
+                        throw new OperationFailureException(err(ORG_ZSTACK_KVM_10165, VM_STATE_ERROR,
                                 "VM[uuid:%s] must be stopped with its root volume ready for adding TPM", vmUuid));
                     }
                 }
                 if (!em.createQuery("select t.uuid from TpmVO t where t.vmInstanceUuid = :vmUuid", String.class)
                         .setParameter("vmUuid", vmUuid).getResultList().isEmpty()) {
-                    throw new OperationFailureException(err(ORG_ZSTACK_KVM_10163, TPM_ALREADY_EXISTS,
+                    throw new OperationFailureException(err(ORG_ZSTACK_KVM_10165, TPM_ALREADY_EXISTS,
                             "tpm device already exists"));
                 }
 

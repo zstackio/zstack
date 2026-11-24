@@ -28,7 +28,7 @@ public class KvmVmHostFileFactory {
         switch (file.getType()) {
         case NvRam: return new NvRamVmHostFileBase(file);
         case TpmState: return new TpmStateVmHostFileBase(file);
-        default: throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163,
+        default: throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10165,
                 "invalid VM host file type: %s", file.getType()));
         }
     }
@@ -37,7 +37,7 @@ public class KvmVmHostFileFactory {
         switch (backupFile.getType()) {
         case NvRam: return new NvRamVmHostBackupFileBase(backupFile);
         case TpmState: return new TpmStateVmHostBackupFileBase(backupFile);
-        default: throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163,
+        default: throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10165,
                 "invalid VM host file type: %s", backupFile.getType()));
         }
     }

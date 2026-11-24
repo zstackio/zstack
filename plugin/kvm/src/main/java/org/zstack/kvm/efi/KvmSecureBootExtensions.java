@@ -288,13 +288,13 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         sender.send(cmd, WRITE_VM_HOST_FILE_PATH, wrapper -> {
             KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
             return writeRsp.isSuccess() ? null :
-                    operr(ORG_ZSTACK_KVM_10163, "failed to write file content response: %s", writeRsp.getError());
+                    operr(ORG_ZSTACK_KVM_10165, "failed to write file content response: %s", writeRsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper wrapper) {
                 KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
                 if (!writeRsp.isSuccess()) {
-                    completion.fail(operr(ORG_ZSTACK_KVM_10163,
+                    completion.fail(operr(ORG_ZSTACK_KVM_10165,
                             "failed to write file content response: %s", writeRsp.getError()));
                     return;
                 }
@@ -462,7 +462,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                         .findValue();
                 if ((hasContent || latestChangeDate != null)
                         && (context.sameHost || isFileLevelReadError(context.syncFromOriginHostError))) {
-                    trigger.fail(operr(ORG_ZSTACK_KVM_10164,
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10166,
                             "%s file[path:%s] of VM[uuid:%s] cannot be read on host[uuid:%s], it may be missing or corrupted; "
                                     + "restore the original file before starting the VM",
                             context.type, context.path, context.vmUuid, context.vmHostFile.getHostUuid())
@@ -508,7 +508,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                             .eq(VmHostBackupFileVO_.uuid, context.backupUuid)
                             .find();
                     if (context.vmBackupFileVO == null) {
-                        trigger.fail(operr(ORG_ZSTACK_KVM_10163, "cannot find matched vm-host backup file[backupUuid:%s]",
+                        trigger.fail(operr(ORG_ZSTACK_KVM_10165, "cannot find matched vm-host backup file[backupUuid:%s]",
                                 context.backupUuid));
                         return;
                     }
@@ -539,7 +539,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 if (content == null) {
                     if (context.vmBackupFileVO != null && StringUtils.isNotBlank(context.backupUuid)
                             && context.type == VmHostFileType.TpmState) {
-                        trigger.fail(operr(ORG_ZSTACK_KVM_10163,
+                        trigger.fail(operr(ORG_ZSTACK_KVM_10165,
                                 "TPM state of vm-host backup file[uuid:%s] is not saved, cannot keep the TPM of VM[uuid:%s]",
                                 context.vmBackupFileVO.getUuid(), context.vmUuid));
                         return;

@@ -2866,9 +2866,9 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_KVM_10164 = "ORG_ZSTACK_KVM_10164";
 
-    public static final String ORG_ZSTACK_KVM_10163 = "ORG_ZSTACK_KVM_10163";
+    public static final String ORG_ZSTACK_KVM_10165 = "ORG_ZSTACK_KVM_10165";
 
-    public static final String ORG_ZSTACK_KVM_10164 = "ORG_ZSTACK_KVM_10164";
+    public static final String ORG_ZSTACK_KVM_10166 = "ORG_ZSTACK_KVM_10166";
 
     public static final String ORG_ZSTACK_ZSV_10000 = "ORG_ZSTACK_ZSV_10000";
 
@@ -10258,13 +10258,13 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_COMPUTE_VM_10350 = "ORG_ZSTACK_COMPUTE_VM_10350";
 
 
-    public static final String ORG_ZSTACK_COMPUTE_VM_10335 = "ORG_ZSTACK_COMPUTE_VM_10335";
+    public static final String ORG_ZSTACK_COMPUTE_VM_10371 = "ORG_ZSTACK_COMPUTE_VM_10371";
 
-    public static final String ORG_ZSTACK_COMPUTE_VM_10336 = "ORG_ZSTACK_COMPUTE_VM_10336";
+    public static final String ORG_ZSTACK_COMPUTE_VM_10372 = "ORG_ZSTACK_COMPUTE_VM_10372";
 
-    public static final String ORG_ZSTACK_COMPUTE_VM_10337 = "ORG_ZSTACK_COMPUTE_VM_10337";
+    public static final String ORG_ZSTACK_COMPUTE_VM_10373 = "ORG_ZSTACK_COMPUTE_VM_10373";
 
-    public static final String ORG_ZSTACK_COMPUTE_VM_10338 = "ORG_ZSTACK_COMPUTE_VM_10338";
+    public static final String ORG_ZSTACK_COMPUTE_VM_10374 = "ORG_ZSTACK_COMPUTE_VM_10374";
 
     public static final String ORG_ZSTACK_IDENTITY_LOGIN_10000 = "ORG_ZSTACK_IDENTITY_LOGIN_10000";
 

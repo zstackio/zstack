@@ -1354,7 +1354,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
         VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getVolumeSnapshotGroupUuid(), VolumeSnapshotGroupVO.class);
         if (group != null && group.getVolumeSnapshotRefs().stream()
                 .anyMatch(ref -> VolumeType.Memory.toString().equals(ref.getVolumeType()))) {
-            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10335,
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10371,
                     "volume snapshot group[uuid:%s] contains a memory snapshot, cannot create a vm from it",
                     msg.getVolumeSnapshotGroupUuid()));
         }

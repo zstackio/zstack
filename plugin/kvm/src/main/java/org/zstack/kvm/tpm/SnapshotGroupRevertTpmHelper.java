@@ -32,7 +32,7 @@ import java.util.List;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10163;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10165;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SnapshotGroupRevertTpmHelper {
@@ -56,7 +56,7 @@ public class SnapshotGroupRevertTpmHelper {
         if (snapshotGroupUuid == null) {
             if (apiMsg.getResetTpm() != null) {
                 throw new OperationFailureException(operr(
-                        ORG_ZSTACK_KVM_10163,
+                        ORG_ZSTACK_KVM_10165,
                         "volume snapshot[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
                         apiMsg.getVolumeSnapshotUuid()));
             }
@@ -91,14 +91,14 @@ public class SnapshotGroupRevertTpmHelper {
                 .isExists();
         if ((requireTpmBackup || snapshotGroupHasTpm) && tpmBackupFile == null) {
             throw new OperationFailureException(operr(
-                    ORG_ZSTACK_KVM_10163,
+                    ORG_ZSTACK_KVM_10165,
                     "volume snapshot group[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
                     snapshotGroupUuid));
         }
         boolean requiresNvRam = snapshotGroupHasTpm || SecureBootRecordHelper.secureBootOfSnapshotGroup(snapshotGroupUuid);
         if (requiresNvRam && nvRamBackupFile == null) {
             throw new OperationFailureException(operr(
-                    ORG_ZSTACK_KVM_10163,
+                    ORG_ZSTACK_KVM_10165,
                     "volume snapshot group[uuid:%s] has no saved NVRAM state, cannot restore its firmware state",
                     snapshotGroupUuid));
         }
@@ -107,7 +107,7 @@ public class SnapshotGroupRevertTpmHelper {
             VmHostFileContentVO content = Q.New(VmHostFileContentVO.class)
                     .eq(VmHostFileContentVO_.uuid, nvRamBackupFile.getUuid()).find();
             if (content == null) {
-                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163, "%s",
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10165, "%s",
                         String.format("volume snapshot group[uuid:%s] has no saved NvRam content for backup file[uuid:%s], "
                                         + "cannot restore its firmware state",
                                 snapshotGroupUuid, nvRamBackupFile.getUuid())));
