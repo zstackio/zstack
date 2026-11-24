@@ -28,7 +28,7 @@ mysql() {
 }
 
 apply_dataset_migration() {
-    sed -n '/^DROP PROCEDURE IF EXISTS upgrade560DatasetAndAudit;/,/^DROP PROCEDURE upgrade560DatasetAndAudit;/p' "$migration" | mysql zstack
+    sed -n '/^CREATE TABLE IF NOT EXISTS `zstack`\.`ZsDatasetSpaceRefVO`/,/^    MODIFY `responseDump`.*;$/p' "$migration" | mysql zstack
 }
 
 uuid36='92b90ae6-af52-4325-b92d-c03b540ce7d8'
@@ -38,7 +38,6 @@ for original_width in 32 36; do
     mysql <<SQL
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
-CREATE TABLE zstack.schema_version (script varchar(255), success boolean, checksum int);
 CREATE TABLE zstack.AsyncRestVO (requestData LONGTEXT CHARACTER SET utf8, result MEDIUMTEXT CHARACTER SET utf8);
 CREATE TABLE zstack.AuditsVO (requestDump MEDIUMTEXT CHARACTER SET utf8, responseDump MEDIUMTEXT CHARACTER SET utf8);
 CREATE TABLE zstack.ZsDatasetSpaceRefVO (uuid varchar(32) PRIMARY KEY, appInstanceUuid varchar($original_width) NOT NULL);
@@ -79,7 +78,6 @@ done
 mysql <<'SQL'
 DROP DATABASE zstack;
 CREATE DATABASE zstack;
-CREATE TABLE zstack.schema_version (script varchar(255), success boolean, checksum int);
 CREATE TABLE zstack.AsyncRestVO (requestData LONGTEXT CHARACTER SET utf8, result MEDIUMTEXT CHARACTER SET utf8);
 CREATE TABLE zstack.AuditsVO (requestDump MEDIUMTEXT CHARACTER SET utf8, responseDump MEDIUMTEXT CHARACTER SET utf8);
 SQL
