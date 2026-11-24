@@ -58,6 +58,9 @@ final class MemoryVmConfiguration {
         ksm.installValidatorExtension((uuid, oldValue, newValue) -> {
             if (!Objects.equals(oldValue, newValue)) { request(uuid, APPLY_KSM, Boolean.valueOf(newValue)); }
         });
+        ksm.installLocalUpdateExtension((config, uuid, type, oldValue, newValue) -> {
+            if (!Objects.equals(oldValue, newValue)) { reconcileKsmAfterChange(uuid); }
+        });
         ksm.installLocalDeleteExtension((config, uuid, type, oldValue) -> {
             try { request(uuid, APPLY_KSM, null); }
             catch (GlobalConfigException failed) {
@@ -69,6 +72,7 @@ final class MemoryVmConfiguration {
                 }
                 throw failed;
             }
+            reconcileKsmAfterChange(uuid);
         });
         ksm.installRuntimeStateReader(uuid -> readState(uuid, "ksm"));
     }
@@ -109,6 +113,22 @@ final class MemoryVmConfiguration {
             Object value = state == null ? null : state.get(feature);
             return value instanceof Map ? (Map<String, Object>) value : status("Unknown", "VM_MEMORY_STATE_UNKNOWN");
         } catch (RuntimeException | ExecutionException e) { return status("Unknown", e.getMessage()); }
+    }
+
+    /** Re-read the committed KSM value on the existing per-VM queue after a config write. */
+    void reconcileKsmAfterChange(String vm) {
+        try {
+            bus.send(message(vm, APPLY_KSM, null), new CloudBusCallBack(null) {
+                @Override public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("VM[%s] page sharing configuration was saved, but runtime reconciliation failed: %s",
+                                vm, reply.getError() == null ? "NO_ERROR" : reply.getError().getDetails()));
+                    }
+                }
+            });
+        } catch (RuntimeException e) {
+            logger.warn(String.format("VM[%s] page sharing configuration was saved, but runtime reconciliation could not be scheduled", vm), e);
+        }
     }
 
     private void reconcileAfterReclaimChange(String vm) {

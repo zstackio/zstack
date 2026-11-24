@@ -1238,6 +1238,31 @@ public class MemoryLifecycleHooksCallbackTest {
         assertTrue("the validator can now persist the candidate, replacing the old value", f.repository.sharePages);
     }
 
+    @Test public void committedKsmValuesReconcileAfterValidatorsFinishOutOfOrder() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+
+        // Two pre-save validations leave the runtime at the older request's value.
+        MemoryVmConfigurationMsg first = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        first.setKsmEnabled(true); f.coordinator.handle(first); f.runQueued();
+        MemoryVmConfigurationMsg second = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        second.setKsmEnabled(false); f.coordinator.handle(second); f.runQueued();
+        assertEquals(Arrays.asList(true, false), f.ksmValues);
+
+        // The older request commits last. Each after-commit callback queues the existing
+        // APPLY_KSM action, which reads the now committed value when it reaches the VM queue.
+        f.repository.sharePages = false;
+        f.coordinator.reconcileKsmAfterChange("vm-1");
+        f.repository.sharePages = true;
+        f.coordinator.reconcileKsmAfterChange("vm-1");
+        assertEquals(2, f.sent.size());
+        for (MemoryVmConfigurationMsg queued : f.sent) {
+            assertEquals(MemoryVmConfigurationMsg.Action.APPLY_KSM, queued.getAction());
+            assertNull(queued.getKsmEnabled());
+            f.coordinator.handle(queued); f.runQueued();
+        }
+        assertEquals(Arrays.asList(true, false, true, true), f.ksmValues);
+    }
+
     @Test public void vmReadStateRequiresMatchingInstanceAndQmpEvidence() {
         VmConfigurationFixture f = new VmConfigurationFixture();
         f.repository.reclaimMode = "deny"; f.repository.sharePages = false;
@@ -1342,12 +1367,19 @@ public class MemoryLifecycleHooksCallbackTest {
         boolean failObservationWithoutMessage;
         boolean omitVmMemoryState;
         Map<String, Object> stateCommand, ksmCommand;
+        final List<MemoryVmConfigurationMsg> sent = new ArrayList<>();
+        final List<Boolean> ksmValues = new ArrayList<>();
         final FakeManager manager = new FakeManager() {
             @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
                 if (!"state".equals(action)) {
-                    if ("set-ksm".equals(command.get("action"))) { ksmCommand = new HashMap<>(command); }
+                    if ("set-ksm".equals(command.get("action"))) {
+                        ksmCommand = new HashMap<>(command); ksmValues.add((Boolean) command.get("ksmEnabled"));
+                        proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", command.get("ksmEnabled"))));
+                    }
                     super.call(host, action, command, answer -> {
-                        answer.operationUuid = (String) command.get("operationUuid"); callback.accept(answer);
+                        answer.operationUuid = (String) command.get("operationUuid");
+                        if ("set-ksm".equals(command.get("action"))) { answer.state.put("applied", true); }
+                        callback.accept(answer);
                     }); return;
                 }
                 stateCommand = new HashMap<>(command);
@@ -1366,6 +1398,7 @@ public class MemoryLifecycleHooksCallbackTest {
             org.zstack.core.cloudbus.CloudBus bus = (org.zstack.core.cloudbus.CloudBus) Proxy.newProxyInstance(
                 getClass().getClassLoader(), new Class[]{org.zstack.core.cloudbus.CloudBus.class}, (proxy, method, args) -> {
                     if ("reply".equals(method.getName())) { reply = (MemoryVmConfigurationMsg.Reply) args[1]; }
+                    if ("send".equals(method.getName())) { sent.add((MemoryVmConfigurationMsg) args[0]); return null; }
                     if ("call".equals(method.getName())) {
                         MemoryVmConfigurationMsg msg = (MemoryVmConfigurationMsg) args[0];
                         readCalls++; readTimeout = msg.getTimeout();
