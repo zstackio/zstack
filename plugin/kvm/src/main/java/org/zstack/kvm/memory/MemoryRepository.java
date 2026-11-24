@@ -12,6 +12,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.allocator.HostCapacityVO_;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -205,15 +207,43 @@ public class MemoryRepository {
     }
 
     /** Why a standard value cannot be stored on the resource, or null when it can. */
-    public String standardChangeRefusal(MemoryStandardField field, String resourceUuid) {
+    public String standardChangeRefusal(MemoryStandardField field, String resourceUuid, String newValue) {
         return transaction(em -> {
             String scope = standardScopeOrNull(resourceUuid);
             if (scope == null) { return NOT_HOST_OR_CLUSTER; }
             if (!field.allows(scopeOf(scope))) { return field.path() + " does not support " + scope; }
             // The legacy host.ksm switch was settable on any Host or Cluster before memory optimization.
             if (field == MemoryStandardField.KSM_ENABLED && nonKvm(em, scope, resourceUuid)) { return null; }
-            return resourceRefusal(scope, resourceUuid == null ? "global" : resourceUuid);
+            String refusal = resourceRefusal(scope, resourceUuid == null ? "global" : resourceUuid);
+            if (refusal != null || (field != MemoryStandardField.ZRAM_LOGICAL_CAPACITY && field != MemoryStandardField.ZRAM_RAM_LIMIT)) {
+                return refusal;
+            }
+            return capacityChangeRefusal(em, field, scope, resourceUuid, MemoryStandardConfigCodec.decode(field.path(), newValue));
         });
+    }
+
+    /** The first Host the changed capacity would leave with a RAM limit above its logical capacity. */
+    private String capacityChangeRefusal(EntityManager em, MemoryStandardField field, String scope, String resource, Object value) {
+        Object candidate = MemoryStandardConfigAdapter.isUnmanaged(value) ? null : value;
+        for (String host : targets(em, scope, resource)) {
+            String cluster = hostCluster(host);
+            Map<MemoryStandardField, Object> values = effectiveValues(em, host, cluster);
+            Map<String, Map<MemoryStandardField, Object>> overrides = standardConfigs.readOverridesOwn(em,
+                    cluster == null ? Collections.singletonList(host) : Arrays.asList(host, cluster));
+            boolean hostOwn = overrides.getOrDefault(host, Collections.emptyMap()).get(field) != null;
+            boolean clusterOwn = cluster != null && overrides.getOrDefault(cluster, Collections.emptyMap()).get(field) != null;
+            // A more specific override keeps its own value; only the Hosts that inherit this one take it.
+            if ("Host".equals(scope) || ("Cluster".equals(scope) && !hostOwn) || ("Global".equals(scope) && !hostOwn && !clusterOwn)) {
+                values.put(field, candidate);
+            }
+            Long memory = Q.New(HostCapacityVO.class).select(HostCapacityVO_.totalPhysicalMemory)
+                    .eq(HostCapacityVO_.uuid, host).findValue();
+            String refusal = MemoryStandardConfigurationCoordinator.capacityRefusal(
+                    (Long) values.get(MemoryStandardField.ZRAM_LOGICAL_CAPACITY),
+                    (Long) values.get(MemoryStandardField.ZRAM_RAM_LIMIT), memory);
+            if (refusal != null) { return refusal + " on Host " + host; }
+        }
+        return null;
     }
 
     /** The KVM Hosts whose effective configuration a committed standard change may alter. */

@@ -47,4 +47,21 @@ public class MemoryStandardConfigAdapterTest {
         assertThrows(IllegalArgumentException.class,
                 () -> MemoryStandardConfigCodec.decode("zram.logicalCapacityBytes", "none"));
     }
+
+    @Test public void aRamLimitAboveTheZramLogicalCapacityIsRefused() {
+        long memory = 16464789504L;
+        // The default logical capacity is half of MemTotal, page aligned, as the service resolves it.
+        long half = 8232394752L;
+        assertNotNull(MemoryStandardConfigurationCoordinator.capacityRefusal(null, 8769265664L, memory));
+        assertNull(MemoryStandardConfigurationCoordinator.capacityRefusal(null, half, memory));
+        assertNotNull(MemoryStandardConfigurationCoordinator.capacityRefusal(null, half + 4096, memory));
+        assertNotNull(MemoryStandardConfigurationCoordinator.capacityRefusal(4L << 30, 5L << 30, memory));
+        assertNull(MemoryStandardConfigurationCoordinator.capacityRefusal(12L << 30, 10L << 30, memory));
+        // A RAM limit left to the service default follows the logical capacity.
+        assertNull(MemoryStandardConfigurationCoordinator.capacityRefusal(4L << 30, null, memory));
+        // Without the Host's memory the default cannot be judged here; the service still refuses it.
+        assertNull(MemoryStandardConfigurationCoordinator.capacityRefusal(null, 8769265664L, null));
+        String reason = MemoryStandardConfigurationCoordinator.capacityRefusal(null, 8769265664L, memory);
+        assertTrue(reason, reason.contains("8769265664") && reason.contains("8232394752"));
+    }
 }
