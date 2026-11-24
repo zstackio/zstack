@@ -9,6 +9,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.tpm.api.*;
@@ -61,14 +62,16 @@ public class TpmApiInterceptor implements ApiMessageInterceptor {
                     TPM_ALREADY_EXISTS, "tpm device already exists"));
         }
 
-        boolean vmInSupportState = Q.New(VmInstanceVO.class)
-                .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
-                .in(VmInstanceVO_.state, SUPPORT_VM_STATES_FOR_TPM_OPERATION)
-                .isExists();
-        if (!vmInSupportState) {
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+        if (vm == null || !SUPPORT_VM_STATES_FOR_TPM_OPERATION.contains(vm.getState())) {
             throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009, VM_STATE_ERROR,
                     "The current VM state does not support adding TPM operations")
                     .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
+        }
+
+        if (!ImageArchitecture.x86_64.toString().equals(vm.getArchitecture())) {
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10014, SysErrors.NOT_SUPPORTED,
+                    "vTPM requires an x86_64 VM, but vm[uuid:%s] has architecture %s", vm.getUuid(), vm.getArchitecture()));
         }
 
         String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(msg.getVmInstanceUuid(), VmSystemTags.BOOT_MODE_TOKEN);

@@ -3350,6 +3350,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(error);
         }
 
+        if (VmInstanceConstant.USER_VM_TYPE.equals(self.getType())) {
+            String clusterUuid = msg.getHostUuid() == null ? self.getClusterUuid()
+                    : Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, msg.getHostUuid()).findValue();
+            error = SecureBootResourceConfigGuard.checkCreateArchitecture(msg.getVmInstanceInventory(), clusterUuid, rcf);
+            if (error != null) {
+                removeFailedNewVm(VmTpmManager.findTpmUuidForVmOrNull(self.getUuid()));
+                throw new OperationFailureException(error);
+            }
+        }
+
         InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply();
         if (VmCreationStrategy.JustCreate.toString().equals(msg.getStrategy())) {
             createVmButNotStart(msg, msg.getVmInstanceInventory());
@@ -8091,19 +8101,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                     completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10289, errCode, errCode.getDetails()));
                     return;
                 }
-                dbf.remove(self);
-                // clean up EO, otherwise API-retry may cause conflict if
-                // the resource uuid is set
-                try {
-                    dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
-                } catch (Exception e) {
-                    logger.warn(e.getMessage());
-                }
-
-                detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
+                removeFailedNewVm(tpmUuidForEncryptedKeyRef);
                 completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10289, errCode, errCode.getDetails()));
             }
         }).start();
+    }
+
+    private void removeFailedNewVm(String tpmUuid) {
+        dbf.remove(self);
+        // Release the caller's VM UUID so the create request can be retried.
+        try {
+            dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
+        } catch (Exception e) {
+            logger.warn(e.getMessage());
+        }
+        detachTpmKeyProviderBestEffort(tpmUuid);
     }
 
     protected void startVm(final StartVmInstanceMsg msg, final SyncTaskChain taskChain) {
