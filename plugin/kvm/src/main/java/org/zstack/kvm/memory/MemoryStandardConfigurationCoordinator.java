@@ -57,7 +57,11 @@ public final class MemoryStandardConfigurationCoordinator {
         String problem = MemoryStandardConfigCodec.problem(field.path(), value);
         if (problem != null) { throw new GlobalConfigException(problem); }
         Object decoded = MemoryStandardConfigCodec.decode(field.path(), value);
-        if (decoded instanceof Long && ((Long) decoded < 4096 || (Long) decoded % 4096 != 0)) {
+        if (field == MemoryStandardField.HOT_MEMORY_INTERVAL) {
+            if (!(decoded instanceof Long) || (Long) decoded < 300 || (Long) decoded > 86400) {
+                throw new GlobalConfigException(field.path() + " must be between 300 and 86400 seconds");
+            }
+        } else if (decoded instanceof Long && ((Long) decoded < 4096 || (Long) decoded % 4096 != 0)) {
             throw new GlobalConfigException(field.path() + " must be a positive 4KiB-aligned byte count");
         }
     }

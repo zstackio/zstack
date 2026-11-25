@@ -24,6 +24,12 @@ public final class MemorySummaryRules {
             if (state == null) {
                 detail.setMetrics(new LinkedHashMap<>()); detail.setQuality("Unknown");
             } else {
+                Long observedAt = state.getLastSampleTime();
+                if (observedAt != null && observedAt <= now + 5000
+                        && now - observedAt < MemoryOptimizationGlobalConfig.displayTtlMillis()) {
+                    JsonObject hotMemory = object(storedObject(state.getState()), "hotMemory");
+                    detail.setHotMemoryServiceState(string(hotMemory, "serviceState"));
+                }
                 Map<String, Object> savings = samples.get(host);
                 detail.setMetrics(MemoryMetricsPresentation.metrics(savings, now));
                 detail.setQuality(MemoryMetricsPresentation.quality(savings, now));

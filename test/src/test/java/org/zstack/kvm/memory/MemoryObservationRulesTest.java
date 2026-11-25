@@ -32,6 +32,28 @@ public class MemoryObservationRulesTest {
                 "{\"ksm\":{\"serviceState\":\"active\",\"tunedServiceState\":\"active\"}}", now).size());
     }
 
+    @Test public void aFailedHotMemoryObserverIsAServiceEventOnlyWhereItIsEnabled() {
+        long now = System.currentTimeMillis();
+        MemoryAgentResponse response = serviceObservation(now);
+        Map<String, Object> observer = new LinkedHashMap<>();
+        observer.put("serviceState", "failed");
+        response.state.put("hotMemory", observer);
+        MemoryStateVO enabled = desired("{\"control\":\"active\",\"hotMemory\":{\"enabled\":true}}");
+        assertEquals("hot-memory", MemoryObservationRules.serviceEvents("host", response, enabled, null, now).get(0).getService());
+        assertEquals("Failed", MemoryObservationRules.serviceEvents("host", response, enabled, null, now).get(0).getStatus());
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, enabled,
+                "{\"hotMemory\":{\"serviceState\":\"failed\"}}", now).size());
+        observer.put("serviceState", "active");
+        assertEquals("Recovered", MemoryObservationRules.serviceEvents("host", response, enabled,
+                "{\"hotMemory\":{\"serviceState\":\"failed\"}}", now).get(0).getStatus());
+        // A Host without the observer, or with the statistics off, reports nothing.
+        observer.put("serviceState", "absent");
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, enabled, null, now).size());
+        observer.put("serviceState", "failed");
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response,
+                desired("{\"control\":\"active\",\"hotMemory\":{\"enabled\":false}}"), null, now).size());
+    }
+
     @Test public void nativeServiceEventsRequireExplicitFailedOrActiveNotScanningOrUnknown() {
         long now = System.currentTimeMillis();
         MemoryStateVO policy = desired(KSM_ENABLED);

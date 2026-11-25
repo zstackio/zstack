@@ -20,6 +20,14 @@ public class MemoryHostSavingsInventory  {
         return this.metrics;
     }
 
+    public java.lang.String hotMemoryServiceState;
+    public void setHotMemoryServiceState(java.lang.String hotMemoryServiceState) {
+        this.hotMemoryServiceState = hotMemoryServiceState;
+    }
+    public java.lang.String getHotMemoryServiceState() {
+        return this.hotMemoryServiceState;
+    }
+
     public java.lang.String quality;
     public void setQuality(java.lang.String quality) {
         this.quality = quality;

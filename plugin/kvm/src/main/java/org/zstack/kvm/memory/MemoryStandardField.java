@@ -15,6 +15,8 @@ import java.util.*;
 public enum MemoryStandardField {
     KSM_ENABLED("ksm.enabled", KVMGlobalConfig.HOST_KSM, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     KSM_ZERO_PAGES("ksm.zeroPagesEnabled", MemoryStandardGlobalConfig.KSM_ZERO_PAGES, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
+    HOT_MEMORY_ENABLED("hotMemory.enabled", MemoryStandardGlobalConfig.HOT_MEMORY_ENABLED, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
+    HOT_MEMORY_INTERVAL("hotMemory.interval", MemoryStandardGlobalConfig.HOT_MEMORY_INTERVAL, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     ZRAM_ENABLED("zram.enabled", MemoryStandardGlobalConfig.ZRAM_ENABLED, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     ZRAM_LOGICAL_CAPACITY("zram.logicalCapacityBytes", MemoryStandardGlobalConfig.ZRAM_LOGICAL_CAPACITY, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     ZRAM_RAM_LIMIT("zram.ramLimitBytes", MemoryStandardGlobalConfig.ZRAM_RAM_LIMIT, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
@@ -52,7 +54,7 @@ public enum MemoryStandardField {
     public Kind kind() { return kind; }
     boolean isFeatureSwitch() {
         return this == KSM_ENABLED || this == KSM_ZERO_PAGES
-                || this == ZRAM_ENABLED || this == WRITEBACK_ENABLED;
+                || this == ZRAM_ENABLED || this == WRITEBACK_ENABLED || this == HOT_MEMORY_ENABLED;
     }
     public boolean allows(Scope scope) { return scopes.contains(scope); }
     public Set<Scope> scopes() { return Collections.unmodifiableSet(scopes); }
