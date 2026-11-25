@@ -3951,6 +3951,17 @@ public class KVMAgentCommands {
     }
 
     public static class MigrateVmCmd extends AgentCommand implements HasThreadContext {
+        @GrayVersion(value = "5.5.48")
+        private Boolean noSharePages;
+        public Boolean getNoSharePages() { return noSharePages; }
+        public void setNoSharePages(Boolean value) { noSharePages = value; }
+
+        @GrayVersion(value = "5.5.48")
+        private Map<String, Object> swapDirect;
+
+        public Map<String, Object> getSwapDirect() { return swapDirect; }
+        public void setSwapDirect(Map<String, Object> swapDirect) { this.swapDirect = swapDirect; }
+
         @GrayVersion(value = "5.0.0")
         private String vmUuid;
         @GrayVersion(value = "5.0.0")
@@ -4124,6 +4135,9 @@ public class KVMAgentCommands {
     }
 
     public static class MigrateVmResponse extends AgentResponse {
+        private Map<String, Object> swapDirect;
+        public Map<String, Object> getSwapDirect() { return swapDirect; }
+        public void setSwapDirect(Map<String, Object> swapDirect) { this.swapDirect = swapDirect; }
     }
 
     public static class VmGetCpuXmlCmd extends AgentCommand{

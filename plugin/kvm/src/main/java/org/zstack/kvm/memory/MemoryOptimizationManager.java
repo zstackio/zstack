@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.config.GlobalConfigInitExtensionPoint;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
@@ -82,6 +83,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     @Autowired private AccountManager accountManager;
     @Autowired private MemoryLifecycleHooks lifecycleHooks;
     @Autowired private ResourceDestinationMaker destMaker;
+    private MemoryVmConfiguration vmConfiguration;
     private final AtomicBoolean ticking = new AtomicBoolean();
     /** Hosts with an apply in flight from this management node. */
     private final Set<String> delivering = ConcurrentHashMap.newKeySet();
@@ -228,7 +230,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         if (message instanceof APIMessage) {
             checkReadAuthorization((APIMessage) message);
         }
-        if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
+        if (message instanceof MemoryVmConfigurationMsg) { vmConfiguration.handle((MemoryVmConfigurationMsg) message); }
+        else if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
         else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
         else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
         else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
@@ -1005,6 +1008,19 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** Runs a follow-up step off the callback thread after the given delay. */
+    public void installVmMemoryConfiguration(ResourceConfigFacade configs) {
+        vmConfiguration = new MemoryVmConfiguration(bus, thdf, repository, this);
+        vmConfiguration.install(configs);
+    }
+
+    void checkConfigurationLicense() {
+        if (license() != License.VALID) { throw new org.zstack.core.config.GlobalConfigException("A valid Cloud License is required for memory configuration changes"); }
+    }
+
+    void reconcileVmConfiguration(String vm, Consumer<MemoryAgentResponse> completion) {
+        vmConfiguration.reconcile(vm, completion);
+    }
+
     void later(Runnable task, long seconds) {
         thdf.submitTimeoutTask(task::run, TimeUnit.SECONDS, seconds);
     }
@@ -1014,6 +1030,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         communication.put("requestBytes", MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.REQUEST_BYTES, 1 << 20));
         communication.put("responseBytes", MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.RESPONSE_BYTES, 16 << 20));
         communication.put("communicationSeconds", MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.COMMUNICATION_SECONDS, 30));
+        if ("state".equals(action) && Boolean.TRUE.equals(command.get("vmMemoryState"))) {
+            // Leave time for the VM READ to return Unknown within its 10s budget.
+            communication.put("communicationSeconds", Math.min(8, communication.get("communicationSeconds")));
+        } else if ("vm-efficiency".equals(action) && Boolean.FALSE.equals(command.get("ksmEnabled"))
+                && ("check-ksm".equals(command.get("action")) || "set-ksm".equals(command.get("action")))) {
+            // Up to 120s for the unmerge estimate, 15s for the Host lock and reply margin.
+            communication.put("communicationSeconds", Math.max(180, communication.get("communicationSeconds")));
+        }
         command = new LinkedHashMap<>(command); command.put("communication", communication);
         final Map<String, Object> dispatchedCommand = command;
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

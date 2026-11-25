@@ -164,6 +164,28 @@ public class MemoryWritebackManagerCallbackTest {
         assertNull("cached Agent metrics are not a fallback", capture.summary.get());
     }
 
+    @Test
+    public void onlyRuntimeKsmDisableCallsReceiveTheLongerScanBudget() throws Exception {
+        int configured = MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.COMMUNICATION_SECONDS, 30);
+        for (String action : new String[]{"check-ksm", "set-ksm", "bind"}) {
+            for (boolean enabled : new boolean[]{false, true}) {
+                Capture capture = new Capture();
+                Map<String, Object> command = new LinkedHashMap<>();
+                command.put("action", action); command.put("ksmEnabled", enabled);
+                manager(capture).call(HOST, "vm-efficiency", command, ignored -> { });
+                int expected = !enabled && !"bind".equals(action) ? Math.max(180, configured) : configured;
+                assertEquals(expected * 1000L, capture.request.get().getTimeout());
+                Map<?, ?> dispatched = new com.google.gson.Gson().fromJson(capture.request.get().getCommand(), Map.class);
+                assertEquals(expected, ((Number) ((Map<?, ?>) dispatched.get("communication")).get("communicationSeconds")).intValue());
+                assertFalse("the caller's request must remain unchanged", command.containsKey("communication"));
+            }
+        }
+        Capture capture = new Capture();
+        Map<String, Object> read = new LinkedHashMap<>(); read.put("vmMemoryState", true);
+        manager(capture).call(HOST, "state", read, ignored -> { });
+        assertEquals(Math.min(8, configured) * 1000L, capture.request.get().getTimeout());
+    }
+
     private static Map<String, Object> savings(long now) {
         Map<String, Object> savings = new LinkedHashMap<>();
         savings.put("ksmOrdinaryBytes", 1024L); savings.put("ksmZeroBytes", 0L); savings.put("ksmTotalBytes", 1024L);
