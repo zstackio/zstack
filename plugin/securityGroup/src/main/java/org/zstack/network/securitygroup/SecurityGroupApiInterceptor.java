@@ -190,12 +190,24 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             return;
         }
 
-        List<String> systemTags = new ArrayList<>(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm.getUuid()));
+        String l3Uuid = msg.getL3NetworkUuid();
+        List<String> systemTags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm.getUuid());
         if (msg.getSystemTags() != null) {
+            for (String tag : msg.getSystemTags()) {
+                String tagL3Uuid = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTokenByTag(tag, VmSystemTags.L3_UUID_TOKEN);
+                if (tagL3Uuid == null) {
+                    tagL3Uuid = VmSystemTags.SECURITY_GROUP_POLICY.getTokenByTag(tag, VmSystemTags.L3_UUID_TOKEN);
+                }
+                if (tagL3Uuid != null && !l3Uuid.equals(tagL3Uuid)) {
+                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_IAM2_SECURITYGROUP_10004,
+                            "the l3Uuid[%s] in the label is inconsistent with the l3Uuid[%s] in the parameter", tagL3Uuid, l3Uuid));
+                }
+            }
+            systemTags = new ArrayList<>(systemTags);
             systemTags.addAll(msg.getSystemTags());
         }
         List<String> securityGroupUuids = SecurityGroupVmInstanceExtension.getSecurityGroupsByL3(systemTags)
-                .values().stream().flatMap(List::stream).distinct().collect(Collectors.toList());
+                .getOrDefault(l3Uuid, Collections.emptyList());
         if (!securityGroupUuids.isEmpty()) {
             permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(vm.getUuid()), securityGroupUuids);
         }

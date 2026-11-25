@@ -56,7 +56,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         return SecurityGroupProviderFactory.networkServiceType;
     }
 
-    private List<String> syncSystemTagToVmNicSecurityGroup(VmInstanceInventory vm, Map<String, List<String>> groups, Set<String> hiddenGroupUuids) {
+    private List<String> syncSystemTagToVmNicSecurityGroup(VmInstanceInventory vm, Map<String, List<String>> groups, Set<String> hiddenGroupUuids, String attachedL3Uuid) {
         String vmUuid = vm.getUuid();
         final List<String> sgUuids = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
@@ -102,9 +102,20 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 }
             }
         }
-        VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
+        if (attachedL3Uuid == null) {
+            VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
+        } else {
+            List<String> selectionTags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmUuid);
+            selectionTags.removeIf(tag -> !attachedL3Uuid.equals(
+                    VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTokenByTag(tag, VmSystemTags.L3_UUID_TOKEN)));
+            selectionTags.forEach(tag -> VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid, tag));
+        }
 
         List<String> tags = VmSystemTags.SECURITY_GROUP_POLICY.getTags(vmUuid);
+        if (attachedL3Uuid != null) {
+            tags.removeIf(tag -> !attachedL3Uuid.equals(
+                    VmSystemTags.SECURITY_GROUP_POLICY.getTokenByTag(tag, VmSystemTags.L3_UUID_TOKEN)));
+        }
         for (String tag : tags) {
             Map<String, String> tokens = VmSystemTags.SECURITY_GROUP_POLICY.getTokensByTag(tag);
             String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
@@ -121,7 +132,11 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                     .set(VmNicSecurityPolicyVO_.ingressPolicy, ingressPolicy)
                     .set(VmNicSecurityPolicyVO_.egressPolicy, egressPolicy).update();
         }
-        VmSystemTags.SECURITY_GROUP_POLICY.delete(vmUuid);
+        if (attachedL3Uuid == null) {
+            VmSystemTags.SECURITY_GROUP_POLICY.delete(vmUuid);
+        } else {
+            tags.forEach(tag -> VmSystemTags.SECURITY_GROUP_POLICY.delete(vmUuid, tag));
+        }
 
 
         return sgUuids.stream().distinct().collect(Collectors.toList());
@@ -161,7 +176,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 }
             }
         }
-        syncSystemTagToVmNicSecurityGroup(vm, groups, hiddenGroupUuids);
+        syncSystemTagToVmNicSecurityGroup(vm, groups, hiddenGroupUuids, null);
 
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(
                 SecurityGroupProviderFactory.networkServiceType,
@@ -370,13 +385,23 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
     @Override
     public void afterAttachNic(String nicUuid, VmInstanceInventory vmInstanceInventory, Completion completion) {
         Map<String, List<String>> groups = SecurityGroupVmInstanceExtension.getSecurityGroupsByL3(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmInstanceInventory.getUuid()));
-        Set<String> hiddenGroupUuids = Collections.emptySet();
-        if (!groups.isEmpty() && VmInstanceConstant.USER_VM_TYPE.equals(vmInstanceInventory.getType()) && VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(vmInstanceInventory.getHypervisorType())) {
-            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(vmInstanceInventory.getUuid());
-            List<String> candidates = groups.values().stream().flatMap(Collection::stream).distinct().collect(Collectors.toList());
-            hiddenGroupUuids = permissionChecker.getHiddenAdminSecurityGroupUuids(accountUuid, candidates);
+        List<String> sgUuids = Collections.emptyList();
+        if (VmInstanceConstant.USER_VM_TYPE.equals(vmInstanceInventory.getType())
+                && VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(vmInstanceInventory.getHypervisorType())) {
+            VmNicVO attachedNic = dbf.findByUuid(nicUuid, VmNicVO.class);
+            if (attachedNic != null && attachedNic.getL3NetworkUuid() != null) {
+                String l3Uuid = attachedNic.getL3NetworkUuid();
+                groups.keySet().retainAll(Collections.singleton(l3Uuid));
+                Set<String> hiddenGroupUuids = Collections.emptySet();
+                if (!groups.isEmpty()) {
+                    String accountUuid = acntMgr.getOwnerAccountUuidOfResource(vmInstanceInventory.getUuid());
+                    hiddenGroupUuids = permissionChecker.getHiddenAdminSecurityGroupUuids(accountUuid, groups.get(l3Uuid));
+                }
+                sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory, groups, hiddenGroupUuids, l3Uuid);
+            }
+        } else {
+            sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory, groups, Collections.emptySet(), null);
         }
-        List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory, groups, hiddenGroupUuids);
         if (StringUtils.isEmpty(vmInstanceInventory.getHostUuid())) {
             completion.success();
             return;
