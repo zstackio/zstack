@@ -17,4 +17,6 @@ public class MemoryAgentResponse extends KVMAgentCommands.AgentResponse {
     /** The latest generation the Host took, also one it has not applied yet. */
     public Long acceptedGeneration;
     public Map<String, Object> state;
+    /** What the Agent adds to a refusal, such as how much memory a swapoff lacks. */
+    public Map<String, Object> details;
 }

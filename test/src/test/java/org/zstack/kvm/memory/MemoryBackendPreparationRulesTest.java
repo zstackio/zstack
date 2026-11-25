@@ -31,7 +31,10 @@ public class MemoryBackendPreparationRulesTest {
         MemoryBackendPreparationRules.validate(CANDIDATE);
         for (String invalid : Arrays.asList(null, "/dev/vdb", "candidate:abc")) {
             try { MemoryBackendPreparationRules.validate(invalid); fail("accepted " + invalid); }
-            catch (MemoryOperationException expected) { assertEquals("MEMORY_BACKEND_PREPARATION_INVALID", expected.getCode()); }
+            catch (MemoryOperationException expected) {
+                assertEquals("MEMORY_BACKEND_PREPARATION_INVALID", expected.getCode());
+                assertTrue(expected.getMessage().contains("Host's candidate list"));
+            }
         }
     }
 
