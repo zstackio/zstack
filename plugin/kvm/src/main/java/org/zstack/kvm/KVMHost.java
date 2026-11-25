@@ -6719,6 +6719,7 @@ public class KVMHost extends HostBase implements Host {
                 createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
                 createTagWithoutNonValue(HostSystemTags.ISCSI_INITIATOR_NAME, HostSystemTags.ISCSI_INITIATOR_NAME_TOKEN, ret.getIscsiInitiatorName(), true);
                 createTagWithoutNonValue(HostSystemTags.DEPLOY_MODE, HostSystemTags.DEPLOY_MODE_TOKEN, ret.getDeployMode(), true);
+                HostSystemTags.saveSwapDevices(self.getUuid(), ret.getSwapDevices());
 
 
                 saveHostExtraIps(ret);
