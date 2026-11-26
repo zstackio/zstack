@@ -27,6 +27,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.storage.backup.CleanUpVmBackupExtensionPoint;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -54,6 +57,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.zql.ZQL;
 
 import javax.persistence.Query;
@@ -1289,45 +1294,72 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 .map(vo -> JSONObjectUtil.toObject(vo.getMetadata(), ArchiveVmNicBundle.class).getVmNicInventory())
                 .filter(Objects::nonNull).collect(Collectors.toList());
 
-        Set<String> groupIps = vmNics.stream().map(VmNicInventory::getIp).filter(Objects::nonNull).collect(Collectors.toSet());
-        Set<String> groupMacs = vmNics.stream().map(VmNicInventory::getMac).filter(Objects::nonNull).collect(Collectors.toSet());
-
         String groupVmUuid = Q.New(VolumeSnapshotGroupVO.class).eq(VolumeSnapshotGroupVO_.uuid, msg.getUuid()).select(VolumeSnapshotGroupVO_.vmInstanceUuid).findValue();
-
-        List<VmNicConflictEntry> vmNetworkConflictEntries = new ArrayList<>();
-        Set<String> conflictVmUuids = new HashSet<>();
-
-        long count = Q.New(VmNicVO.class).notEq(VmNicVO_.vmInstanceUuid, groupVmUuid).count();
-        String sql = String.format("select vmNicVO from VmNicVO vmNicVO where vmNicVO.vmInstanceUuid != '%s'", groupVmUuid);
-        SQL.New(sql, VmNicVO.class).limit(100).paginate(count, (List<VmNicVO> vmNicVOs) -> vmNicVOs.forEach(vmNicVO -> {
-            String vmUuid = vmNicVO.getVmInstanceUuid();
-            String ip = vmNicVO.getIp();
-            String mac = vmNicVO.getMac();
-
-            boolean isConflict = false;
-            VmNicConflictEntry vmNicConflictEntry = new VmNicConflictEntry();
-            if (groupIps.contains(ip)) {
-                vmNicConflictEntry.setIp(ip);
-                isConflict = true;
-            }
-            if (groupMacs.contains(mac)) {
-                vmNicConflictEntry.setMac(mac);
-                isConflict = true;
-            }
-
-            if (!isConflict) {
-                return;
-            }
-            vmNicConflictEntry.setVmNicName(vmNicVO.getInternalName());
-            vmNicConflictEntry.setVmInstanceUuid(vmUuid);
-            conflictVmUuids.add(vmUuid);
-            vmNetworkConflictEntries.add(vmNicConflictEntry);
-        }));
-
-        hideInvisibleConflictDetails(msg.getSession(), conflictVmUuids, vmNetworkConflictEntries);
-
-        reply.setVmNicConflict(vmNetworkConflictEntries);
+        List<VmNicConflictEntry> conflicts = findNicConflicts(vmNics, groupVmUuid);
+        Set<String> conflictVmUuids = conflicts.stream().map(VmNicConflictEntry::getVmInstanceUuid)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        hideInvisibleConflictDetails(msg.getSession(), conflictVmUuids, conflicts);
+        reply.setVmNicConflict(conflicts);
         bus.reply(msg, reply);
+    }
+
+    private List<VmNicConflictEntry> findNicConflicts(List<VmNicInventory> vmNics, String groupVmUuid) {
+        Map<String, Set<String>> ipsByL3 = new HashMap<>();
+        for (VmNicInventory nic : vmNics) {
+            Stream.concat(Stream.of(nic.getIp()), CollectionUtils.emptyIfNull(nic.getUsedIps()).stream().map(UsedIpInventory::getIp))
+                    .filter(ip -> ip != null && !ip.isEmpty())
+                    .map(IPv6NetworkUtils::normalizeHost)
+                    .forEach(ip -> ipsByL3.computeIfAbsent(nic.getL3NetworkUuid(), ignored -> new HashSet<>()).add(ip));
+        }
+        Set<String> groupMacs = vmNics.stream().map(VmNicInventory::getMac).filter(Objects::nonNull).collect(Collectors.toSet());
+        List<VmNicConflictEntry> conflicts = new ArrayList<>();
+        Map<String, VmNicConflictEntry> macConflicts = new HashMap<>();
+        if (!groupMacs.isEmpty()) {
+            List<Tuple> nics = Q.New(VmNicVO.class).in(VmNicVO_.mac, groupMacs)
+                    .notEq(VmNicVO_.vmInstanceUuid, groupVmUuid)
+                    .select(VmNicVO_.uuid, VmNicVO_.vmInstanceUuid, VmNicVO_.internalName, VmNicVO_.mac).listTuple();
+            for (Tuple nic : nics) {
+                String mac = nic.get(3, String.class);
+                if (groupMacs.contains(mac)) {
+                    VmNicConflictEntry entry = conflictEntry(nic.get(1, String.class), nic.get(2, String.class));
+                    entry.setMac(mac);
+                    macConflicts.put(nic.get(0, String.class), entry);
+                }
+            }
+        }
+        if (!ipsByL3.isEmpty()) {
+            List<byte[]> addresses = ipsByL3.values().stream().flatMap(Set::stream).distinct()
+                    .map(NetworkUtils::ipStringToBytes).collect(Collectors.toList());
+            List<Tuple> occupied = SQL.New("select distinct ip.ip, nic.uuid, nic.vmInstanceUuid, nic.internalName, ip.l3NetworkUuid" +
+                    " from UsedIpVO ip left join VmNicVO nic on nic.uuid = ip.vmNicUuid" +
+                    " where ip.l3NetworkUuid in (:l3Uuids) and ip.ipInBinary in (:addresses)" +
+                    " and (nic.vmInstanceUuid is null or nic.vmInstanceUuid != :vmUuid)", Tuple.class)
+                    .param("l3Uuids", ipsByL3.keySet()).param("addresses", addresses).param("vmUuid", groupVmUuid).list();
+            for (Tuple row : occupied) {
+                String ip = row.get(0, String.class);
+                String l3Uuid = row.get(4, String.class);
+                if (!ipsByL3.get(l3Uuid).contains(IPv6NetworkUtils.normalizeHost(ip))) {
+                    continue;
+                }
+                VmNicConflictEntry entry = macConflicts.remove(row.get(1, String.class));
+                if (entry == null) {
+                    entry = conflictEntry(row.get(2, String.class), row.get(3, String.class));
+                }
+                entry.setIp(ip);
+                conflicts.add(entry);
+            }
+        }
+        conflicts.addAll(macConflicts.values());
+        return conflicts;
+    }
+
+    private VmNicConflictEntry conflictEntry(String vmUuid, String nicName) {
+        VmNicConflictEntry entry = new VmNicConflictEntry();
+        if (vmUuid != null) {
+            entry.setVmInstanceUuid(vmUuid);
+            entry.setVmNicName(nicName);
+        }
+        return entry;
     }
 
     private void hideInvisibleConflictDetails(SessionInventory session, Set<String> vmUuids,
