@@ -13,6 +13,7 @@ import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.devices.VmDevicesSpec;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
@@ -339,6 +340,7 @@ public class VmInstanceSpec implements Serializable {
     private HostInventory destHost;
     private List<VmNicInventory> destNics = new ArrayList<>();
     private List<VolumeInventory> destDataVolumes = new ArrayList<>();
+    private boolean preserveExistingDataVolumes;
     private List<VolumeInventory> destCacheVolumes = new ArrayList<>();
     private VolumeInventory destRootVolume;
     private VmOperation currentVmOperation;
@@ -405,6 +407,8 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> disableL3Networks;
     private List<APICreateVmInstanceMsg.DiskAO> diskAOs;
+    private VmDevicesSpec devicesSpec = new VmDevicesSpec();
+    private OperatingSystemBootingSpec osSpec = new OperatingSystemBootingSpec();
 
     public List<APICreateVmInstanceMsg.DiskAO> getDiskAOs() {
         return diskAOs;
@@ -412,6 +416,22 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public VmDevicesSpec getDevicesSpec() {
+        return devicesSpec;
+    }
+
+    public void setDevicesSpec(VmDevicesSpec devicesSpec) {
+        this.devicesSpec = devicesSpec;
+    }
+
+    public OperatingSystemBootingSpec getOsSpec() {
+        return osSpec;
+    }
+
+    public void setOsSpec(OperatingSystemBootingSpec osSpec) {
+        this.osSpec = osSpec;
     }
 
     public boolean isSkipIpAllocation() {
@@ -690,6 +710,14 @@ public class VmInstanceSpec implements Serializable {
         this.destDataVolumes = destDataVolumes;
     }
 
+    public boolean isPreserveExistingDataVolumes() {
+        return preserveExistingDataVolumes;
+    }
+
+    public void setPreserveExistingDataVolumes(boolean preserveExistingDataVolumes) {
+        this.preserveExistingDataVolumes = preserveExistingDataVolumes;
+    }
+
     public List<VolumeInventory> getDestCacheVolumes() {
         return destCacheVolumes;
     }
@@ -908,6 +936,21 @@ public class VmInstanceSpec implements Serializable {
             return imageFormat.getOutputFormat(getDestHost().getHypervisorType());
         } else {
             return ImageConstant.QCOW2_FORMAT_STRING;
+        }
+    }
+
+    public static class OperatingSystemBootingSpec implements Serializable {
+        /**
+         * @see VmMachineType
+         */
+        private String machineType;
+
+        public String getMachineType() {
+            return machineType;
+        }
+
+        public void setMachineType(String machineType) {
+            this.machineType = machineType;
         }
     }
 }

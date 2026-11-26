@@ -212,6 +212,15 @@ doc {
 					optional true
 					since "4.7.21"
 				}
+				column {
+					name "resetTpm"
+					enclosedIn "params"
+					desc "是否重置 TPM 状态，默认 false（保留快照点的 TPM 状态）"
+					location "body"
+					type "Boolean"
+					optional true
+					since "5.0.0"
+				}
 			}
         }
 

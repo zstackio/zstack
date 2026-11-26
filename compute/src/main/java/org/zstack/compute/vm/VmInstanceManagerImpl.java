@@ -937,7 +937,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("create-nic-on-l3-network-%s", msg.getL3NetworkUuid()));
         flowChain.then(new NoRollbackFlow() {
-            String __name__ = "create-nic-and-presist-to-db";
+            String __name__ = "create-nic-and-persist-to-db";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -1143,6 +1143,19 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     VmInstanceVO.class.getSimpleName(), false);
         }
 
+        List<String> requestedTags = cmsg == null ? msg.getSystemTags() : cmsg.getSystemTags();
+        if (!CollectionUtils.isEmpty(requestedTags)) {
+            String requestedBootMode = SystemTagUtils.findTagValue(requestedTags, VmSystemTags.BOOT_MODE);
+            if (requestedBootMode != null) {
+                // Image inheritance copies tags directly, without their create validators.
+                // Apply the request last so the VM has one effective boot mode.
+                SystemTagCreator bootModeCreator = VmSystemTags.BOOT_MODE.newSystemTagCreator(finalVo.getUuid());
+                bootModeCreator.recreate = true;
+                bootModeCreator.tag = requestedBootMode;
+                bootModeCreator.create();
+            }
+        }
+
         if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
             SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
             creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
@@ -1238,6 +1251,28 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     setDiskAOsName(otherDisks);
                     attachOtherDisk = !otherDisks.isEmpty();
                 }
+
+                flow(new Flow() {
+                    String __name__ = "call-after-persist-vm-extensions";
+                    List<VmInstanceCreateExtensionPoint> done = new ArrayList<>();
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (VmInstanceCreateExtensionPoint extension : pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class)) {
+                            done.add(extension);
+                            extension.afterPersistVmInstanceVO(finalVo, msg);
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        Collections.reverse(done);
+                        CollectionUtils.safeForEach(done,
+                                extension -> extension.afterRollbackPersistVmInstanceVO(finalVo, msg));
+                        trigger.rollback();
+                    }
+                });
 
                 flow(new Flow() {
                     List<ErrorCode> errorCodes = new ArrayList<>();
@@ -1336,6 +1371,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
                         smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
                         smsg.setDiskAOs(msg.getDiskAOs());
+                        smsg.setDevicesSpec(msg.getDevicesSpec());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
@@ -1377,7 +1413,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
                         DestroyVmInstanceMsg dmsg = new DestroyVmInstanceMsg();
                         dmsg.setVmInstanceUuid(finalVo.getUuid());
-                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct);
+                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicy.Direct);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(dmsg, new CloudBusCallBack(null) {
                             @Override

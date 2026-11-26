@@ -3,13 +3,20 @@ package org.zstack.storage.snapshot.group;
 import org.zstack.core.db.Q;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupAvailability;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO_;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
+import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.volume.Volume;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.storage.snapshot.VolumeSnapshotGroupSystemTags;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -21,6 +28,38 @@ import static org.zstack.core.Platform.i18n;
  * Created by MaJin on 2019/7/12.
  */
 public class VolumeSnapshotGroupChecker {
+    public static List<String> getSecurityProtectedGroupUuids(Collection<String> groupUuids) {
+        if (groupUuids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<String> protectedGroups = new HashSet<>(getHostStateProtectedGroupUuids(groupUuids));
+        protectedGroups.addAll(Q.New(VolumeSnapshotGroupRefVO.class)
+                .select(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid)
+                .in(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, groupUuids)
+                .eq(VolumeSnapshotGroupRefVO_.volumeType, VolumeType.Memory.toString())
+                .listValues());
+        return protectedGroups.stream().sorted().collect(Collectors.toList());
+    }
+
+    public static List<String> getHostStateProtectedGroupUuids(Collection<String> groupUuids) {
+        if (groupUuids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<String> protectedGroups = new HashSet<>(Q.New(VmHostBackupFileVO.class)
+                .select(VmHostBackupFileVO_.resourceUuid)
+                .in(VmHostBackupFileVO_.resourceUuid, groupUuids)
+                .in(VmHostBackupFileVO_.type, Arrays.asList(VmHostFileType.TpmState, VmHostFileType.NvRam))
+                .listValues());
+        protectedGroups.addAll(Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.resourceUuid)
+                .in(SystemTagVO_.resourceUuid, groupUuids)
+                .eq(SystemTagVO_.tag, VolumeSnapshotGroupSystemTags.WITH_TPM.getTagFormat())
+                .listValues());
+        return protectedGroups.stream().sorted().collect(Collectors.toList());
+    }
+
     public static boolean isAvailable(String uuid) {
         return getAvailability(uuid).isAvailable();
     }

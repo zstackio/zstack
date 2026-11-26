@@ -1,0 +1,199 @@
+package org.zstack.kvm.tpm;
+
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
+import org.zstack.core.db.Q;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO_;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.tpm.entity.TpmSpec;
+import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupMsg;
+import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotMsg;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
+import org.zstack.header.vm.additions.VmHostFileContentVO;
+import org.zstack.header.vm.additions.VmHostFileContentVO_;
+import org.zstack.header.vm.additions.VmHostFileType;
+import org.zstack.header.vm.devices.NvRamSpec;
+import org.zstack.header.vm.devices.VmDevicesSpec;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.kvm.KVMSystemTags;
+import org.zstack.kvm.efi.SecureBootRecordHelper;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
+
+import static org.zstack.compute.vm.VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS;
+import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10165;
+
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class SnapshotGroupRevertTpmHelper {
+    private static final CLogger logger = Utils.getLogger(SnapshotGroupRevertTpmHelper.class);
+
+    @Autowired
+    private TpmEncryptedResourceKeyBackend tpmKeyBackend;
+
+    public void setupFromApi(APICreateVmInstanceFromVolumeSnapshotGroupMsg apiMsg, CreateVmInstanceMsg cmsg) {
+        setupFromSnapshotGroup(apiMsg.getVolumeSnapshotGroupUuid(), apiMsg.getResetTpm() == Boolean.TRUE,
+                false, cmsg);
+    }
+
+    public void setupFromApi(APICreateVmInstanceFromVolumeSnapshotMsg apiMsg, CreateVmInstanceMsg cmsg) {
+        String snapshotGroupUuid = Q.New(VolumeSnapshotGroupRefVO.class)
+                .select(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid)
+                .eq(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid, apiMsg.getVolumeSnapshotUuid())
+                .eq(VolumeSnapshotGroupRefVO_.volumeType, VolumeType.Root.toString())
+                .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false)
+                .findValue();
+        if (snapshotGroupUuid == null) {
+            if (apiMsg.getResetTpm() != null) {
+                throw new OperationFailureException(operr(
+                        ORG_ZSTACK_KVM_10165,
+                        "volume snapshot[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
+                        apiMsg.getVolumeSnapshotUuid()));
+            }
+            return;
+        }
+
+        setupFromSnapshotGroup(snapshotGroupUuid, apiMsg.getResetTpm() == Boolean.TRUE,
+                apiMsg.getResetTpm() != null, cmsg);
+    }
+
+    private void setupFromSnapshotGroup(String snapshotGroupUuid, boolean resetTpm,
+                                        boolean requireTpmBackup, CreateVmInstanceMsg cmsg) {
+        List<VmHostBackupFileVO> backupFiles = Q.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, snapshotGroupUuid)
+                .list();
+
+        VmHostBackupFileVO tpmBackupFile = null;
+        VmHostBackupFileVO nvRamBackupFile = null;
+        for (VmHostBackupFileVO f : backupFiles) {
+            if (f.getType() == VmHostFileType.TpmState) {
+                tpmBackupFile = f;
+            } else if (f.getType() == VmHostFileType.NvRam) {
+                nvRamBackupFile = f;
+            }
+        }
+
+        // The snapshot-point marker survives missing backup records. Missing material
+        // must not turn a TPM/SecureBoot point into an ordinary VM, even when resetting TPM.
+        boolean snapshotGroupHasTpm = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, snapshotGroupUuid)
+                .eq(SystemTagVO_.tag, VolumeSnapshotConstant.SNAPSHOT_GROUP_WITH_TPM_TAG)
+                .isExists();
+        if ((requireTpmBackup || snapshotGroupHasTpm) && tpmBackupFile == null) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_KVM_10165,
+                    "volume snapshot group[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
+                    snapshotGroupUuid));
+        }
+        boolean requiresNvRam = snapshotGroupHasTpm || SecureBootRecordHelper.secureBootOfSnapshotGroup(snapshotGroupUuid);
+        if (requiresNvRam && nvRamBackupFile == null) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_KVM_10165,
+                    "volume snapshot group[uuid:%s] has no saved NVRAM state, cannot restore its firmware state",
+                    snapshotGroupUuid));
+        }
+
+        if (nvRamBackupFile != null && (tpmBackupFile != null || requiresNvRam)) {
+            VmHostFileContentVO content = Q.New(VmHostFileContentVO.class)
+                    .eq(VmHostFileContentVO_.uuid, nvRamBackupFile.getUuid()).find();
+            if (content == null) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10165, "%s",
+                        String.format("volume snapshot group[uuid:%s] has no saved NvRam content for backup file[uuid:%s], "
+                                        + "cannot restore its firmware state",
+                                snapshotGroupUuid, nvRamBackupFile.getUuid())));
+            }
+        }
+
+        if (tpmBackupFile == null && nvRamBackupFile == null) {
+            logger.debug(String.format("no TpmState or NvRam backup file found for volume snapshot group[uuid:%s]",
+                    snapshotGroupUuid));
+            return;
+        }
+
+        VmDevicesSpec devicesSpec = cmsg.getDevicesSpec();
+        if (devicesSpec == null) {
+            devicesSpec = new VmDevicesSpec();
+            cmsg.setDevicesSpec(devicesSpec);
+        }
+
+        if (tpmBackupFile != null) {
+            TpmSpec tpmSpec = devicesSpec.getTpm();
+            if (tpmSpec == null) {
+                tpmSpec = new TpmSpec();
+                devicesSpec.setTpm(tpmSpec);
+            }
+            setupTpmSpec(snapshotGroupUuid, tpmBackupFile, tpmSpec, cmsg, resetTpm);
+        }
+
+        if (nvRamBackupFile != null) {
+            NvRamSpec nvRamSpec = devicesSpec.getNvRam();
+            if (nvRamSpec == null) {
+                nvRamSpec = new NvRamSpec();
+                devicesSpec.setNvRam(nvRamSpec);
+            }
+            nvRamSpec.setBackupFileUuid(nvRamBackupFile.getUuid());
+            logger.debug(String.format("set NvRam restore info for volume snapshot group[uuid:%s], nvRamBackupFileUuid:%s",
+                    snapshotGroupUuid, nvRamBackupFile.getUuid()));
+        }
+    }
+
+    private void setupTpmSpec(String snapshotGroupUuid, VmHostBackupFileVO tpmBackupFile, TpmSpec tpmSpec,
+                              CreateVmInstanceMsg cmsg, boolean resetTpm) {
+        tpmSpec.setEnable(true);
+
+        if (resetTpm) {
+            // resetTpm=true: reset generate a new one during VM creation
+            logger.debug(String.format("resetTpm is true for volume snapshot group[uuid:%s], " +
+                    "will reset tpmBackupFileUuid:%s", snapshotGroupUuid, tpmBackupFile.getUuid()));
+        } else {
+            tpmSpec.setBackupFileUuid(tpmBackupFile.getUuid());
+        }
+
+        if (ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class) == Boolean.TRUE) {
+            return;
+        }
+
+        if (resetTpm) {
+            String defaultProviderUuid = tpmKeyBackend.defaultKeyProviderUuid();
+            tpmSpec.setKeyProviderUuid(defaultProviderUuid);
+            logger.info(String.format(
+                    "snapshot-reset TPM target provider selected, source[snapshotGroupUuid:%s,tpmBackupFileUuid:%s], " +
+                            "destination[vmResourceUuid:%s,vmName:%s,providerUuid:%s]",
+                    snapshotGroupUuid, tpmBackupFile.getUuid(),
+                    cmsg.getResourceUuid(), cmsg.getName(), defaultProviderUuid));
+            return;
+        }
+
+        String keyProviderName = KVMSystemTags.TPM_KEY_PROVIDER_NAME
+                .getTokenByResourceUuid(tpmBackupFile.getUuid(), KVMSystemTags.TPM_KEY_PROVIDER_NAME_TOKEN);
+        if (keyProviderName == null) {
+            logger.warn(String.format(
+                    "failed to find keyProvider from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s]",
+                    snapshotGroupUuid, tpmBackupFile.getUuid()));
+            if (tpmSpec.getKeyProviderUuid() == null) {
+                tpmSpec.setKeyProviderUuid(tpmKeyBackend.defaultKeyProviderUuid());
+            }
+            return;
+        }
+
+        String keyProviderUuid = tpmKeyBackend.findKeyProviderUuidByName(keyProviderName);
+        if (keyProviderUuid == null) {
+            logger.warn(String.format(
+                    "failed to resolve keyProvider[name:%s] from snapshotGroup[uuid:%s] by tpmBackupFile[uuid:%s], keep keyProviderUuid unset",
+                    keyProviderName, snapshotGroupUuid, tpmBackupFile.getUuid()));
+            return;
+        }
+
+        tpmSpec.setKeyProviderUuid(keyProviderUuid);
+    }
+}

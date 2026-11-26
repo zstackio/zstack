@@ -31,6 +31,9 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.tag.SystemTagVO;
@@ -1130,7 +1133,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
                 }
 
                 if (msg.getRootDiskSize() <= 0) {
-                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10182, "Unexpected root disk settings"));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10182,
+                            "Unexpected root disk settings: DiskAO[0].size is mandatory when image format is ISO"));
                 }
             }
         }
@@ -1347,6 +1351,31 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor, APIResou
     }
 
     private void validate(APICreateVmInstanceFromVolumeSnapshotGroupMsg msg) {
+        VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getVolumeSnapshotGroupUuid(), VolumeSnapshotGroupVO.class);
+        if (group != null && group.getVolumeSnapshotRefs().stream()
+                .anyMatch(ref -> VolumeType.Memory.toString().equals(ref.getVolumeType()))) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10371,
+                    "volume snapshot group[uuid:%s] contains a memory snapshot, cannot create a vm from it",
+                    msg.getVolumeSnapshotGroupUuid()));
+        }
+
+        if (group != null) {
+            Set<VolumeSnapshotGroupRefVO> refs = group.getVolumeSnapshotRefs();
+            Set<String> existingSnapshots = refs.isEmpty() ? Collections.emptySet() : new HashSet<>(
+                    Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
+                            .in(VolumeSnapshotVO_.uuid, refs.stream()
+                                    .map(VolumeSnapshotGroupRefVO::getVolumeSnapshotUuid).collect(Collectors.toList()))
+                            .listValues());
+            List<String> missingSnapshots = refs.stream()
+                    .filter(ref -> ref.isSnapshotDeleted() || !existingSnapshots.contains(ref.getVolumeSnapshotUuid()))
+                    .map(VolumeSnapshotGroupRefVO::getVolumeSnapshotUuid).collect(Collectors.toList());
+            if (refs.isEmpty() || !missingSnapshots.isEmpty()) {
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000,
+                        "volume snapshot group[uuid:%s] is incomplete, missing snapshot(s)[uuids:%s]; cannot create a vm from it",
+                        group.getUuid(), missingSnapshots));
+            }
+        }
+
         validate((NewVmInstanceMessage2) msg);
     }
 

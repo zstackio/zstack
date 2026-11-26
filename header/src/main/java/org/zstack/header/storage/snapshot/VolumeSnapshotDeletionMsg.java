@@ -11,10 +11,20 @@ public class VolumeSnapshotDeletionMsg extends DeletionMessage implements Volume
     private boolean dbOnly;
     private String direction;
     private String scope;
+    // Internal group deletion context; individual snapshot APIs never set it.
+    private String snapshotGroupUuid;
     /**
      * @ignore
      */
     private String treeUuid;
+
+    public String getSnapshotGroupUuid() {
+        return snapshotGroupUuid;
+    }
+
+    public void setSnapshotGroupUuid(String snapshotGroupUuid) {
+        this.snapshotGroupUuid = snapshotGroupUuid;
+    }
 
     @Override
     public String getTreeUuid() {

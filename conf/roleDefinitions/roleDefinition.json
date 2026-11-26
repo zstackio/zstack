@@ -523,6 +523,7 @@
           "org.zstack.header.simulator.**",
           "org.zstack.sns.platform.aliyunsms.**",
           "org.zstack.usbDevice.**",
+          "org.zstack.header.tpm.**",
           "org.zstack.header.storage.database.backup.**",
           "org.zstack.monitoring.**",
           "org.zstack.log.**",

@@ -110,6 +110,9 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
     @APIParam(required = false)
     private List<String> rootVolumeSystemTags;
 
+    @APIParam(required = false)
+    private Boolean resetTpm;
+
     public String getName() {
         return name;
     }
@@ -259,6 +262,14 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
         this.rootVolumeSystemTags = rootVolumeSystemTags;
     }
 
+    public Boolean getResetTpm() {
+        return resetTpm;
+    }
+
+    public void setResetTpm(Boolean resetTpm) {
+        this.resetTpm = resetTpm;
+    }
+
     public static APICreateVmInstanceFromVolumeSnapshotMsg __example__() {
         APICreateVmInstanceFromVolumeSnapshotMsg msg = new APICreateVmInstanceFromVolumeSnapshotMsg();
         msg.setName("vm1");
@@ -267,6 +278,7 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
         msg.setVolumeSnapshotUuid(uuid());
         msg.setInstanceOfferingUuid(uuid());
         msg.setL3NetworkUuids(Collections.singletonList(uuid()));
+        msg.setResetTpm(false);
         return msg;
     }
 

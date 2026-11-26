@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMessage
         implements CreateTemporaryRootVolumeTemplateMessage, CreateTemplateFromSnapshotMessage {
+    private String resourceUuid;
     private String snapshotUuid;
     private String guestOsType;
     private String platform;
@@ -15,6 +16,16 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
     private boolean system;
     private SessionInventory session;
     private boolean virtio = true;
+
+    @Override
+    public String getResourceUuid() {
+        return resourceUuid;
+    }
+
+    @Override
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
+    }
 
     @Override
     public void setSnapshotUuid(String snapshotUuid) {

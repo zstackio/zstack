@@ -16,6 +16,8 @@ public class CreateVolumesSnapshotMsg extends NeedReplyMessage implements NeedQu
 
     private List<CreateVolumesSnapshotsJobStruct> volumeSnapshotJobs;
 
+    private boolean backupHostFileIfNeeded;
+
     public String getAccountUuid() {
         return accountUuid;
     }
@@ -43,5 +45,13 @@ public class CreateVolumesSnapshotMsg extends NeedReplyMessage implements NeedQu
 
     public void setConsistentType(ConsistentType consistentType) {
         this.consistentType = consistentType;
+    }
+
+    public boolean isBackupHostFileIfNeeded() {
+        return backupHostFileIfNeeded;
+    }
+
+    public void setBackupHostFileIfNeeded(boolean backupHostFileIfNeeded) {
+        this.backupHostFileIfNeeded = backupHostFileIfNeeded;
     }
 }

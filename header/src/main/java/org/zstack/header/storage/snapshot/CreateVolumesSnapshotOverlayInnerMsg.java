@@ -19,6 +19,8 @@ public class CreateVolumesSnapshotOverlayInnerMsg extends NeedReplyMessage imple
 
     private List<String> lockedVolumeUuids;
 
+    private boolean backupHostFileIfNeeded;
+
     public List<String> getLockedVmInstanceUuids() {
         return lockedVmInstanceUuids;
     }
@@ -62,5 +64,13 @@ public class CreateVolumesSnapshotOverlayInnerMsg extends NeedReplyMessage imple
 
     public void setConsistentType(ConsistentType consistentType) {
         this.consistentType = consistentType;
+    }
+
+    public boolean isBackupHostFileIfNeeded() {
+        return backupHostFileIfNeeded;
+    }
+
+    public void setBackupHostFileIfNeeded(boolean backupHostFileIfNeeded) {
+        this.backupHostFileIfNeeded = backupHostFileIfNeeded;
     }
 }

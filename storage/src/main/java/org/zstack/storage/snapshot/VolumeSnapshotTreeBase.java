@@ -47,14 +47,19 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.VmHostBackupFileDeletionMsg;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.tag.TagManager;
@@ -73,6 +78,8 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
@@ -368,6 +375,26 @@ public class VolumeSnapshotTreeBase {
             bus.reply(msg, reply);
             completion.done();
             return;
+        }
+
+        // Check the actual deletion range under the volume queue. A batch may
+        // name only an ordinary ancestor while its chain includes protected members.
+        if (!msg.isVolumeDeletion() && !msg.isDbOnly() && msg.getSnapshotGroupUuid() == null) {
+            List<String> snapshotUuids = DeleteVolumeSnapshotScope.Single.toString().equals(msg.getScope())
+                    ? Collections.singletonList(currentRoot.getUuid())
+                    : currentLeaf.getDescendants().stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
+            List<String> groupUuids = Q.New(VolumeSnapshotGroupRefVO.class)
+                    .select(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid)
+                    .in(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid, snapshotUuids).listValues();
+            List<String> protectedGroups = VolumeSnapshotGroupChecker.getSecurityProtectedGroupUuids(groupUuids);
+            if (!protectedGroups.isEmpty()) {
+                reply.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001,
+                        "cannot delete individual snapshots of group(s)[uuids:%s] containing memory or TPM/NVRAM state; delete the snapshot group instead",
+                        protectedGroups));
+                bus.reply(msg, reply);
+                completion.done();
+                return;
+            }
         }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -1377,6 +1404,7 @@ public class VolumeSnapshotTreeBase {
                 .eq(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, volumeSnapshotInv.getGroupUuid())
                 .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false).count();
         if (count == 0) {
+            cleanVmHostBackupFilesForGroup(list(volumeSnapshotInv.getGroupUuid()));
             dbf.removeByPrimaryKey(volumeSnapshotInv.getGroupUuid(), VolumeSnapshotGroupVO.class);
             logger.debug(String.format("snapshot group[uuid:%s] all volume snapshot has been deleted, " +
                     "delete snapshot group", volumeSnapshotInv.getGroupUuid()));
@@ -2096,20 +2124,69 @@ public class VolumeSnapshotTreeBase {
         List<String> uuids = snapshots.stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
         SQL.New(VolumeSnapshotGroupRefVO.class).in(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid, uuids)
                 .set(VolumeSnapshotGroupRefVO_.snapshotDeleted, true).update();
-        if (currentRoot.getVolumeType().equals(VolumeType.Root.toString())) {
-            List<String> groupUuids = new ArrayList<>();
-            for (VolumeSnapshotInventory snapshot : snapshots) {
-                String groupUuid = snapshot.getGroupUuid();
-                if (groupUuid != null) {
-                    logger.debug(String.format("root volume snapshot[uuid:%s, name:%s] has been deleted, " +
-                            "ungroup snapshot group[uuid:%s]", snapshot.getUuid(), snapshot.getName(), groupUuid));
-                    groupUuids.add(groupUuid);
+        List<String> groupUuids = snapshots.stream().map(VolumeSnapshotInventory::getGroupUuid)
+                .filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (groupUuids.isEmpty()) {
+            return;
+        }
+
+        // Ordinary memory points use independent trees and retain their existing
+        // root-deletion cleanup. Host state must survive any remaining member.
+        List<String> groupsToCheck = currentRoot.getVolumeType().equals(VolumeType.Root.toString())
+                ? VolumeSnapshotGroupChecker.getHostStateProtectedGroupUuids(groupUuids) : groupUuids;
+        if (!groupsToCheck.isEmpty()) {
+            List<String> groupsWithSnapshots = Q.New(VolumeSnapshotGroupRefVO.class)
+                    .select(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid)
+                    .in(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, groupsToCheck)
+                    .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false).listValues();
+            groupUuids.removeAll(groupsWithSnapshots);
+        }
+        if (groupUuids.isEmpty()) {
+            return;
+        }
+
+        groupUuids.forEach(groupUuid -> vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid));
+        cleanVmHostBackupFilesForGroup(groupUuids);
+        dbf.removeByPrimaryKeys(groupUuids, VolumeSnapshotGroupVO.class);
+    }
+
+    private void cleanVmHostBackupFilesForGroup(List<String> groupUuids) {
+        // TODO: refactor this: VolumeSnapshotGroupVO should has its own cascade extensions!
+        //       VolumeSnapshotGroupVO -> VmHostBackupFileVO
+        if (groupUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> backupUuidList = Q.New(VmHostBackupFileVO.class)
+                .in(VmHostBackupFileVO_.resourceUuid, groupUuids)
+                .select(VmHostBackupFileVO_.uuid)
+                .listValues();
+        if (!backupUuidList.isEmpty()) {
+            new While<>(backupUuidList).each((fileUuid, whileCompletion) -> {
+                VmHostBackupFileDeletionMsg deletionMsg = new VmHostBackupFileDeletionMsg();
+                deletionMsg.setUuid(fileUuid);
+                deletionMsg.setForceDelete(true);
+                bus.makeLocalServiceId(deletionMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                bus.send(deletionMsg, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            whileCompletion.done();
+                            return;
+                        }
+                        whileCompletion.addError(reply.getError());
+                        whileCompletion.done();
+                    }
+                });
+            }).run(new WhileDoneCompletion(null) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        logger.warn("failed to delete some VmHostBackupFiles:\n" + String.join("\n",
+                                transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails)));
+                    }
                 }
-
-            }
-
-            groupUuids.forEach(groupUuid -> vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid));
-            dbf.removeByPrimaryKeys(groupUuids, VolumeSnapshotGroupVO.class);
+            });
         }
     }
 
@@ -2831,6 +2908,9 @@ public class VolumeSnapshotTreeBase {
         final String issuer = VolumeSnapshotVO.class.getSimpleName();
         VolumeSnapshotDeletionStructs ctx = new VolumeSnapshotDeletionStructs(
                 Collections.singletonList(getSelfInventory()), msg.getDirection(), msg.getScope());
+        if (msg instanceof DeleteVolumeSnapshotMsg) {
+            ctx.setSnapshotGroupUuid(((DeleteVolumeSnapshotMsg) msg).getSnapshotGroupUuid());
+        }
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-snapshot-%s", msg.getSnapshotUuid()));
 

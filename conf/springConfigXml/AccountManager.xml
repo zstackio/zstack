@@ -65,6 +65,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="CustomizedRoleTpmPermissionUpgrader" class="org.zstack.identity.rbac.CustomizedRoleTpmPermissionUpgrader">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="SystemIdentityResourceGenerator" class="org.zstack.identity.SystemIdentityResourceGenerator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>

@@ -6,7 +6,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -21,10 +20,11 @@ import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.header.vm.APIGetCandidatePrimaryStoragesForCreatingVmMsg;
 import org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmMsg;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -86,6 +86,8 @@ public class VolumeSnapshotApiInterceptor implements GlobalApiMessageInterceptor
             validate((APIBatchDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIRevertVmFromSnapshotGroupMsg) {
             validate((APIRevertVmFromSnapshotGroupMsg) msg);
+        } else if (msg instanceof APIUngroupVolumeSnapshotGroupMsg) {
+            validate((APIUngroupVolumeSnapshotGroupMsg) msg);
         }
 
         setServiceId(msg);
@@ -188,6 +190,22 @@ public class VolumeSnapshotApiInterceptor implements GlobalApiMessageInterceptor
         return groupVO.getVolumeSnapshotRefs().stream().anyMatch(ref -> ref.getVolumeType().equals(VolumeType.Memory.toString()));
     }
 
+    private void validate(APIUngroupVolumeSnapshotGroupMsg msg) {
+        VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getUuid(), VolumeSnapshotGroupVO.class);
+        if (isWithMemoryForSnapshotGroup(group)) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001,
+                    "volume snapshot group[uuid:%s] holds memory snapshots, cannot be ungrouped", msg.getUuid()));
+        }
+        boolean hasSecurityAttachment = Q.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, msg.getUuid())
+                .isExists() || VolumeSnapshotGroupSystemTags.WITH_TPM.hasTag(msg.getUuid());
+        if (hasSecurityAttachment) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001,
+                    "volume snapshot group[uuid:%s] holds TPM or NVRAM backup files, cannot be ungrouped",
+                    msg.getUuid()));
+        }
+    }
+
     private void validate(APIRevertVmFromSnapshotGroupMsg msg) {
         VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getUuid(), VolumeSnapshotGroupVO.class);
 
@@ -216,13 +234,18 @@ public class VolumeSnapshotApiInterceptor implements GlobalApiMessageInterceptor
             }
         }
 
-        if (isWithMemoryForSnapshotGroup(group)
-                && Q.New(VmInstanceVO.class)
-                .eq(VmInstanceVO_.uuid, group.getVmInstanceUuid())
-                .in(VmInstanceVO_.state, Arrays.asList(VmInstanceState.Running, VmInstanceState.Paused))
-                .isExists()) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_SNAPSHOT_10021, "Can not take memory snapshot, expected vm states are [%s, %s]",
-                    VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
+        if (isWithMemoryForSnapshotGroup(group)) {
+            VmInstanceState vmState = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state)
+                    .eq(VmInstanceVO_.uuid, group.getVmInstanceUuid())
+                    .findValue();
+            if (!VolumeSnapshotConstant.ALLOW_TAKE_MEMORY_SNAPSHOTS_VM_STATES.contains(vmState)) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_SNAPSHOT_10021,
+                        "Can not revert VM with memory snapshot: unexpected VM state")
+                        .withOpaque("vm.uuid", group.getVmInstanceUuid())
+                        .withOpaque("vm.state", vmState.toString())
+                        .withOpaque("expect.states", VolumeSnapshotConstant.ALLOW_TAKE_MEMORY_SNAPSHOTS_VM_STATES));
+            }
         }
 
         msg.setVmInstanceUuid(group.getVmInstanceUuid());

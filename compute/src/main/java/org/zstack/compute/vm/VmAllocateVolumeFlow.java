@@ -28,6 +28,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
@@ -45,6 +46,8 @@ import static org.zstack.core.progress.ProgressReportService.taskProgress;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateVolumeFlow implements Flow {
     @Autowired
+    private ResourceConfigFacade rcf;
+    @Autowired
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
@@ -54,6 +57,7 @@ public class VmAllocateVolumeFlow implements Flow {
     protected ErrorFacade errf;
     @Autowired
     private EventFacade evtf;
+    private static final String PRE_EXISTING_DATA_VOLUME_UUIDS = "VmAllocateVolumeFlow.preExistingDataVolumeUuids";
 
     protected List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
         taskProgress("create volumes");
@@ -135,6 +139,21 @@ public class VmAllocateVolumeFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        if (spec.isPreserveExistingDataVolumes()) {
+            data.put(PRE_EXISTING_DATA_VOLUME_UUIDS, Collections.unmodifiableSet(spec.getDestDataVolumes().stream()
+                    .filter(volume -> VolumeStatus.Ready.toString().equals(volume.getStatus()))
+                    .map(VolumeInventory::getUuid).collect(Collectors.toSet())));
+        }
+        // Placement is known here and NIC allocation has not consumed any custom MAC tags.
+        if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate && spec.getDestHost() != null
+                && VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(spec.getDestHost().getHypervisorType())) {
+            ErrorCode error = SecureBootResourceConfigGuard.checkCreateArchitecture(
+                    spec.getVmInventory(), spec.getDestHost().getClusterUuid(), rcf);
+            if (error != null) {
+                trigger.fail(error);
+                return;
+            }
+        }
         List<CreateVolumeMsg> msgs = prepareMsg(data);
         bus.send(msgs, 1, new CloudBusListCallBack(trigger) {
             @Override
@@ -177,11 +196,14 @@ public class VmAllocateVolumeFlow implements Flow {
     @Override
     public void rollback(final FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        Set<String> preExistingDataVolumeUuids = (Set<String>) data.getOrDefault(PRE_EXISTING_DATA_VOLUME_UUIDS, Collections.emptySet());
         List<VolumeInventory> destVolumes = new ArrayList<>(spec.getDestDataVolumes().size() + 1);
         if (spec.getDestRootVolume() != null) {
             destVolumes.add(spec.getDestRootVolume());
         }
-        destVolumes.addAll(spec.getDestDataVolumes());
+        destVolumes.addAll(spec.getDestDataVolumes().stream()
+                .filter(volume -> !preExistingDataVolumeUuids.contains(volume.getUuid()))
+                .collect(Collectors.toList()));
 
         final List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(destVolumes, new Function<DeleteVolumeMsg, VolumeInventory>() {
             @Override
@@ -227,6 +249,11 @@ public class VmAllocateVolumeFlow implements Flow {
                     VmInstanceVO vm = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
                     vm.setRootVolumeUuid(spec.getVmInventory().getRootVolumeUuid());
                     dbf.update(vm);
+                } else if (spec.isPreserveExistingDataVolumes()
+                        && spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate && spec.getDestRootVolume() != null) {
+                    UpdateQuery.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getUuid())
+                            .eq(VmInstanceVO_.rootVolumeUuid, spec.getDestRootVolume().getUuid())
+                            .set(VmInstanceVO_.rootVolumeUuid, null).update();
                 }
 
                 chain.rollback();

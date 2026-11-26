@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.header.vm.ArchiveResourceConfigBundle;
 import org.zstack.header.vm.ResourceConfigMemorySnapshotExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -20,6 +21,13 @@ public class KvmResourceConfigExtension implements ResourceConfigMemorySnapshotE
         bundle.setIdentity(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         bundle.setValue(rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, resourceUuid, String.class));
         bundleList.add(bundle);
+
+        ArchiveResourceConfigBundle.ResourceConfigBundle secureBootBundle =
+                new ArchiveResourceConfigBundle.ResourceConfigBundle();
+        secureBootBundle.setResourceUuid(resourceUuid);
+        secureBootBundle.setIdentity(VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT.getIdentity());
+        secureBootBundle.setValue(rcf.getResourceConfigValue(VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT, resourceUuid, String.class));
+        bundleList.add(secureBootBundle);
 
         if (Boolean.TRUE.equals(KVMHostUtils.isWindowsVmByUuid(resourceUuid))) {
             Boolean cpuHardwareVirtualization = rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION,

@@ -1150,7 +1150,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
 
                 volume.setInstallPath(cmd.getInstallUrl());
-                volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                volume.setFormat(cmd.getVolumeFormat());
                 volume.setActualSize(rsp.actualSize);
                 if (rsp.size != null) {
                     volume.setSize(rsp.size);

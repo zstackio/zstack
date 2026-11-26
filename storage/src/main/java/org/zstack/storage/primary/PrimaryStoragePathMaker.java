@@ -43,6 +43,10 @@ public class PrimaryStoragePathMaker {
         return PathUtil.join("dataVolumes", "acct-" + getAccountUuidOfResource(volUuid), "vol-" + volUuid, volUuid + ".qcow2");
     }
 
+    public static String makeNvRamVolumeInstallPath(String volUuid) {
+        return PathUtil.join("nvRam", "acct-" + getAccountUuidOfResource(volUuid), "vol-" + volUuid, volUuid + ".raw");
+    }
+
     public static String makeImageFromSnapshotWorkspacePath(String imageUuid) {
         return PathUtil.join("snapshotWorkspace", String.format("image-%s", imageUuid));
     }

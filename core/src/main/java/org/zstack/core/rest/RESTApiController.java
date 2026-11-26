@@ -1,5 +1,6 @@
 package org.zstack.core.rest;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -18,6 +19,7 @@ import org.zstack.header.rest.RESTApiFacade;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.RestAPIResponse;
+import org.zstack.header.rest.RestException;
 import org.zstack.utils.HttpServletRequestUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -41,7 +43,10 @@ public class RESTApiController {
     @RequestMapping(value = RESTConstant.REST_API_RESULT + "{uuid}", method = {RequestMethod.GET, RequestMethod.PUT})
     public void queryResult(@PathVariable String uuid, HttpServletRequest req, HttpServletResponse rsp) throws IOException {
         try {
-            RestAPIResponse apiRsp = restApi.getResult(uuid);
+            String auth = req.getHeader("Authorization");
+            String sessionUuid = StringUtils.startsWithIgnoreCase(auth, "OAuth ")
+                    ? auth.substring("OAuth ".length()).trim() : null;
+            RestAPIResponse apiRsp = restApi.getResult(uuid, sessionUuid);
             if (apiRsp == null) {
                 rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("No api result[uuid:%s] found", uuid));
                 return;
@@ -53,6 +58,8 @@ public class RESTApiController {
             String res = JSONObjectUtil.toJsonString(apiRsp);
             rsp.setStatus(HttpStatus.SC_OK);
             writer.write(res);
+        } catch (RestException e) {
+            rsp.sendError(e.statusCode, e.error);
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
             rsp.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, t.getMessage());

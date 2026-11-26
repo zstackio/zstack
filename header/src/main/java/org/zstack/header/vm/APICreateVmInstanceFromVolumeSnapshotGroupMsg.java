@@ -110,6 +110,9 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     @APIParam(required = false)
     private Map<String, List<String>> dataVolumeSystemTags;
 
+    @APIParam(required = false)
+    private Boolean resetTpm;
+
     public String getName() {
         return name;
     }
@@ -273,5 +276,13 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     public void setDataVolumeSystemTags(Map<String, List<String>> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    public Boolean getResetTpm() {
+        return resetTpm;
+    }
+
+    public void setResetTpm(Boolean resetTpm) {
+        this.resetTpm = resetTpm;
     }
 }

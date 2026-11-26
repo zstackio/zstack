@@ -11,4 +11,8 @@ public interface AuthorizationBackend {
     APIMessage authorize(APIMessage msg);
 
     void validatePermission(List<Class> classes, SessionInventory session);
+
+    default boolean isGlobalAdmin(SessionInventory session) {
+        return false;
+    }
 }

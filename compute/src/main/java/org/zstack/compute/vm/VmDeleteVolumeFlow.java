@@ -47,7 +47,9 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         final boolean deleteDataDisk = VmGlobalConfig.DELETE_DATA_VOLUME_ON_VM_DESTROY.value(Boolean.class);
 
         /* data volume must be detached anyway no matter if it is going to be deleted */
-        if (spec.getVmInventory().getAllVolumes().size() > 1) {
+        boolean anyDataVolume = spec.getVmInventory().getAllVolumes().stream()
+                .anyMatch(arg -> VolumeType.Data.toString().equals(arg.getType()));
+        if (anyDataVolume) {
             detachDataVolumes(spec);
         }
 
@@ -58,7 +60,11 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
             return;
         }
 
-        List<String> volumeTypes = Arrays.asList(VolumeType.Root.toString(), VolumeType.Memory.toString(), VolumeType.Cache.toString());
+        List<String> volumeTypes = Arrays.asList(
+                VolumeType.Root.toString(),
+                VolumeType.Memory.toString(),
+                VolumeType.Cache.toString()
+        );
         List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
             @Override
             public VolumeDeletionStruct call(VolumeInventory arg) {

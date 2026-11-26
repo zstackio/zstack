@@ -117,6 +117,7 @@ public class VmGlobalConfig {
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "sync clock after vm resume")
     public static GlobalConfig VM_CLOCK_SYNC_AFTER_VM_RESUME = new GlobalConfig(CATEGORY, "vm.clock.sync.after.vm.resume");
 
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_UEFI_SECURE_BOOT = new GlobalConfig(CATEGORY, "enable.uefi.secure.boot");
 
@@ -141,4 +142,13 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false", "auto"})
     @GlobalConfigDef(defaultValue = "false", type = String.class, description = "generate config required for vhost primary storage")
     public static GlobalConfig GENERATE_CONFIG_VHOST_REQUIRED = new GlobalConfig(CATEGORY, "generate.config.vhost.required");
+
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "whether reset TPM state after VM clone")
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig RESET_TPM_AFTER_VM_CLONE = new GlobalConfig(CATEGORY, "reset.tpm.after.vm.clone");
+
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "allowed TPM VM start without KMS")
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ALLOWED_TPM_VM_WITHOUT_KMS = new GlobalConfig(CATEGORY, "allowed.tpm.vm.without.kms");
 }

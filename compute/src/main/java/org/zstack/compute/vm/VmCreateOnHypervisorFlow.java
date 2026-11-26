@@ -3,13 +3,18 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
@@ -17,7 +22,6 @@ import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
@@ -33,20 +37,37 @@ public class VmCreateOnHypervisorFlow implements Flow {
     @Autowired
     private EventFacade evtf;
 
-    private void fireExtensions(VmInstanceSpec spec) {
-        for (VmBeforeCreateOnHypervisorExtensionPoint ext : pluginRgty.getExtensionList(VmBeforeCreateOnHypervisorExtensionPoint.class)) {
-            ext.beforeCreateVmOnHypervisor(spec);
-        }
-    }
-
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         taskProgress("start on the hypervisor");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        fireExtensions(spec);
+        new While<>(pluginRgty.getExtensionList(VmBeforeCreateOnHypervisorExtensionPoint.class))
+                .each((ext, next) -> ext.beforeCreateVmOnHypervisor(spec, new Completion(next) {
+                    @Override
+                    public void success() {
+                        next.done();
+                    }
 
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        next.addError(errorCode);
+                        next.allDone();
+                    }
+                })).run(new WhileDoneCompletion(chain) {
+                    @Override
+                    public void done(ErrorCodeList errors) {
+                        if (!errors.getCauses().isEmpty()) {
+                            chain.fail(errors.getCauses().get(0));
+                        } else {
+                            createOnHypervisor(chain, spec);
+                        }
+                    }
+                });
+    }
+
+    private void createOnHypervisor(FlowTrigger chain, VmInstanceSpec spec) {
         CreateVmOnHypervisorMsg msg = new CreateVmOnHypervisorMsg();
         msg.setVmSpec(spec);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());

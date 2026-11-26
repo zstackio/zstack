@@ -55,6 +55,7 @@ class LiveMigrateVmCase extends SubCase {
     void test() {
         env.create {
             testMigrateNonLinuxVmOnLocalStorageReturnsCause()
+            testRejectLiveMigrationWhenDisabled()
             testLiveMigrateVmFailure()
             testLiveMigrateVmWithDataVolume()
             testPausedVmStateAfterMigrate()
@@ -71,8 +72,10 @@ class LiveMigrateVmCase extends SubCase {
         String dstHostUuid = srcHostUuid == host1.uuid ? host2.uuid : host1.uuid
         String originPlatform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                 .select(VmInstanceVO_.platform).findValue()
+        String originalAllowLiveMigration = LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value()
 
         try {
+            LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue("true")
             SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .set(VmInstanceVO_.platform, ImagePlatform.Windows.toString())
                     .update()
@@ -87,6 +90,7 @@ class LiveMigrateVmCase extends SubCase {
                 assert delegate.details.contains(vm.uuid)
             }
         } finally {
+            LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(originalAllowLiveMigration)
             SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .set(VmInstanceVO_.platform, originPlatform)
                     .update()
@@ -95,6 +99,34 @@ class LiveMigrateVmCase extends SubCase {
         VmInstanceVO currentVm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).find()
         assert currentVm.hostUuid == srcHostUuid
         assert currentVm.state == VmInstanceState.Running
+    }
+
+    void testRejectLiveMigrationWhenDisabled() {
+        dbf = bean(DatabaseFacade.class)
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        KVMHostInventory target = env.inventoryByName("kvm1") as KVMHostInventory
+        String originalHostUuid = vm.hostUuid
+        VmInstanceState originalState = dbf.findByUuid(vm.uuid, VmInstanceVO.class).state
+        LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue("false")
+
+        int migrateCalls = 0
+        env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> e ->
+            migrateCalls++
+            return rsp
+        }
+
+        MigrateVmAction action = new MigrateVmAction()
+        action.vmInstanceUuid = vm.uuid
+        action.hostUuid = target.uuid
+        action.sessionId = adminSession()
+        def result = action.call()
+
+        assert result.error != null : "disabled LocalStorage live migration was accepted"
+        assert result.error.details.contains("liveMigrationWithStorage.allow")
+        assert migrateCalls == 0
+        VmInstanceVO actual = dbf.findByUuid(vm.uuid, VmInstanceVO.class)
+        assert actual.hostUuid == originalHostUuid
+        assert actual.state == originalState
     }
 
     void testLiveMigrateVmFailure() {

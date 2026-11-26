@@ -89,7 +89,8 @@ class VmMachineTypeCase extends SubCase {
             uuid = vm.uuid
         }
 
-        assert !VmSystemTags.MACHINE_TYPE.hasTag(vm.uuid)
+        assert VmMachineType.pc.toString() == VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(
+                vm.uuid, VmSystemTags.MACHINE_TYPE_TOKEN)
         assert Q.New(VmInstanceDeviceAddressVO.class)
                 .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vm.uuid)
                 .count() != 0
@@ -147,10 +148,14 @@ class VmMachineTypeCase extends SubCase {
             assert globalErrorCode == ORG_ZSTACK_COMPUTE_VM_10344
         }
 
+        // Older VMs can have no persisted machine type.
         VmSystemTags.MACHINE_TYPE.delete(vm.uuid)
-        def q35MachineTypeTag = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(vm.uuid)
-        q35MachineTypeTag.setTagByTokens([(VmSystemTags.MACHINE_TYPE_TOKEN): VmMachineType.q35.toString()])
-        q35MachineTypeTag.create()
+        setVmMachineType {
+            uuid = vm.uuid
+            machineType = VmMachineType.q35.toString()
+        }
+        assert VmMachineType.q35.toString() == VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(
+                vm.uuid, VmSystemTags.MACHINE_TYPE_TOKEN)
 
         setVmBootMode {
             uuid = vm.uuid

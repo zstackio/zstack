@@ -15,6 +15,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.telemetry.TelemetryFacade;
 import org.zstack.core.telemetry.TelemetryGlobalProperty;
+import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -31,6 +32,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -71,6 +73,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private List<List<Runnable>> afterDone = new ArrayList<>();
     private List<List<Runnable>> afterError = new ArrayList<>();
     private List<List<Runnable>> afterFinal = new ArrayList<>();
+    private List<AsyncBackup> asyncBackups = new ArrayList<>();
 
     private boolean isFailCalled;
 
@@ -291,9 +294,18 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         id = "FCID_" + Platform.getUuid().substring(0, 8);
     }
 
+    public SimpleFlowChain(String name) {
+        this();
+        this.name = name;
+    }
+
     public SimpleFlowChain(Map<String, Object> data) {
         id = "FCID_" + Platform.getUuid().substring(0, 8);
         this.data.putAll(data);
+    }
+
+    public static SimpleFlowChain of(String chainName) {
+        return new SimpleFlowChain(chainName);
     }
 
     @Override
@@ -379,6 +391,10 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this;
     }
 
+    public SimpleFlowChain then(String flowName, Consumer<FlowTrigger> consumer) {
+        return then(Flow.of(flowName).handle(consumer).build());
+    }
+
     public SimpleFlowChain ctxHandler(FlowContextHandler handler) {
         DebugUtils.Assert(contextHandler == null, "there has been an FlowContextHandler installed");
         contextHandler = handler;
@@ -389,6 +405,23 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         DebugUtils.Assert(errorHandler == null, "there has been an FlowErrorHandler installed");
         errorHandler = handler;
         return this;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public SimpleFlowChain error(Consumer<ErrorCode> handler) {
+        DebugUtils.Assert(!asyncBackups.isEmpty(),
+                "propagateExceptionTo() must be called before error(Consumer<ErrorCode>)."
+                        + " Call .propagateExceptionTo(completion) or .propagateExceptionTo((AsyncBackup) null) if you don't need async backup");
+        AsyncBackup firstAsyncBackup = this.asyncBackups.get(0);
+        AsyncBackup[] otherAsyncBackups = this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
+
+        DebugUtils.Assert(handler != null, "handler of errorHandler should not be null");
+        return error(new FlowErrorHandler(firstAsyncBackup, otherAsyncBackups) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                handler.accept(errCode);
+            }
+        });
     }
 
     @Override
@@ -433,11 +466,43 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this.data;
     }
 
+    public SimpleFlowChain propagateExceptionTo(AsyncBackup... backups) {
+        DebugUtils.Assert(backups != null, "backups in methods propagateExceptionTo() must be not null");
+        DebugUtils.Assert(doneHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.done()");
+        DebugUtils.Assert(errorHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.error()");
+        DebugUtils.Assert(finallyHandler == null, "propagateExceptionTo() must be called before SimpleFlowChain.Finally()");
+
+        this.asyncBackups.addAll(Arrays.asList(backups));
+        this.asyncBackups.removeIf(Objects::isNull);
+
+        if (this.asyncBackups.isEmpty()) {
+            this.asyncBackups.add(null);
+        }
+        return this;
+    }
+
     @Override
     public SimpleFlowChain done(FlowDoneHandler handler) {
         DebugUtils.Assert(doneHandler == null, "there has been a FlowDoneHandler installed");
         doneHandler = handler;
         return this;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public SimpleFlowChain done(Runnable runnable) {
+        DebugUtils.Assert(!asyncBackups.isEmpty(),
+                "propagateExceptionTo() must be called before done(Runnable)."
+                        + " Call .propagateExceptionTo(completion) or .propagateExceptionTo((AsyncBackup) null) if you don't need async backup");
+        AsyncBackup firstAsyncBackup = this.asyncBackups.get(0);
+        AsyncBackup[] otherAsyncBackups = this.asyncBackups.subList(1, this.asyncBackups.size()).toArray(new AsyncBackup[0]);
+
+        DebugUtils.Assert(runnable != null, "runnable of doneHandler should not be null");
+        return done(new FlowDoneHandler(firstAsyncBackup, otherAsyncBackups) {
+            @Override
+            public void handle(Map data) {
+                runnable.run();
+            }
+        });
     }
 
     private void collectAfterRunnable(Flow flow) {
