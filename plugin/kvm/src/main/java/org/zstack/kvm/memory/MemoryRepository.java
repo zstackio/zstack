@@ -281,6 +281,11 @@ public class MemoryRepository {
         desired.put("ksm", ksm);
         desired.put("zram", zram);
         desired.put("writeback", writeback);
+        // Observation has its own service lifecycle; ZRAM control and reclaim gates do not drive it.
+        Map<String, Object> hotMemory = new LinkedHashMap<>();
+        hotMemory.put("enabled", values.get(MemoryStandardField.HOT_MEMORY_ENABLED));
+        hotMemory.put("interval", values.get(MemoryStandardField.HOT_MEMORY_INTERVAL));
+        desired.put("hotMemory", hotMemory);
         return desired;
     }
 

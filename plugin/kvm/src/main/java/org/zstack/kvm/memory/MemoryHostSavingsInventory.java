@@ -19,6 +19,10 @@ public class MemoryHostSavingsInventory {
     public java.util.Map<String, Object> getMetrics() { return metrics; }
     public void setMetrics(java.util.Map<String, Object> value) { metrics = value; }
 
+    private String hotMemoryServiceState;
+    public String getHotMemoryServiceState() { return hotMemoryServiceState; }
+    public void setHotMemoryServiceState(String value) { hotMemoryServiceState = value; }
+
     private String quality;
     public String getQuality() { return quality; }
     public void setQuality(String value) { quality = value; }
