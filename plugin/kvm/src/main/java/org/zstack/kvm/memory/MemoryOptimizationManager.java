@@ -229,12 +229,19 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             checkReadAuthorization((APIMessage) message);
         }
         if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
+        else if (message instanceof APIGetHostMemorySwapDisksMsg) { swapDisks((APIGetHostMemorySwapDisksMsg) message); }
         else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
         else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
         else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
         else if (message instanceof APIPrepareHostMemoryWritebackBackendMsg) {
             APIPrepareHostMemoryWritebackBackendEvent event = new APIPrepareHostMemoryWritebackBackendEvent(message.getId());
             submitLongJob((APICreateMessage) message, ((APIPrepareHostMemoryWritebackBackendMsg) message).getUuid(), event, event::setInventory);
+        } else if (message instanceof APIPrepareHostMemorySwapDiskMsg) {
+            APIPrepareHostMemorySwapDiskEvent event = new APIPrepareHostMemorySwapDiskEvent(message.getId());
+            submitLongJob((APICreateMessage) message, ((APIPrepareHostMemorySwapDiskMsg) message).getUuid(), event, event::setInventory);
+        } else if (message instanceof APIDisableHostMemorySwapDiskMsg) {
+            APIDisableHostMemorySwapDiskEvent event = new APIDisableHostMemorySwapDiskEvent(message.getId());
+            submitLongJob((APICreateMessage) message, ((APIDisableHostMemorySwapDiskMsg) message).getUuid(), event, event::setInventory);
         } else if (message instanceof APIRecoverVmMemoryMigrationHoldMsg) {
             APIRecoverVmMemoryMigrationHoldEvent event = new APIRecoverVmMemoryMigrationHoldEvent(message.getId());
             submitLongJob((APICreateMessage) message, ((APIRecoverVmMemoryMigrationHoldMsg) message).getUuid(), event, event::setInventory);
@@ -433,6 +440,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
             MemoryBackendPreparationRules.validate(msg.getCandidateId());
             prepareBackend(host, msg.getCandidateId(), actor, deadline, finish);
+            return;
+        }
+        if (MemorySwapDiskRules.PREPARE.equals(msg.getAction()) || MemorySwapDiskRules.DISABLE.equals(msg.getAction())) {
+            if (MemorySwapDiskRules.PREPARE.equals(msg.getAction())) { MemoryBackendPreparationRules.validate(msg.getCandidateId()); }
+            swapDiskOperation(host, msg, deadline, finish);
             return;
         }
         String control = PAUSE.equals(msg.getAction()) ? "paused" : RESUME.equals(msg.getAction()) ? "active"
@@ -841,6 +853,73 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
+    private void swapDisks(APIGetHostMemorySwapDisksMsg msg) {
+        repository.targets("Host", msg.getHostUuid());
+        call(msg.getHostUuid(), "swap-disks", command(msg.getHostUuid(), Platform.getUuid()), response -> {
+            ErrorableValue<MemorySwapDiskInventory> inventory = response == null || !response.isSuccess()
+                    || response.state == null ? null : swapDiskInventory(msg.getHostUuid(), response);
+            if (inventory == null || !inventory.isSuccess()) {
+                bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_BACKEND_QUERY_UNAVAILABLE",
+                        "Swap disk observation unavailable or malformed; no storage was modified").toErrorCode());
+                return;
+            }
+            APIGetHostMemorySwapDisksReply reply = new APIGetHostMemorySwapDisksReply();
+            reply.setInventory(inventory.result);
+            bus.reply(msg, reply);
+        });
+    }
+
+    @ExceptionSafe
+    ErrorableValue<MemorySwapDiskInventory> swapDiskInventory(String host, MemoryAgentResponse response) {
+        return ErrorableValue.of(MemorySwapDiskInventory.fromAgentState(host, response.hostUuid, response.state));
+    }
+
+    /**
+     * Prepares or disables the Host's swap disk in one Agent request; the Agent checks the disk and the Host again
+     * and refuses what it cannot do. It holds the Host like a writeback preparation, so the two never interleave.
+     */
+    @Deferred
+    private void swapDiskOperation(String host, MemoryHostOperationMsg msg, long deadline, Consumer<String> finish) {
+        if (MemorySwapDiskRules.PREPARE.equals(msg.getAction()) && !repository.wantsSwap(host)) {
+            throw new MemoryOperationException("MEMORY_BACKEND_PREPARATION_INVALID", "Select the swap reclaim backend before preparing a disk");
+        }
+        if (!preparing.add(host)) {
+            throw new MemoryOperationException("MEMORY_HOST_BUSY", "A disk is already being prepared on this Host");
+        }
+        Defer.guard(() -> preparing.remove(host));
+        AtomicBoolean answered = new AtomicBoolean();
+        Consumer<String> done = outcome -> {
+            if (!answered.compareAndSet(false, true)) { return; }
+            preparing.remove(host);
+            deliver(host);
+            finish.accept(outcome);
+        };
+        Map<String, Object> command = command(host, Platform.getUuid());
+        boolean prepare = MemorySwapDiskRules.PREPARE.equals(msg.getAction());
+        command.put("action", prepare ? "prepare" : "disable");
+        if (prepare) {
+            command.put("candidateId", msg.getCandidateId());
+            // The administrator confirmed overwriting a disk with data by asking for it.
+            command.put("overwrite", msg.isOverwrite());
+        }
+        afterApplyInFlight(host, deadline, () -> call(host, "swap-disks", command,
+                response -> done.accept(swapDiskOutcome(response))), done);
+    }
+
+    /** "success", or the reason the Agent refused or could not finish, as a memory error outcome. */
+    static String swapDiskOutcome(MemoryAgentResponse response) {
+        if (response != null && response.isSuccess() && MemoryRepository.SUCCEEDED.equals(response.status)) {
+            return "success";
+        }
+        if (response == null || response.status == null) { return "Failed: AGENT_UNREACHABLE"; }
+        String reason = response.reasonCode != null ? response.reasonCode : response.reason;
+        // SWAP_DISK_COMMAND_FAILED and SWAP_DISK_REQUEST_FAILED are failures of a step, not refusals of the request.
+        boolean refused = response.reasonCode != null && !response.reasonCode.startsWith("SWAP_DISK_COMMAND_FAILED")
+                && !"SWAP_DISK_REQUEST_FAILED".equals(response.reasonCode);
+        return (refused ? "MEMORY_BACKEND_PREPARATION_INVALID: " : "Failed: ") + reason
+                + (response.details == null ? "" : " " + response.details);
+    }
+
     /** The Agent inventory as the API shows it; an inventory the Agent malformed is an error value. */
     @ExceptionSafe
     ErrorableValue<MemoryWritebackBackendInventory> backendInventory(String host, MemoryAgentResponse response) {
@@ -1014,6 +1093,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         communication.put("requestBytes", MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.REQUEST_BYTES, 1 << 20));
         communication.put("responseBytes", MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.RESPONSE_BYTES, 16 << 20));
         communication.put("communicationSeconds", MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.COMMUNICATION_SECONDS, 30));
+        if ("swap-disks".equals(action) && command.get("action") != null) {
+            communication.put("communicationSeconds", Math.max(MemorySwapDiskRules.AGENT_SECONDS, communication.get("communicationSeconds")));
+        }
         command = new LinkedHashMap<>(command); command.put("communication", communication);
         final Map<String, Object> dispatchedCommand = command;
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

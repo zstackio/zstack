@@ -536,6 +536,8 @@ public class SourceClassMap {
 			put("org.zstack.kvm.memory.HostMemoryStateInventory", "org.zstack.sdk.HostMemoryStateInventory");
 			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
 			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
+			put("org.zstack.kvm.memory.MemorySwapDiskDeviceInventory", "org.zstack.sdk.MemorySwapDiskDeviceInventory");
+			put("org.zstack.kvm.memory.MemorySwapDiskInventory", "org.zstack.sdk.MemorySwapDiskInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory", "org.zstack.sdk.MemoryWritebackBackendCandidateInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackBackendInventory", "org.zstack.sdk.MemoryWritebackBackendInventory");
 			put("org.zstack.kvm.xmlhook.XmlHookInventory", "org.zstack.sdk.XmlHookInventory");
@@ -1352,6 +1354,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
 			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
 			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");
+			put("org.zstack.sdk.MemorySwapDiskDeviceInventory", "org.zstack.kvm.memory.MemorySwapDiskDeviceInventory");
+			put("org.zstack.sdk.MemorySwapDiskInventory", "org.zstack.kvm.memory.MemorySwapDiskInventory");
 			put("org.zstack.sdk.MemoryWritebackBackendCandidateInventory", "org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory");
 			put("org.zstack.sdk.MemoryWritebackBackendInventory", "org.zstack.kvm.memory.MemoryWritebackBackendInventory");
 			put("org.zstack.sdk.MetaServerService", "org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService");

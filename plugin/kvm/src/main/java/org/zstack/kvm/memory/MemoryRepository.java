@@ -268,6 +268,15 @@ public class MemoryRepository {
             zram.put("enabled", Boolean.FALSE);
         }
         Map<String, Object> desired = new LinkedHashMap<>();
+        if (license == License.VALID) {
+            Object backend = values.get(MemoryStandardField.RECLAIM_BACKEND);
+            desired.put("reclaim", Collections.singletonMap("backend", backend == null ? "zram" : backend));
+            if ("swap".equals(backend)) {
+                // Older Agents ignore reclaim.backend. Leave their running pool and tuning alone.
+                zram.clear();
+                writeback.clear();
+            }
+        }
         desired.put("control", control);
         desired.put("ksm", ksm);
         desired.put("zram", zram);
@@ -383,8 +392,15 @@ public class MemoryRepository {
 
     /** Whether the Host's effective configuration turns ZRAM on now. */
     public boolean wantsZram(String host) {
-        return transaction(em -> Boolean.TRUE.equals(
-                effectiveValues(em, host, hostCluster(host)).get(MemoryStandardField.ZRAM_ENABLED)));
+        return transaction(em -> {
+            Map<MemoryStandardField, Object> values = effectiveValues(em, host, hostCluster(host));
+            return !"swap".equals(values.get(MemoryStandardField.RECLAIM_BACKEND))
+                    && Boolean.TRUE.equals(values.get(MemoryStandardField.ZRAM_ENABLED));
+        });
+    }
+
+    boolean wantsSwap(String host) {
+        return transaction(em -> "swap".equals(effectiveValues(em, host, hostCluster(host)).get(MemoryStandardField.RECLAIM_BACKEND)));
     }
 
     public boolean isDrained(String host) {
@@ -463,6 +479,11 @@ public class MemoryRepository {
             String status = response == null ? null : response.status;
             String reason = response == null ? "AGENT_UNREACHABLE"
                     : response.reasonCode != null ? response.reasonCode : response.reason;
+            if (SUCCEEDED.equals(status) && response.isSuccess() && swapMissing(desired(state), response.state)) {
+                // An older Agent can acknowledge a generation without recognizing the requested backend.
+                status = CONVERGING;
+                reason = "SWAP_DISK_NOT_ENABLED";
+            }
             if (SUCCEEDED.equals(status) && response.isSuccess()) {
                 state.setAppliedRevision(generation); state.setStatus(SUCCEEDED); state.setReason(null);
                 state.setFailures(0); state.setNextAttemptAt(null);
@@ -686,6 +707,11 @@ public class MemoryRepository {
     }
 
     /** The observed Host contradicts its applied desired configuration. */
+    private static boolean swapMissing(Map<String, Object> desired, Map<String, Object> observed) {
+        return "active".equals(desired.get("control")) && "swap".equals(field(desired.get("reclaim"), "backend"))
+                && (observed == null || !"swap".equals(field(observed.get("reclaim"), "backend")));
+    }
+
     static boolean drifted(Map<String, Object> desired, Map<String, Object> observed) {
         Object control = desired.get("control"), observedControl = observed.get("control");
         if ("drained".equals(control)) {
@@ -695,6 +721,7 @@ public class MemoryRepository {
         }
         if ("paused".equals(control)) { return "active".equals(observedControl); }
         if (!"active".equals(control)) { return false; }
+        if (swapMissing(desired, observed)) { return true; }
         // A service back on its packaged observe-only config (e.g. after a reinstall) or with reclaim
         // turned off on the Host no longer reclaims.
         if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled")) && zramSupported(observed)

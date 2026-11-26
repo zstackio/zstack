@@ -3,6 +3,7 @@ package org.zstack.kvm.memory;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
+import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.cluster.ClusterVO;
@@ -17,6 +18,11 @@ public class MemoryStandardGlobalConfig {
     @GlobalConfigDef(defaultValue = EMPTY, description = "KSM zero-page scanning")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig KSM_ZERO_PAGES = new GlobalConfig(CATEGORY, "memory.ksm.zeroPagesEnabled");
+
+    @GlobalConfigValidation(validValues = {"zram", "swap"})
+    @GlobalConfigDef(defaultValue = "zram", description = "Memory reclaim backend")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig RECLAIM_BACKEND = new GlobalConfig(CATEGORY, "memory.reclaim.backend");
 
     @GlobalConfigDef(defaultValue = "false", description = "Enable ZRAM")
     @BindResourceConfig({HostVO.class, ClusterVO.class})

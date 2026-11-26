@@ -11,7 +11,7 @@ public final class MemoryBackendPreparationRules {
     public static void validate(String candidateId) {
         if (candidateId == null || !candidateId.matches("candidate:[a-f0-9]{64}")) {
             throw new MemoryOperationException("MEMORY_BACKEND_PREPARATION_INVALID",
-                    "A writeback preparation requires a candidate id from GetHostMemoryWritebackBackends");
+                    "A memory backend preparation requires a candidate id from the Host's candidate list");
         }
     }
 
