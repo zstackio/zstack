@@ -40,6 +40,22 @@ public class MemorySummaryRulesTest {
         assertTrue(hosts.get(2).getMetrics().isEmpty());
         assertNull(hosts.get(2).getSampleTime());
     }
+    @Test public void hotMemoryServiceStateUsesOnlyCurrentHostObservations() {
+        String absent = "{\"hotMemory\":{\"serviceState\":\"absent\"}}";
+        List<MemoryHostSavingsInventory> hosts = MemorySummaryRules.hostDetails(
+                Arrays.asList("absent", "oldAgent", "expired", "future", "failedRead"),
+                Arrays.asList(current("absent", now, absent), current("oldAgent", now, "{}"),
+                        current("expired", now - MemoryOptimizationGlobalConfig.displayTtlMillis(), absent),
+                        current("future", now + 5001, absent),
+                        current("failedRead", now, "{\"hotMemory\":{\"serviceState\":\"unknown\"}}")),
+                Collections.emptyMap(), now);
+        assertEquals("absent", hosts.get(0).getHotMemoryServiceState());
+        assertNull(hosts.get(1).getHotMemoryServiceState());
+        assertNull(hosts.get(2).getHotMemoryServiceState());
+        assertNull(hosts.get(3).getHotMemoryServiceState());
+        assertEquals("unknown", hosts.get(4).getHotMemoryServiceState());
+    }
+
     @Test public void aHostWhoseSampleCannotBeReadIsCountedOnceAsUnknown() {
         // Paused is seen before the unreadable sample time; the Host is not counted twice.
         String state = "{\"control\":\"paused\",\"ksm\":{\"enabled\":true},"

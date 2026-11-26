@@ -23,6 +23,12 @@ public class MemoryStandardGlobalConfig {
     @GlobalConfigDef(defaultValue = "zram", description = "Memory reclaim backend")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig RECLAIM_BACKEND = new GlobalConfig(CATEGORY, "memory.reclaim.backend");
+    @GlobalConfigDef(defaultValue = "false", description = "Enable VM hot-memory observation")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig HOT_MEMORY_ENABLED = new GlobalConfig(CATEGORY, "memory.hotMemory.enabled");
+    @GlobalConfigDef(defaultValue = "600", description = "VM hot-memory observation interval in seconds (300-86400)")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig HOT_MEMORY_INTERVAL = new GlobalConfig(CATEGORY, "memory.hotMemory.interval");
 
     @GlobalConfigDef(defaultValue = "false", description = "Enable ZRAM")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
