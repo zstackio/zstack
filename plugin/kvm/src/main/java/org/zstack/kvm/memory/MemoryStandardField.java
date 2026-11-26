@@ -15,6 +15,7 @@ import java.util.*;
 public enum MemoryStandardField {
     KSM_ENABLED("ksm.enabled", KVMGlobalConfig.HOST_KSM, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     KSM_ZERO_PAGES("ksm.zeroPagesEnabled", MemoryStandardGlobalConfig.KSM_ZERO_PAGES, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
+    RECLAIM_BACKEND("reclaim.backend", MemoryStandardGlobalConfig.RECLAIM_BACKEND, Kind.STRING, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     ZRAM_ENABLED("zram.enabled", MemoryStandardGlobalConfig.ZRAM_ENABLED, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     ZRAM_LOGICAL_CAPACITY("zram.logicalCapacityBytes", MemoryStandardGlobalConfig.ZRAM_LOGICAL_CAPACITY, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     ZRAM_RAM_LIMIT("zram.ramLimitBytes", MemoryStandardGlobalConfig.ZRAM_RAM_LIMIT, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
@@ -81,6 +82,9 @@ public enum MemoryStandardField {
             case STRING:
                 if (!(value instanceof String)) { throw incompatible(value); }
                 String text = (String) value;
+                if (this == RECLAIM_BACKEND && !("zram".equals(text) || "swap".equals(text))) {
+                    throw incompatible(value);
+                }
                 if ("writeback.backendResourceUuid".equals(path) && !isBackendResource(text)) {
                     throw new IllegalArgumentException("writeback.backendResourceUuid must be a UUID");
                 }

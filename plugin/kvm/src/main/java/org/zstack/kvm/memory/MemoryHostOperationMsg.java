@@ -7,6 +7,7 @@ public class MemoryHostOperationMsg extends NeedReplyMessage {
     private String hostUuid;
     private String action;
     private String candidateId;
+    private boolean overwrite;
     private String jobUuid;
     private String accountUuid;
     private String userUuid;
@@ -17,6 +18,8 @@ public class MemoryHostOperationMsg extends NeedReplyMessage {
     public void setAction(String value) { action = value; }
     public String getCandidateId() { return candidateId; }
     public void setCandidateId(String value) { candidateId = value; }
+    public boolean isOverwrite() { return overwrite; }
+    public void setOverwrite(boolean value) { overwrite = value; }
     public String getJobUuid() { return jobUuid; }
     public void setJobUuid(String value) { jobUuid = value; }
     public String getAccountUuid() { return accountUuid; }

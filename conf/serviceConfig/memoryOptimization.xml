@@ -7,6 +7,9 @@
     <message><name>org.zstack.kvm.memory.APIResumeMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIDrainMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIPrepareHostMemoryWritebackBackendMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetHostMemorySwapDisksMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIPrepareHostMemorySwapDiskMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIDisableHostMemorySwapDiskMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIRecoverVmMemoryMigrationHoldMsg</name></message>
     <message>
         <name>org.zstack.kvm.memory.APIQueryHostMemoryStateMsg</name>

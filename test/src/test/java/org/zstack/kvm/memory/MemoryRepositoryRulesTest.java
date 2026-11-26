@@ -69,6 +69,14 @@ public class MemoryRepositoryRulesTest {
         registryField.set(encryptAspect, previousRegistry);
     }
 
+    @Test public void anAgentAcknowledgementWithoutTheRequestedSwapBackendStaysPending() {
+        stored.setDesiredRevision(4);
+        stored.setDesired("{\"control\":\"active\",\"reclaim\":{\"backend\":\"swap\"}}");
+        repository.record("host1", 4, ksmSample(4, "active"));
+        assertEquals(MemoryRepository.CONVERGING, stored.getStatus());
+        assertEquals(Long.valueOf(3), stored.getAppliedRevision());
+    }
+
     private static MemoryAgentResponse ksmSample(long generation, String tunedState) {
         MemoryAgentResponse response = new MemoryAgentResponse();
         response.setSuccess(true); response.status = MemoryRepository.SUCCEEDED;
