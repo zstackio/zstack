@@ -1,6 +1,7 @@
 package org.zstack.kvm.memory;
 
 import org.junit.Test;
+import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.utils.gson.JSONObjectUtil;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -204,4 +205,31 @@ public class MemoryObservationRulesTest {
         }
         assertNull(MemoryObservationRules.epochMillis(1791468260720L));
     }
+
+    @Test public void theZramServiceFailingOrRecoveringIsAnEvent() {
+        long now = System.currentTimeMillis();
+        MemoryStateVO policy = desired("{\"control\":\"active\",\"zram\":{\"enabled\":true}}");
+        MemoryAgentResponse response = serviceObservation(now);
+        Map<String, Object> zram = new LinkedHashMap<>();
+        response.state.put("zram", zram);
+        zram.put("serviceState", "failed");
+        String active = "{\"zram\":{\"serviceState\":\"active\"}}", failed = "{\"zram\":{\"serviceState\":\"failed\"}}";
+        assertEquals(1, MemoryObservationRules.serviceEvents("host", response, policy, active, now).size());
+        HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event =
+                MemoryObservationRules.serviceEvents("host", response, policy, active, now).get(0);
+        assertEquals("zram", event.getService());
+        assertEquals("Failed", event.getStatus());
+        assertEquals("SYSTEMD_FAILED", event.getReason());
+        assertEquals("the same failed sample again is not another event",
+                0, MemoryObservationRules.serviceEvents("host", response, policy, failed, now).size());
+        zram.put("serviceState", "active");
+        assertEquals("Recovered", MemoryObservationRules.serviceEvents("host", response, policy, failed, now).get(0).getStatus());
+        // A service stopped on purpose (drain, ZRAM off) is not a failure.
+        zram.put("serviceState", "inactive");
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, active, now).size());
+        zram.put("serviceState", "failed");
+        assertEquals("ZRAM off in the configuration", 0, MemoryObservationRules.serviceEvents("host", response,
+                desired("{\"control\":\"active\",\"zram\":{\"enabled\":false}}"), active, now).size());
+    }
+
 }

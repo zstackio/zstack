@@ -12,6 +12,7 @@ public class HostMemoryStateInventory {
     private String hostUuid;
     private String status;
     private String featureState;
+    private String zramState;
     private String reason;
     private List<String> allowedActions;
     private String activeJobUuid;
@@ -24,6 +25,7 @@ public class HostMemoryStateInventory {
         inventory.hostUuid = vo.getHostUuid();
         inventory.status = vo.getStatus();
         inventory.featureState = vo.getFeatureState();
+        inventory.zramState = vo.getZramState();
         inventory.reason = vo.getReason();
         inventory.allowedActions = vo.getAllowedActions() == null ? Collections.emptyList()
                 : JSONObjectUtil.toObject(vo.getAllowedActions(), ArrayList.class);
@@ -45,6 +47,7 @@ public class HostMemoryStateInventory {
         inventory.setHostUuid("1234567890abcdef1234567890abcdef");
         inventory.setStatus("Applied");
         inventory.setFeatureState("Active");
+        inventory.setZramState("Active");
         inventory.setAllowedActions(Arrays.asList("query", "pause", "drain"));
         inventory.setLastObservedAt(1791583200000L);
         return inventory;
@@ -56,6 +59,8 @@ public class HostMemoryStateInventory {
     public void setStatus(String value) { status = value; }
     public String getFeatureState() { return featureState; }
     public void setFeatureState(String value) { featureState = value; }
+    public String getZramState() { return zramState; }
+    public void setZramState(String value) { zramState = value; }
     public String getReason() { return reason; }
     public void setReason(String value) { reason = value; }
     public List<String> getAllowedActions() { return allowedActions; }

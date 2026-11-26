@@ -95,7 +95,7 @@ public final class MemorySummaryRules {
         long zramNormal = 0, zramWriteback = 0;
         int count = 0, ordinaryCount = 0, zeroCount = 0, totalCount = 0, zramCount = 0;
         int ordinaryDisabled = 0, zeroDisabled = 0, totalDisabled = 0, zramDisabled = 0;
-        int zeroDisabledWithValue = 0, zramDisabledWithValue = 0;
+        int zeroDisabledWithValue = 0, zramDisabledWithValue = 0, zeroUnsupported = 0;
         int zramNormalDisabled = 0, zramWritebackDisabled = 0;
         long disabledZramValue = 0;
         Aggregate aOrdinary = aggregate(samples, bucket, 0), aZero = aggregate(samples, bucket, 1);
@@ -108,6 +108,7 @@ public final class MemorySummaryRules {
         for (HostMetrics sample : samples.values()) {
             if (sample.sampleTime / windowMillis != bucket) continue;
             if (sample.zeroDisabled) { zeroDisabled++; if (sample.zero != null && sample.zero == 0) zeroDisabledWithValue++; }
+            if (sample.zeroUnsupported) { zeroUnsupported++; }
             if (sample.zramDisabled) {
                 zramDisabled++;
                 if (sample.zram != null && sample.zram == 0) { zramDisabledWithValue++; disabledZramValue += sample.zram; }
@@ -140,8 +141,11 @@ public final class MemorySummaryRules {
         if ((aZramWriteback.count > 0 || zramWritebackDisabled > 0) && !aZramWriteback.overflow) result.setZramWritebackBytes(zramWriteback);
         Map<String, Map<String, Object>> coverage = new LinkedHashMap<>();
         coverage.put("ksmOrdinaryBytes", coverage(expected.size(), ordinaryCount, ordinaryCount, 0, aOrdinary));
-        coverage.put("ksmZeroBytes", coverage(expected.size(), zeroCount + (aZero.overflow ? 0 : zeroDisabledWithValue),
-                zeroCount, zeroDisabledWithValue, aZero));
+        Map<String, Object> zeroCoverage = coverage(expected.size(), zeroCount + (aZero.overflow ? 0 : zeroDisabledWithValue),
+                zeroCount, zeroDisabledWithValue, aZero);
+        // Every Host in scope has a kernel that cannot count zero pages: not a missing sample.
+        if (!expected.isEmpty() && zeroUnsupported == expected.size()) { zeroCoverage.put("quality", "Unsupported"); }
+        coverage.put("ksmZeroBytes", zeroCoverage);
         coverage.put("ksmTotalBytes", coverage(expected.size(), totalCount, totalCount, 0, aTotal));
         coverage.put("zramBytes", coverage(expected.size(), zramCount + (aZram.overflow ? 0 : zramDisabledWithValue),
                 zramCount, zramDisabledWithValue, aZram));
@@ -201,7 +205,7 @@ public final class MemorySummaryRules {
         Long ordinary, zero, total, zram, zramNormal, zramWriteback;
         boolean ordinaryObserved, zeroObserved, totalObserved, zramObserved, zramSplitObserved;
         boolean totalSeries, metricQualityPresent;
-        boolean zeroDisabled, zramDisabled, zramSplitDisabled;
+        boolean zeroDisabled, zeroUnsupported, zramDisabled, zramSplitDisabled;
     }
 
     private static HostMetrics parseMetrics(JsonObject s, long now) {
@@ -222,6 +226,7 @@ public final class MemorySummaryRules {
         m.totalObserved = usable(s, "ksm_total", m.total);
         m.zramObserved = usable(s, "zram", m.zram);
         m.zeroDisabled = "disabled".equalsIgnoreCase(quality(q, "ksm_zero"));
+        m.zeroUnsupported = m.zero == null && "unsupported".equalsIgnoreCase(quality(q, "ksm_zero"));
         m.zramDisabled = "disabled".equalsIgnoreCase(quality(q, "zram"));
         m.totalSeries = "mechanism-estimate-v1".equals(string(s, "formulaVersion"))
                 && "Fresh".equals(string(s, "quality"))

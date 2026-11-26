@@ -95,7 +95,7 @@ doc {
 	}
 	field {
 		name "metricCoverage"
-		desc "各指标覆盖质量细节。"
+		desc "各指标覆盖质量细节，每项含expectedHosts、coveredHosts和quality。quality取值：Fresh（范围内Host均有有效值）、Partial（部分Host有有效值，数值和coveredHosts只含这些Host）、Missing（没有有效值，包括内核不支持与未采样或采集失败混合）、Disabled（机制已关闭，值为0）、Unknown（汇总溢出）；ksmZeroBytes另有Unsupported：范围非空且所有Host的内核都不提供零页计数，此时ksmTotalBytes不完整。"
 		type "Map"
 		since "5.5.48"
 	}
