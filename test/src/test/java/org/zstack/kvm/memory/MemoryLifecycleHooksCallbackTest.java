@@ -1060,6 +1060,19 @@ public class MemoryLifecycleHooksCallbackTest {
         MemoryMigrationVO hold;
         String reclaimMode = "auto";
         Boolean sharePages = true;
+        boolean explicitSharing = true, failSave, loseCommitReply;
+        @Override org.zstack.resourceconfig.ResourceConfig vmPageSharingConfig() {
+            return new org.zstack.resourceconfig.ResourceConfig() {
+                @Override public <T> T defaultValue(Class<T> type) { return type.cast(true); }
+                @Override public boolean resourceConfigCreated(String vm) { return explicitSharing; }
+                @Override public void persistLocalValue(String vm, String value) {
+                    if (failSave) { throw new IllegalStateException("commit failed"); }
+                    explicitSharing = value != null;
+                    sharePages = value == null || Boolean.parseBoolean(value);
+                    if (loseCommitReply) { throw new IllegalStateException("commit reply lost"); }
+                }
+            };
+        }
         boolean reclaimModeUnavailable;
         @Override public String vmReclaimMode(String vm) {
             if (reclaimModeUnavailable) { throw new MemoryOperationException("VM_CONFIGURATION_UNKNOWN", "configuration unavailable"); }
@@ -1214,6 +1227,79 @@ public class MemoryLifecycleHooksCallbackTest {
         assertTrue("the previously saved value remains the inherited/current value", f.repository.sharePages);
     }
 
+    @Test public void saveFailureRestoresTheSameInstanceAndKeepsTheSavedSetting() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.failSave = true;
+        f.proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", true)));
+        MemoryVmConfigurationMsg msg = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        msg.setKsmEnabled(false);
+        f.coordinator.handle(msg); f.runQueued();
+        assertFalse(f.reply.isSuccess());
+        assertEquals("KSM_CONFIGURATION_SAVE_FAILED: memory.ksm.runtimeRestored", f.reply.getError().getDetails());
+        assertEquals(Arrays.asList(false, true), f.writes);
+        assertTrue(f.repository.sharePages);
+        assertEquals(1, f.completed);
+    }
+
+    @Test public void failedCommitCannotRestoreAReplacementVm() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.failSave = true;
+        f.replaceAfterWrite = true;
+        f.proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", true)));
+        MemoryVmConfigurationMsg msg = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        msg.setKsmEnabled(false);
+        f.coordinator.handle(msg); f.runQueued();
+        assertFalse(f.reply.isSuccess());
+        assertTrue(f.reply.getError().getDetails().contains("memory.ksm.runtimeUnknown"));
+        assertEquals(Collections.singletonList(false), f.writes);
+    }
+
+    @Test public void rejectedDeleteKeepsTheExplicitVmOverride() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.sharePages = false;
+        f.omitVmMemoryState = true;
+        f.coordinator.handle(f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM)); f.runQueued();
+        assertFalse(f.reply.isSuccess());
+        assertEquals(Boolean.FALSE, f.repository.sharePages);
+        assertTrue(f.repository.explicitSharing);
+        assertTrue(f.writes.isEmpty());
+    }
+
+    @Test public void oldManagementNodeApplyRequestLeavesPersistenceToItsCaller() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        MemoryVmConfigurationMsg msg = new MemoryVmConfigurationMsg();
+        msg.setVmUuid("vm-1"); msg.setAction(MemoryVmConfigurationMsg.Action.APPLY_KSM); msg.setKsmEnabled(false);
+        f.coordinator.handle(msg); f.runQueued();
+        assertTrue(f.reply.isSuccess());
+        assertEquals(Collections.singletonList(false), f.writes);
+        assertTrue(f.repository.sharePages);
+    }
+
+    @Test public void lostCommitReplyIsVerifiedWithoutAnInverseWrite() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.repository.loseCommitReply = true;
+        f.proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", true)));
+        MemoryVmConfigurationMsg msg = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        msg.setKsmEnabled(false);
+        f.coordinator.handle(msg); f.runQueued();
+        assertTrue(f.reply.isSuccess());
+        assertEquals(Collections.singletonList(false), f.writes);
+        assertEquals(Boolean.FALSE, f.repository.sharePages);
+    }
+
+    @Test public void agentTimeoutDoesNotClaimThatALateWriteHasBeenRestored() {
+        VmConfigurationFixture f = new VmConfigurationFixture();
+        f.loseAgentReply = true;
+        f.proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", true)));
+        MemoryVmConfigurationMsg msg = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
+        msg.setKsmEnabled(false);
+        f.coordinator.handle(msg); f.runQueued();
+        assertFalse(f.reply.isSuccess());
+        assertTrue(f.reply.getError().getDetails().contains("memory.ksm.runtimeUnknown"));
+        assertEquals(Collections.singletonList(false), f.writes);
+        assertTrue(f.repository.sharePages);
+    }
+
     @Test public void vmConfigurationFailureWithoutMessageStillReturnsAnError() {
         VmConfigurationFixture f = new VmConfigurationFixture();
         f.failObservationWithoutMessage = true;
@@ -1235,32 +1321,7 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("Unsupported", f.reply.getState().get("state"));
         assertEquals("KSM_RUNTIME_UNSUPPORTED_NEXT_START", f.reply.getState().get("reasonCode"));
         assertNull("no live QMP write is possible on this platform", f.ksmCommand);
-        assertTrue("the validator can now persist the candidate, replacing the old value", f.repository.sharePages);
-    }
-
-    @Test public void committedKsmValuesReconcileAfterValidatorsFinishOutOfOrder() {
-        VmConfigurationFixture f = new VmConfigurationFixture();
-
-        // Two pre-save validations leave the runtime at the older request's value.
-        MemoryVmConfigurationMsg first = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
-        first.setKsmEnabled(true); f.coordinator.handle(first); f.runQueued();
-        MemoryVmConfigurationMsg second = f.message(MemoryVmConfigurationMsg.Action.APPLY_KSM);
-        second.setKsmEnabled(false); f.coordinator.handle(second); f.runQueued();
-        assertEquals(Arrays.asList(true, false), f.ksmValues);
-
-        // The older request commits last. Each after-commit callback queues the existing
-        // APPLY_KSM action, which reads the now committed value when it reaches the VM queue.
-        f.repository.sharePages = false;
-        f.coordinator.reconcileKsmAfterChange("vm-1");
-        f.repository.sharePages = true;
-        f.coordinator.reconcileKsmAfterChange("vm-1");
-        assertEquals(2, f.sent.size());
-        for (MemoryVmConfigurationMsg queued : f.sent) {
-            assertEquals(MemoryVmConfigurationMsg.Action.APPLY_KSM, queued.getAction());
-            assertNull(queued.getKsmEnabled());
-            f.coordinator.handle(queued); f.runQueued();
-        }
-        assertEquals(Arrays.asList(true, false, true, true), f.ksmValues);
+        assertFalse("the new value is saved for the next start", f.repository.sharePages);
     }
 
     @Test public void vmReadStateRequiresMatchingInstanceAndQmpEvidence() {
@@ -1365,21 +1426,27 @@ public class MemoryLifecycleHooksCallbackTest {
         long readTimeout;
         boolean readFailure;
         boolean failObservationWithoutMessage;
-        boolean omitVmMemoryState;
+        boolean omitVmMemoryState, replaceAfterWrite, loseAgentReply;
+        List<Boolean> writes = new ArrayList<>();
         Map<String, Object> stateCommand, ksmCommand;
-        final List<MemoryVmConfigurationMsg> sent = new ArrayList<>();
-        final List<Boolean> ksmValues = new ArrayList<>();
         final FakeManager manager = new FakeManager() {
             @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
                 if (!"state".equals(action)) {
                     if ("set-ksm".equals(command.get("action"))) {
-                        ksmCommand = new HashMap<>(command); ksmValues.add((Boolean) command.get("ksmEnabled"));
-                        proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", command.get("ksmEnabled"))));
+                        ksmCommand = new HashMap<>(command);
+                        boolean enabled = (Boolean) command.get("ksmEnabled");
+                        writes.add(enabled);
+                        if (loseAgentReply) { callback.accept(null); return; }
+                        proof.put("backends", Collections.singletonList(Collections.singletonMap("merge", enabled)));
+                        if (replaceAfterWrite) { vm.put("instanceGeneration", "replacement"); }
+                        MemoryAgentResponse answer = response(host, "current-instance");
+                        answer.operationUuid = (String) command.get("operationUuid");
+                        answer.state.put("applied", true);
+                        callback.accept(answer);
+                        return;
                     }
                     super.call(host, action, command, answer -> {
-                        answer.operationUuid = (String) command.get("operationUuid");
-                        if ("set-ksm".equals(command.get("action"))) { answer.state.put("applied", true); }
-                        callback.accept(answer);
+                        answer.operationUuid = (String) command.get("operationUuid"); callback.accept(answer);
                     }); return;
                 }
                 stateCommand = new HashMap<>(command);
@@ -1398,7 +1465,6 @@ public class MemoryLifecycleHooksCallbackTest {
             org.zstack.core.cloudbus.CloudBus bus = (org.zstack.core.cloudbus.CloudBus) Proxy.newProxyInstance(
                 getClass().getClassLoader(), new Class[]{org.zstack.core.cloudbus.CloudBus.class}, (proxy, method, args) -> {
                     if ("reply".equals(method.getName())) { reply = (MemoryVmConfigurationMsg.Reply) args[1]; }
-                    if ("send".equals(method.getName())) { sent.add((MemoryVmConfigurationMsg) args[0]); return null; }
                     if ("call".equals(method.getName())) {
                         MemoryVmConfigurationMsg msg = (MemoryVmConfigurationMsg) args[0];
                         readCalls++; readTimeout = msg.getTimeout();
@@ -1416,7 +1482,9 @@ public class MemoryLifecycleHooksCallbackTest {
             coordinator = new MemoryVmConfiguration(bus, threads, repository, manager);
         }
         MemoryVmConfigurationMsg message(MemoryVmConfigurationMsg.Action action) {
-            MemoryVmConfigurationMsg msg = new MemoryVmConfigurationMsg(); msg.setVmUuid("vm-1"); msg.setAction(action); return msg;
+            MemoryVmConfigurationMsg msg = action == MemoryVmConfigurationMsg.Action.APPLY_KSM
+                    ? new MemoryVmConfigurationMsg.SaveKsm() : new MemoryVmConfigurationMsg();
+            msg.setVmUuid("vm-1"); msg.setAction(action); return msg;
         }
         void runQueued() {
             queued.run(() -> completed++);

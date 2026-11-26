@@ -897,8 +897,12 @@ public class MemoryRepository {
         return modes;
     }
 
+    ResourceConfig vmPageSharingConfig() {
+        return rcf.getResourceConfig("vmMemory.memory.backing.share.pages");
+    }
+
     public Boolean vmSharePages(String vmUuid) {
-        ResourceConfig config = rcf.getResourceConfig("vmMemory.memory.backing.share.pages");
+        ResourceConfig config = vmPageSharingConfig();
         return config == null ? null : config.getResourceConfigValue(vmUuid, Boolean.class);
     }
 

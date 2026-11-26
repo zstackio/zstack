@@ -17,6 +17,10 @@ public class MemoryVmConfigurationMsg extends NeedReplyMessage {
     public Boolean getKsmEnabled() { return ksmEnabled; }
     public void setKsmEnabled(Boolean value) { ksmEnabled = value; }
 
+    // The old APPLY_KSM request changes the host only. Older owners must not acknowledge a durable write.
+    public static class SaveKsm extends MemoryVmConfigurationMsg {
+    }
+
     public static class Reply extends MessageReply {
         private Map<String, Object> state;
         public Map<String, Object> getState() { return state; }

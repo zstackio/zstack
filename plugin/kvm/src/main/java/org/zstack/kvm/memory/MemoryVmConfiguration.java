@@ -51,34 +51,15 @@ final class MemoryVmConfiguration {
         zram.installLocalDeleteExtension((config, uuid, type, oldValue) -> reconcileAfterReclaimChange(uuid));
         zram.installRuntimeStateReader(uuid -> readState(uuid, "zram"));
         // A tenant must not take its VM out of the Host's reclaim, or split its merged pages.
-        ResourceConfig ksm = configs.getResourceConfig("vmMemory.memory.backing.share.pages");
+        ResourceConfig ksm = repository.vmPageSharingConfig();
         if (ksm == null) { return; } // Optional commercial module; never invent a second KSM config.
-        // The running VM is changed before the value is saved: a failure leaves the
-        // configuration as it was, and the Agent checks and changes in one pass.
-        ksm.installValidatorExtension((uuid, oldValue, newValue) -> {
-            if (!Objects.equals(oldValue, newValue)) { request(uuid, APPLY_KSM, Boolean.valueOf(newValue)); }
-        });
-        ksm.installLocalUpdateExtension((config, uuid, type, oldValue, newValue) -> {
-            if (!Objects.equals(oldValue, newValue)) { reconcileKsmAfterChange(uuid); }
-        });
-        ksm.installLocalDeleteExtension((config, uuid, type, oldValue) -> {
-            try { request(uuid, APPLY_KSM, null); }
-            catch (GlobalConfigException failed) {
-                // The inherited value was not applied. Keep the VM's own value, which
-                // the running VM still has, so that the two do not differ.
-                if (oldValue != null) {
-                    try { config.updateValue(uuid, oldValue); }
-                    catch (RuntimeException e) { logger.warn(String.format("VM[%s] page sharing configuration was not restored", uuid), e); }
-                }
-                throw failed;
-            }
-            reconcileKsmAfterChange(uuid);
-        });
+        ksm.installLocalValueWriter((uuid, value) ->
+                request(uuid, APPLY_KSM, value == null ? null : Boolean.valueOf(value)));
         ksm.installRuntimeStateReader(uuid -> readState(uuid, "ksm"));
     }
 
     private MemoryVmConfigurationMsg message(String vm, MemoryVmConfigurationMsg.Action action, Boolean enabled) {
-        MemoryVmConfigurationMsg msg = new MemoryVmConfigurationMsg();
+        MemoryVmConfigurationMsg msg = action == APPLY_KSM ? new MemoryVmConfigurationMsg.SaveKsm() : new MemoryVmConfigurationMsg();
         msg.setVmUuid(vm); msg.setAction(action); msg.setKsmEnabled(enabled);
         if (action == READ) { msg.setTimeout(10000L); }
         bus.makeTargetServiceIdByResourceUuid(msg, MemoryOptimizationManager.SERVICE_ID, vm);
@@ -113,22 +94,6 @@ final class MemoryVmConfiguration {
             Object value = state == null ? null : state.get(feature);
             return value instanceof Map ? (Map<String, Object>) value : status("Unknown", "VM_MEMORY_STATE_UNKNOWN");
         } catch (RuntimeException | ExecutionException e) { return status("Unknown", e.getMessage()); }
-    }
-
-    /** Re-read the committed KSM value on the existing per-VM queue after a config write. */
-    void reconcileKsmAfterChange(String vm) {
-        try {
-            bus.send(message(vm, APPLY_KSM, null), new CloudBusCallBack(null) {
-                @Override public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(String.format("VM[%s] page sharing configuration was saved, but runtime reconciliation failed: %s",
-                                vm, reply.getError() == null ? "NO_ERROR" : reply.getError().getDetails()));
-                    }
-                }
-            });
-        } catch (RuntimeException e) {
-            logger.warn(String.format("VM[%s] page sharing configuration was saved, but runtime reconciliation could not be scheduled", vm), e);
-        }
     }
 
     private void reconcileAfterReclaimChange(String vm) {
@@ -171,12 +136,19 @@ final class MemoryVmConfiguration {
         try {
             MemoryRepository.VmPlacement placement = repository.vmPlacement(msg.getVmUuid());
             if (placement == null) { finish(done, null, "VM_NOT_FOUND"); return; }
+            if (msg instanceof MemoryVmConfigurationMsg.SaveKsm && msg.getKsmEnabled() != null
+                    && Objects.equals(repository.vmSharePages(msg.getVmUuid()), msg.getKsmEnabled())) {
+                saveKsm(msg, null, done, null);
+                return;
+            }
             if (placement.state != VmInstanceState.Running || placement.hostUuid == null) {
                 if (placement.state == VmInstanceState.Unknown) { finish(done, null, "VM_STATE_UNKNOWN"); return; }
                 Map<String, Object> pending = new LinkedHashMap<>();
                 pending.put("ksm", status("Pending", "NEXT_VM_START"));
                 pending.put("zram", status("Pending", "NEXT_VM_START"));
-                finish(done, pending, null); return;
+                if (msg instanceof MemoryVmConfigurationMsg.SaveKsm) { saveKsm(msg, pending, done, null); }
+                else { finish(done, pending, null); }
+                return;
             }
             String host = placement.hostUuid;
             Map<String, Object> command = new LinkedHashMap<>();
@@ -214,7 +186,7 @@ final class MemoryVmConfiguration {
             Object raw = observed.state.get("vmMemoryState");
             Map<?, ?> proof = raw instanceof Map ? (Map<?, ?>) raw : Collections.emptyMap();
             if (Boolean.FALSE.equals(proof.get("supported"))) {
-                finish(done, status("Unsupported", "KSM_RUNTIME_UNSUPPORTED_NEXT_START"), null); return;
+                saveKsm(msg, status("Unsupported", "KSM_RUNTIME_UNSUPPORTED_NEXT_START"), done, null); return;
             }
             if (!Boolean.TRUE.equals(proof.get("supported")) || !Objects.equals(generation, proof.get("instanceGeneration"))) {
                 finish(done, null, "KSM_RUNTIME_STATE_UNKNOWN"); return;
@@ -228,25 +200,111 @@ final class MemoryVmConfiguration {
             command.put("scope", "VM");
             command.put("participation", "deny".equals(repository.vmReclaimMode(msg.getVmUuid())) ? "deny" : "allow");
         } else {
-            // A value being validated is not saved yet; a deleted one is read as inherited.
-            Boolean enabled = msg.getKsmEnabled() != null ? msg.getKsmEnabled() : repository.vmSharePages(msg.getVmUuid());
+            Boolean enabled = desiredSharing(msg);
             if (enabled == null) { finish(done, null, "KSM_CONFIGURATION_UNSUPPORTED"); return; }
             command.put("action", "set-ksm");
             command.put("ksmEnabled", enabled);
         }
+        final Boolean previous = msg.getAction() == APPLY_KSM ? observedSharing(observed.state, generation) : null;
         manager.call(host, "vm-efficiency", command, applied -> {
-            if (MemoryResultRules.succeeded((String) command.get("operationUuid"), applied)) {
-                if (msg.getAction() == APPLY_KSM && (applied.state == null || !Boolean.TRUE.equals(applied.state.get("applied")))) {
-                    finish(done, null, "KSM_RUNTIME_READBACK_UNKNOWN"); return;
-                }
-                finish(done, applied.state, null);
+            if (msg.getAction() != APPLY_KSM) {
+                if (MemoryResultRules.succeeded((String) command.get("operationUuid"), applied)) { finish(done, applied.state, null); }
+                else { finish(done, null, MemoryOptimizationManager.failure(applied)); }
+                return;
             }
-            else if (msg.getAction() != RECONCILE && applied != null &&
-                    "KSM_RUNTIME_UNSUPPORTED_NEXT_START".equals(applied.reasonCode)) {
-                // Preserve the existing static setting on QEMU without online merge control.
-                finish(done, status("Unsupported", applied.reasonCode), null);
-            } else { finish(done, null, MemoryOptimizationManager.failure(applied)); }
+            boolean terminal = applied != null && command.get("operationUuid").equals(applied.operationUuid)
+                    && ("Succeeded".equals(applied.status) || "Failed".equals(applied.status));
+            Consumer<String> recover = reason -> recoverKsm(msg, host, command, previous, terminal, reason, done);
+            if (applied != null && "KSM_RUNTIME_UNSUPPORTED_NEXT_START".equals(applied.reasonCode)) {
+                saveKsm(msg, status("Unsupported", applied.reasonCode), done, null);
+            } else if (MemoryResultRules.succeeded((String) command.get("operationUuid"), applied)
+                    && applied.state != null && Boolean.TRUE.equals(applied.state.get("applied"))) {
+                saveKsm(msg, applied.state, done, recover);
+            } else {
+                String error = applied != null && applied.isSuccess() ? "KSM_RUNTIME_READBACK_UNKNOWN" : MemoryOptimizationManager.failure(applied);
+                if (msg instanceof MemoryVmConfigurationMsg.SaveKsm) { recover.accept(error); }
+                else { finish(done, null, error); }
+            }
         });
+    }
+
+    private Boolean desiredSharing(MemoryVmConfigurationMsg msg) {
+        if (msg.getKsmEnabled() != null) { return msg.getKsmEnabled(); }
+        return msg instanceof MemoryVmConfigurationMsg.SaveKsm ? repository.vmPageSharingConfig().defaultValue(Boolean.class)
+                : repository.vmSharePages(msg.getVmUuid());
+    }
+
+    private void saveKsm(MemoryVmConfigurationMsg msg, Map<String, Object> state,
+                         Consumer<MemoryVmConfigurationMsg.Reply> done, Consumer<String> recover) {
+        if (!(msg instanceof MemoryVmConfigurationMsg.SaveKsm)) { finish(done, state, null); return; }
+        String vm = msg.getVmUuid();
+        Boolean requested = msg.getKsmEnabled();
+        ResourceConfig ksm = repository.vmPageSharingConfig();
+        try {
+            ksm.persistLocalValue(vm, requested == null ? null : requested.toString());
+        } catch (RuntimeException failure) {
+            // A lost commit acknowledgement does not prove that the write failed.
+            try {
+                boolean saved = ksm.resourceConfigCreated(vm);
+                if (saved == (requested != null) && (!saved || requested.equals(repository.vmSharePages(vm)))) {
+                    finish(done, state, null);
+                    return;
+                }
+            } catch (RuntimeException unreadable) {
+                logger.warn("Cannot verify the saved page sharing setting for VM " + vm, unreadable);
+                finish(done, null, Platform.i18n("memory.ksm.savedValueUnknown"));
+                return;
+            }
+            logger.warn("Cannot save the page sharing setting for VM " + vm, failure);
+            if (recover != null) { recover.accept("KSM_CONFIGURATION_SAVE_FAILED"); }
+            else { finish(done, null, "KSM_CONFIGURATION_SAVE_FAILED"); }
+            return;
+        }
+        finish(done, state, null);
+    }
+
+    private void recoverKsm(MemoryVmConfigurationMsg msg, String host, Map<String, Object> appliedCommand,
+                            Boolean previous, boolean terminal, String reason, Consumer<MemoryVmConfigurationMsg.Reply> done) {
+        String generation = (String) appliedCommand.get("expectedInstanceGeneration");
+        String unknown = reason + ": " + Platform.i18n("memory.ksm.runtimeUnknown");
+        Map<String, Object> query = new LinkedHashMap<>();
+        query.put("hostUuid", host); query.put("resourceUuid", msg.getVmUuid());
+        query.put("operationUuid", Platform.getUuid()); query.put("vmMemoryState", true);
+        manager.call(host, "state", query, observation -> {
+            try {
+                MemoryRepository.VmPlacement placement = repository.vmPlacement(msg.getVmUuid());
+                if (!terminal || placement == null || !host.equals(placement.hostUuid) || placement.state != VmInstanceState.Running
+                        || previous == null || observation == null || !observation.isSuccess() || observation.state == null
+                        || !generation.equals(MemoryLifecycleHooks.instanceGeneration(observation, msg.getVmUuid()))) {
+                    finish(done, null, unknown); return;
+                }
+                Boolean actual = observedSharing(observation.state, generation);
+                String unchanged = "KSM_CONFIGURATION_SAVE_FAILED".equals(reason) ? reason + ": " + Platform.i18n("memory.ksm.runtimeRestored") : reason;
+                if (previous.equals(actual)) { finish(done, null, unchanged); return; }
+                if (!appliedCommand.get("ksmEnabled").equals(actual)) { finish(done, null, unknown); return; }
+                Map<String, Object> restore = new LinkedHashMap<>(appliedCommand);
+                restore.put("operationUuid", Platform.getUuid()); restore.put("ksmEnabled", previous);
+                manager.call(host, "vm-efficiency", restore, response -> {
+                    boolean restored = MemoryResultRules.succeeded((String) restore.get("operationUuid"), response)
+                            && response.state != null && Boolean.TRUE.equals(response.state.get("applied"));
+                    finish(done, null, restored ? unchanged : unknown);
+                });
+            } catch (RuntimeException unreadable) { finish(done, null, unknown); }
+        });
+    }
+
+    private static Boolean observedSharing(Map<String, Object> state, String generation) {
+        Object raw = state.get("vmMemoryState");
+        if (!(raw instanceof Map)) { return null; }
+        Map<?, ?> proof = (Map<?, ?>) raw;
+        if (generation == null || !generation.equals(proof.get("instanceGeneration")) || !(proof.get("backends") instanceof List)) { return null; }
+        Boolean result = null;
+        for (Object backend : (List<?>) proof.get("backends")) {
+            Object merge = backend instanceof Map ? ((Map<?, ?>) backend).get("merge") : null;
+            if (!(merge instanceof Boolean) || result != null && !result.equals(merge)) { return null; }
+            result = (Boolean) merge;
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -283,15 +341,10 @@ final class MemoryVmConfiguration {
         if (Boolean.FALSE.equals(proof.get("supported"))) {
             ksm = status("Unsupported", String.valueOf(proof.get("reasonCode")));
         } else if (sharing != null && generation != null && generation.equals(proof.get("instanceGeneration")) && proof.get("backends") instanceof List) {
-            List<?> backends = (List<?>) proof.get("backends");
-            boolean allTrue = !backends.isEmpty(), allFalse = !backends.isEmpty();
-            for (Object backend : backends) {
-                Object merge = backend instanceof Map ? ((Map<?, ?>) backend).get("merge") : null;
-                allTrue &= Boolean.TRUE.equals(merge); allFalse &= Boolean.FALSE.equals(merge);
-            }
-            boolean applied = sharing ? allTrue : allFalse;
+            Boolean actualSharing = observedSharing(observed, generation);
+            boolean applied = sharing.equals(actualSharing);
             ksm = status(applied ? "Applied" : "Pending", applied ? null : "QMP_MERGE_NOT_CONFIRMED");
-            ksm.put("actualValue", allTrue ? Boolean.TRUE : allFalse ? Boolean.FALSE : null);
+            ksm.put("actualValue", actualSharing);
             ksm.put("liveNoSharePages", proof.get("liveNoSharePages"));
             ksm.put("instanceGeneration", generation);
         }
