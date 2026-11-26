@@ -46,6 +46,12 @@ public final class MemoryObservationRules {
             nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"), field(previousKsm, "serviceState"));
             nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"), field(previousKsm, "tunedServiceState"));
         }
+        // The hot-memory observer is its own service: its failure is reported as the others' are.
+        Map<?, ?> hotMemory = map(state.get("hotMemory"));
+        if (Boolean.TRUE.equals(field(desired.get("hotMemory"), "enabled")) && hotMemory != null) {
+            nativeServiceEvent(result, host, "hot-memory", hotMemory.get("serviceState"),
+                    field(previous == null ? null : previous.get("hotMemory"), "serviceState"));
+        }
         Map<?, ?> status = map(field(state.get("zram"), "status"));
         if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
                 && Boolean.TRUE.equals(field(desired.get("writeback"), "enabled"))

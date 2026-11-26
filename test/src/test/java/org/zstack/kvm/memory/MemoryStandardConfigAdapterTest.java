@@ -47,4 +47,23 @@ public class MemoryStandardConfigAdapterTest {
         assertThrows(IllegalArgumentException.class,
                 () -> MemoryStandardConfigCodec.decode("zram.logicalCapacityBytes", "none"));
     }
+    @Test public void hotMemoryIntervalIsSecondsWithIndependentBounds() {
+        MemoryStandardField field = MemoryStandardField.forPath("hotMemory.interval");
+        for (String value : Arrays.asList("300", "301", "600", "86400")) {
+            MemoryStandardConfigurationCoordinator.validateScalar(field, value);
+            assertEquals(Long.valueOf(value), MemoryStandardConfigCodec.decode(field.path(), value));
+        }
+        for (String value : Arrays.asList("0", "299", "86401", "-1", "600.5", "none", "true")) {
+            assertThrows(org.zstack.core.config.GlobalConfigException.class,
+                    () -> MemoryStandardConfigurationCoordinator.validateScalar(field, value));
+        }
+        // Adding a seconds field must not weaken existing byte-count validation.
+        assertThrows(org.zstack.core.config.GlobalConfigException.class,
+                () -> MemoryStandardConfigurationCoordinator.validateScalar(
+                        MemoryStandardField.ZRAM_RAM_LIMIT, "600"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.decode("hotMemory.enabled", "true"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.decode("hotMemory.enabled", "false"));
+        assertNull(MemoryStandardConfigCodec.decode("hotMemory.enabled", "none"));
+    }
+
 }
