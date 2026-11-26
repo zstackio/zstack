@@ -557,6 +557,8 @@ public class KVMAgentCommands {
         private String cpuCache;
         @GrayVersion(value = "5.0.0")
         private String deployMode;
+        @GrayVersion(value = "5.5.48")
+        private String swapDevices;
         @GrayVersion(value = "5.0.0")
         private List<String> ipAddresses;
         @GrayVersion(value = "5.0.0")
@@ -838,6 +840,14 @@ public class KVMAgentCommands {
 
         public void setDeployMode(String deployMode) {
             this.deployMode = deployMode;
+        }
+
+        public String getSwapDevices() {
+            return swapDevices;
+        }
+
+        public void setSwapDevices(String swapDevices) {
+            this.swapDevices = swapDevices;
         }
 
         public String getCpuFeatureMd5() {

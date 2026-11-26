@@ -32,6 +32,7 @@ import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.header.longjob.LongJobConstants;
 import org.zstack.header.longjob.LongJobInventory;
 import org.zstack.header.longjob.SubmitLongJobMsg;
@@ -902,8 +903,27 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             // The administrator confirmed overwriting a disk with data by asking for it.
             command.put("overwrite", msg.isOverwrite());
         }
-        afterApplyInFlight(host, deadline, () -> call(host, "swap-disks", command,
-                response -> done.accept(swapDiskOutcome(response))), done);
+        afterApplyInFlight(host, deadline, () -> call(host, "swap-disks", command, response -> {
+            String outcome = swapDiskOutcome(response);
+            if ("success".equals(outcome)) {
+                saveSwapDevices(host, response.state);
+            }
+            done.accept(outcome);
+        }), done);
+    }
+
+    /** Update the Host tag only from a reported value after the disk operation succeeded. */
+    private void saveSwapDevices(String host, Map<String, Object> state) {
+        Object swapDevices = state == null ? null : state.get("swapDevices");
+        if (!(swapDevices instanceof String)) {
+            logger.warn(String.format("Host[%s] completed its swap disk operation but swapDevices was unknown; preserving the last tag", host));
+            return;
+        }
+        try {
+            HostSystemTags.saveSwapDevices(host, (String) swapDevices);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Host[%s] completed its swap disk operation but swapDevices tag refresh failed", host), e);
+        }
     }
 
     /** "success", or the reason the Agent refused or could not finish, as a memory error outcome. */

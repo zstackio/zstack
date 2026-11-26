@@ -4,6 +4,9 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
+import org.zstack.tag.SystemTagCreator;
+
+import java.util.Collections;
 
 /**
  */
@@ -109,6 +112,26 @@ public class HostSystemTags {
 
     public static String DEPLOY_MODE_TOKEN = "deployMode";
     public static PatternedSystemTag DEPLOY_MODE = new PatternedSystemTag(String.format("deployMode::{%s}", DEPLOY_MODE_TOKEN), HostVO.class);
+
+    // active swap devices from /proc/swaps: "path|type|sizeBytes|priority", joined by ';'
+    public static String SWAP_DEVICES_TOKEN = "swapDevices";
+    public static PatternedSystemTag SWAP_DEVICES = new PatternedSystemTag(String.format("swapDevices::{%s}", SWAP_DEVICES_TOKEN), HostVO.class);
+
+    /** Keep unknown (null) separate from a known empty swap table. */
+    public static void saveSwapDevices(String hostUuid, String swapDevices) {
+        if (swapDevices == null) {
+            return;
+        }
+        if (swapDevices.isEmpty()) {
+            SWAP_DEVICES.deleteInherentTag(hostUuid);
+            return;
+        }
+        SystemTagCreator creator = SWAP_DEVICES.newSystemTagCreator(hostUuid);
+        creator.setTagByTokens(Collections.singletonMap(SWAP_DEVICES_TOKEN, swapDevices));
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.create();
+    }
 
     public static String HYGON_MDEV_MAX_QEMU_NUM_TOKEN = "hygonMdevMaxQemuNum";
     public static PatternedSystemTag HYGON_MDEV_MAX_QEMU_NUM = new PatternedSystemTag(String.format("hygonMdevMaxQemuNum::{%s}", HYGON_MDEV_MAX_QEMU_NUM_TOKEN), HostVO.class);
