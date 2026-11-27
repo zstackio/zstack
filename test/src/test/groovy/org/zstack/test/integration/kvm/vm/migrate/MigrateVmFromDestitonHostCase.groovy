@@ -4,6 +4,9 @@ import com.google.gson.Gson
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.core.upgrade.UpgradeGlobalConfig
+import org.zstack.kvm.memory.MemoryStandardGlobalConfig
+import org.zstack.resourceconfig.ResourceConfigFacadeImpl
 import org.zstack.header.Constants
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
@@ -215,85 +218,129 @@ class MigrateVmFromDestitonHostCase extends SubCase {
             return new KVMAgentCommands.CleanupUnusedRulesOnHostResponse()
         }
 
-        KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(true)
-        KVMAgentCommands.MigrateVmCmd cmd = null
-        String huuid = null
-        env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> entity ->
-            huuid = entity.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            cmd = json(entity.getBody(), KVMAgentCommands.MigrateVmCmd.class)
-            return rsp
+        ResourceConfigFacadeImpl rcf = bean(ResourceConfigFacadeImpl.class)
+        def resourceConfigsField = ResourceConfigFacadeImpl.class.getDeclaredField("resourceConfigs")
+        resourceConfigsField.setAccessible(true)
+        Map<String, Object> resourceConfigs = (Map<String, Object>) resourceConfigsField.get(rcf)
+        String sharingIdentity = "vmMemory.memory.backing.share.pages"
+        def sharingConfig = resourceConfigs.get(sharingIdentity)
+        boolean usingFixtureAlias = sharingConfig == null
+        if (usingFixtureAlias) {
+            // KvmTest omits the premium plugin; reuse its registered VM config only as this test's lookup value.
+            sharingConfig = resourceConfigs.get(MemoryStandardGlobalConfig.VM_ZRAM_RECLAIM_ENABLED.getIdentity())
+            assert sharingConfig != null
         }
 
-        // do migrate
-        migrateUnknownVm(host.uuid)
+        try {
+            assert !UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)
+            if (usingFixtureAlias) {
+                resourceConfigs.put(sharingIdentity, sharingConfig)
+            } else {
+                def globalConfigField = sharingConfig.class.getDeclaredField("globalConfig")
+                globalConfigField.setAccessible(true)
+                def globalConfig = globalConfigField.get(sharingConfig)
+                updateResourceConfig {
+                    category = globalConfig.category
+                    name = globalConfig.name
+                    resourceUuid = vm1.uuid
+                    value = "true"
+                }
+            }
+            assert sharingConfig.getResourceConfigValue(vm1.uuid, Boolean.class) == Boolean.TRUE
 
-        assert cmd != null
-        assert cmd.migrateFromDestination
-        assert cmd.autoConverge
-        assert cmd.downTime == null
-        assert cmd.destHostIp == host.managementIp
-        assert cmd.srcHostIp == host1.managementIp
-        assert huuid == host.uuid
+            KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(true)
+            KVMAgentCommands.MigrateVmCmd cmd = null
+            String huuid = null
+            env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> entity ->
+                huuid = entity.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+                cmd = json(entity.getBody(), KVMAgentCommands.MigrateVmCmd.class)
+                return rsp
+            }
 
-        // confirm migration success
-        VmInstanceVO vo1
-        retryInSecs {
-            vo1 = dbFindByUuid(vm1.getUuid(), VmInstanceVO.class)
+            // do migrate
+            migrateUnknownVm(host.uuid)
 
-            assert vo1.lastHostUuid != vo1.hostUuid
-            assert vo1.state == VmInstanceState.Running
+            assert cmd != null
+            assert cmd.migrateFromDestination
+            assert cmd.autoConverge
+            assert cmd.downTime == null
+            assert cmd.destHostIp == host.managementIp
+            assert cmd.srcHostIp == host1.managementIp
+            assert huuid == host.uuid
+            assert cmd.noSharePages == Boolean.FALSE
+
+            // confirm migration success
+            VmInstanceVO vo1
+            retryInSecs {
+                vo1 = dbFindByUuid(vm1.getUuid(), VmInstanceVO.class)
+
+                assert vo1.lastHostUuid != vo1.hostUuid
+                assert vo1.state == VmInstanceState.Running
+            }
+
+            disconnectHostUuid.clear()
+            reconnectHost {
+                uuid = vm1.hostUuid
+            }
+
+            KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(false)
+            KVMGlobalConfig.MIGRATE_XBZRLE.updateValue(false)
+            cmd = null
+            huuid = null
+            migrateVm {
+                vmInstanceUuid = vm1.uuid
+                hostUuid = host1.uuid
+                strategy = "auto-converge"
+                downTime = 300
+            }
+
+            assert cmd != null
+            assert !cmd.migrateFromDestination
+            assert cmd.autoConverge
+            assert cmd.downTime != null
+            assert !cmd.xbzrle
+            assert cmd.destHostIp == host1.managementIp
+            assert cmd.srcHostIp == host.managementIp
+            assert huuid == host.uuid
+            assert cmd.noSharePages == Boolean.FALSE
+
+            retryInSecs {
+                vo1 = dbFindByUuid(vm1.getUuid(), VmInstanceVO.class)
+
+                assert vo1.lastHostUuid != vo1.hostUuid
+                assert vo1.state == VmInstanceState.Running
+            }
+
+            // do migrate to the same host again
+            MigrateVmAction action = new MigrateVmAction()
+            action.hostUuid = host1.uuid
+            action.vmInstanceUuid = vm1.uuid
+            action.migrateFromDestination = true
+            action.sessionId = adminSession()
+            cmd = null
+            MigrateVmAction.Result ret = action.call()
+
+            assert ret.error != null
+            assert cmd == null : "a rejected migration must not reach the agent"
+
+            // test migrate disable auto-converge and verify the actual destination host receives the field
+            KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(true)
+            huuid = null
+            migrateVm {
+                vmInstanceUuid = vm1.uuid
+                hostUuid = host.uuid
+                strategy = "no-converge"
+                downTime = 300
+            }
+
+            assert !cmd.autoConverge
+            assert huuid == host1.uuid
+            assert cmd.noSharePages == Boolean.FALSE : "supported agent must receive the configured field"
+        } finally {
+            if (usingFixtureAlias) {
+                resourceConfigs.remove(sharingIdentity)
+            }
         }
-
-        disconnectHostUuid.clear()
-        reconnectHost {
-            uuid = vm1.hostUuid
-        }
-
-        KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(false)
-        KVMGlobalConfig.MIGRATE_XBZRLE.updateValue(false)
-        cmd = null
-        migrateVm {
-            vmInstanceUuid = vm1.uuid
-            hostUuid = host1.uuid
-            strategy = "auto-converge"
-            downTime = 300
-        }
-
-        assert cmd != null
-        assert !cmd.migrateFromDestination
-        assert cmd.autoConverge
-        assert cmd.downTime != null
-        assert !cmd.xbzrle
-        assert cmd.destHostIp == host1.managementIp
-        assert cmd.srcHostIp == host.managementIp
-
-        retryInSecs {
-            vo1 = dbFindByUuid(vm1.getUuid(), VmInstanceVO.class)
-
-            assert vo1.lastHostUuid != vo1.hostUuid
-            assert vo1.state == VmInstanceState.Running
-        }
-
-        // do migrate to the same host again
-        MigrateVmAction action = new MigrateVmAction()
-        action.hostUuid = host1.uuid
-        action.vmInstanceUuid = vm1.uuid
-        action.migrateFromDestination = true
-        action.sessionId = adminSession()
-        MigrateVmAction.Result ret = action.call()
-
-        assert ret.error != null
-
-        // test migrate disable auto-converge
-        KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(true)
-        migrateVm {
-            vmInstanceUuid = vm1.uuid
-            hostUuid = host.uuid
-            strategy = "no-converge"
-            downTime = 300
-        }
-
-        assert !cmd.autoConverge
     }
 
     private void migrateUnknownVm(String destHostUuid) {

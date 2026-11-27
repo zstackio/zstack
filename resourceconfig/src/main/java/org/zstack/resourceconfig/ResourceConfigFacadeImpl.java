@@ -71,8 +71,13 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
 
     private void handle(APIDeleteResourceConfigMsg msg) {
         ResourceConfig rc = getResourceConfig(msg.getIdentity());
-        rc.deleteValue(msg.getResourceUuid());
-        bus.publish(new APIDeleteResourceConfigEvent(msg.getId()));
+        APIDeleteResourceConfigEvent evt = new APIDeleteResourceConfigEvent(msg.getId());
+        try {
+            rc.deleteValue(msg.getResourceUuid());
+        } catch (GlobalConfigException e) {
+            evt.setError(operr(ORG_ZSTACK_RESOURCECONFIG_10003, e.getMessage()));
+        }
+        bus.publish(evt);
     }
 
     private void handle(APIUpdateResourceConfigMsg msg) {
@@ -90,6 +95,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     }
 
     private void handle(APIUpdateResourceConfigsMsg msg) {
+        APIUpdateResourceConfigsEvent evt = new APIUpdateResourceConfigsEvent(msg.getId());
         List<String> identities = new ArrayList<>();
         for (APIUpdateResourceConfigsMsg.ResourceConfigAO resourceConfigAO : msg.getResourceConfigs()) {
             String identity = GlobalConfig.produceIdentity(resourceConfigAO.getCategory(), resourceConfigAO.getName());
@@ -98,14 +104,14 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             try {
                 rc.updateValue(msg.getResourceUuid(), resourceConfigAO.getValue());
             } catch (Exception e) {
+                if (rc.hasLocalValueWriter() && evt.getError() == null) {
+                    evt.setError(operr(ORG_ZSTACK_RESOURCECONFIG_10003, e.getMessage()));
+                }
                 logger.debug(String.format("updated resource config[resourceUuid:%s, category:%s, name:%s] to %s failed",
                         msg.getResourceUuid(),  resourceConfigAO.getCategory(), resourceConfigAO.getName(), resourceConfigAO.getValue()));
-            } finally {
-                continue;
             }
         }
 
-        APIUpdateResourceConfigsEvent evt = new APIUpdateResourceConfigsEvent(msg.getId());
         evt.setInventories(new ArrayList<>());
         for (String identity : identities) {
             ResourceConfig rc = getResourceConfig(identity);
@@ -148,6 +154,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             struct.setName(rc.globalConfig.getName());
             struct.setValue(configs.isEmpty() ? rc.defaultValue(String.class) : configs.get(0).getValue());
 
+            struct.setRuntimeState(rc.getRuntimeState(msg.getResourceUuid()));
             reply.getConfigs().add(struct);
         }
 
@@ -161,6 +168,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         List<ResourceConfigInventory> configs = rc.getEffectiveResourceConfigs(msg.getResourceUuid());
         reply.setEffectiveConfigs(configs);
         reply.setValue(configs.isEmpty() ? rc.defaultValue(String.class) : configs.get(0).getValue());
+        reply.setRuntimeState(rc.getRuntimeState(msg.getResourceUuid()));
         bus.reply(msg, reply);
     }
 
