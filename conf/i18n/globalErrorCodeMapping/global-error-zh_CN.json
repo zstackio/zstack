@@ -1470,6 +1470,7 @@
   "ORG_ZSTACK_IAM2SCRIPT_10004": "运行 iam2 脚本失败。",
   "ORG_ZSTACK_VMWARE_10041": "目标主机不是 ESX 主机。",
   "ORG_ZSTACK_KVM_10161": "意外的VNC端口编号[%d]对于VM [uuid:%s]",
+  "ORG_ZSTACK_KVM_10163": "云主机[uuid:%s]从物理机[uuid:%s, ip:%s]冷页直传迁移到物理机[ip:%s]失败：%s。云主机仍在源物理机上运行。如果再次失败，可将集群或物理机的 memory.swapDirect.enabled 设为 false 关闭冷页直传后重新迁移，届时按普通方式迁移。",
   "ORG_ZSTACK_IAM2SCRIPT_10009": "参数的数量超过限制。",
   "ORG_ZSTACK_IAM2SCRIPT_10008": "脚本没有任何内容。",
   "ORG_ZSTACK_SDNCONTROLLER_10000": "无法创建SDN L2网络，因为API消息中缺少systemTags里的SDN控制器UUID",

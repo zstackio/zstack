@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class ResourceConfigStruct  {
 
+    public java.util.Map runtimeState;
+    public void setRuntimeState(java.util.Map runtimeState) {
+        this.runtimeState = runtimeState;
+    }
+    public java.util.Map getRuntimeState() {
+        return this.runtimeState;
+    }
+
     public java.lang.String value;
     public void setValue(java.lang.String value) {
         this.value = value;
