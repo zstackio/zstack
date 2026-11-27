@@ -52,6 +52,10 @@ public final class MemoryObservationRules {
             nativeServiceEvent(result, host, "hot-memory", hotMemory.get("serviceState"),
                     field(previous == null ? null : previous.get("hotMemory"), "serviceState"));
         }
+        if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))) {
+            nativeServiceEvent(result, host, "zram", field(state.get("zram"), "serviceState"),
+                    field(previous == null ? null : previous.get("zram"), "serviceState"));
+        }
         Map<?, ?> status = map(field(state.get("zram"), "status"));
         if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
                 && Boolean.TRUE.equals(field(desired.get("writeback"), "enabled"))

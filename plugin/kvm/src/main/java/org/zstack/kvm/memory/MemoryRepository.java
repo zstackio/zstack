@@ -205,15 +205,48 @@ public class MemoryRepository {
     }
 
     /** Why a standard value cannot be stored on the resource, or null when it can. */
-    public String standardChangeRefusal(MemoryStandardField field, String resourceUuid) {
+    public String standardChangeRefusal(MemoryStandardField field, String resourceUuid, String newValue) {
         return transaction(em -> {
             String scope = standardScopeOrNull(resourceUuid);
             if (scope == null) { return NOT_HOST_OR_CLUSTER; }
             if (!field.allows(scopeOf(scope))) { return field.path() + " does not support " + scope; }
             // The legacy host.ksm switch was settable on any Host or Cluster before memory optimization.
             if (field == MemoryStandardField.KSM_ENABLED && nonKvm(em, scope, resourceUuid)) { return null; }
-            return resourceRefusal(scope, resourceUuid == null ? "global" : resourceUuid);
+            String resource = resourceUuid == null ? "global" : resourceUuid;
+            String refusal = resourceRefusal(scope, resource);
+            if (refusal != null || (field != MemoryStandardField.ZRAM_LOGICAL_CAPACITY && field != MemoryStandardField.ZRAM_RAM_LIMIT)) {
+                return refusal;
+            }
+            return capacityChangeRefusal(em, field, scope, resource, (Long) MemoryStandardConfigCodec.decode(field.path(), newValue));
         });
+    }
+
+    /** The first Host the changed capacity would leave with a RAM limit above its logical capacity. */
+    private String capacityChangeRefusal(EntityManager em, MemoryStandardField field, String scope, String resource, Long candidate) {
+        List<String> targets = targets(em, scope, resource);
+        if (targets.isEmpty()) { return null; }
+        List<Tuple> hosts = em.createQuery("select h.uuid, h.clusterUuid, c.totalPhysicalMemory "
+                + "from HostVO h left join h.capacity c where h.uuid in (:hosts) order by h.uuid", Tuple.class)
+                .setParameter("hosts", targets).getResultList();
+        Set<String> resources = new HashSet<>(targets);
+        for (Tuple host : hosts) { resources.add(host.get(1, String.class)); }
+        resources.remove(null);
+        Map<String, Map<MemoryStandardField, Object>> overrides = standardConfigs.readOverridesOwn(em, resources);
+        boolean changingLogical = field == MemoryStandardField.ZRAM_LOGICAL_CAPACITY;
+        MemoryStandardField other = changingLogical ? MemoryStandardField.ZRAM_RAM_LIMIT : MemoryStandardField.ZRAM_LOGICAL_CAPACITY;
+        Object globalOther = standardConfigs.readGlobalOwn(gcf, other);
+        for (Tuple host : hosts) {
+            String uuid = host.get(0, String.class);
+            Map<MemoryStandardField, Object> hostValues = overrides.getOrDefault(uuid, Collections.emptyMap());
+            Map<MemoryStandardField, Object> clusterValues = overrides.getOrDefault(host.get(1, String.class), Collections.emptyMap());
+            if ((!"Host".equals(scope) && hostValues.containsKey(field))
+                    || ("Global".equals(scope) && clusterValues.containsKey(field))) { continue; }
+            Long otherValue = (Long) hostValues.getOrDefault(other, clusterValues.getOrDefault(other, globalOther));
+            String refusal = MemoryStandardConfigurationCoordinator.capacityRefusal(changingLogical ? candidate : otherValue,
+                    changingLogical ? otherValue : candidate, host.get(2, Long.class));
+            if (refusal != null) { return refusal + " on Host " + uuid; }
+        }
+        return null;
     }
 
     /** The KVM Hosts whose effective configuration a committed standard change may alter. */
@@ -675,6 +708,7 @@ public class MemoryRepository {
         }
         row.setReason(trim(reason));
         row.setFeatureState(featureState(observed, zramWanted && zramSupported(observed) ? ZramExpectation.RUNNING : ZramExpectation.NONE));
+        row.setZramState(zramState(observed, desired, row.getStatus()));
         row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), state.getStatus(), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
         if (created) { em.persist(row); }
@@ -744,6 +778,28 @@ public class MemoryRepository {
         return ksm instanceof Boolean && observedKsm instanceof Boolean && !ksm.equals(observedKsm);
     }
 
+    /**
+     * Whether ZRAM itself works on the Host, apart from KSM (featureState) and from the delivery of the
+     * configuration (status). The first that holds: Unsupported, Disabled, Failed, Unknown, Drained, Paused,
+     * Preparing (no pool yet), Inactive (a pool that does not reclaim), Active.
+     */
+    static String zramState(Map<String, Object> observed, Map<String, Object> desired, String status) {
+        if (!observed.isEmpty() && !zramSupported(observed)) { return "Unsupported"; }
+        if (desired == null) { return "Unknown"; }
+        if ("swap".equals(field(desired.get("reclaim"), "backend"))
+                || Boolean.FALSE.equals(field(desired.get("zram"), "enabled"))) { return "Disabled"; }
+        if ("Failed".equals(status)) { return "Failed"; }
+        if (observed.isEmpty()) { return "Unknown"; }
+        Object control = observed.get("control");
+        if ("drained".equals(control)) { return "Drained"; }
+        if ("paused".equals(control)) { return "Paused"; }
+        Object zram = observed.get("zram");
+        if (!"active".equals(field(zram, "serviceState"))) { return "Unknown"; }
+        if (field(zram, "poolGeneration") == null) { return "Preparing"; }
+        if ("observe".equals(field(zram, "mode")) || !Boolean.TRUE.equals(field(zram, "efficiencyEnabled"))) { return "Inactive"; }
+        return "Active";
+    }
+
     static String featureState(Map<String, Object> observed, ZramExpectation zram) {
         if (observed.isEmpty()) { return "Unknown"; }
         Map<?, ?> capabilities = map(observed.get("capabilities"));
@@ -795,7 +851,7 @@ public class MemoryRepository {
             if (row == null) {
                 if (job == null) { return null; }
                 row = new HostMemoryStateVO(); row.setHostUuid(host);
-                row.setStatus("Applying"); row.setFeatureState("Unknown"); row.setActiveJobUuid(job);
+                row.setStatus("Applying"); row.setFeatureState("Unknown"); row.setZramState("Unknown"); row.setActiveJobUuid(job);
                 row.setAllowedActions(JSONObjectUtil.toJsonString(Collections.singletonList("query")));
                 em.persist(row);
                 return null;
