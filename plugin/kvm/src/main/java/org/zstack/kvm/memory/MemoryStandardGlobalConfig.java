@@ -8,12 +8,17 @@ import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.header.vm.VmInstanceVO;
 
 /** Standard ResourceConfig identities for scalar memory settings. */
 @GlobalConfigDefinition
 public class MemoryStandardGlobalConfig {
     private static final String CATEGORY = KVMGlobalConfig.CATEGORY;
     private static final String EMPTY = "";
+
+    @GlobalConfigDef(defaultValue = "true", description = "Allow proactive reclaim of this VM's idle memory")
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_ZRAM_RECLAIM_ENABLED = new GlobalConfig(CATEGORY, "memory.zram.reclaim.enabled");
 
     @GlobalConfigDef(defaultValue = EMPTY, description = "KSM zero-page scanning")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
@@ -49,4 +54,9 @@ public class MemoryStandardGlobalConfig {
     @GlobalConfigDef(defaultValue = EMPTY, description = "Writeback backend resource UUID; host scope only")
     @BindResourceConfig({HostVO.class})
     public static GlobalConfig WRITEBACK_BACKEND_RESOURCE = new GlobalConfig(CATEGORY, "memory.writeback.backendResourceUuid");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", description = "Migrate cold pages directly between ZRAM pools; false always migrates the ordinary way")
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
+    public static GlobalConfig SWAP_DIRECT_ENABLED = new GlobalConfig(CATEGORY, "memory.swapDirect.enabled");
 }

@@ -10,6 +10,11 @@ public class MemoryMigrationVO {
     @Column(nullable = false, length = 32) public String sourceHostUuid;
     @Column(nullable = false, length = 32) public String targetHostUuid;
     @Column(length = 128) public String poolGeneration;
+    @Column(length = 128) public String targetPoolGeneration;
+    @Column(length = 32) public String sourceHoldStatus;
+    @Column(length = 32) public String targetHoldStatus;
+    @Column(nullable = false) public boolean swapDirect;
+    @Lob @Column public String swapDirectState;
     @Column(length = 128) public String sourceInstanceGeneration;
     @Column(length = 128) public String targetInstanceGeneration;
     @Column(nullable = false, length = 32) public String status;

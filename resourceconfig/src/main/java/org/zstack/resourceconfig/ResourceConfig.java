@@ -19,6 +19,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.function.Function;
+import java.util.function.BiConsumer;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -49,6 +51,38 @@ public class ResourceConfig {
     private List<ResourceConfigDeleteExtensionPoint> localDeleteExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteExtensionPoint> deleteExtensions = new ArrayList<>();
     private List<ResourceConfigValidatorExtensionPoint> validatorExtensions = new ArrayList<>();
+
+    private Function<String, Map<String, Object>> runtimeStateReader;
+
+    // A configuration that must change a live resource can commit on its owner queue.
+    private BiConsumer<String, String> localValueWriter;
+
+    public void installLocalValueWriter(BiConsumer<String, String> writer) {
+        if (localValueWriter != null) { throw new IllegalStateException("Local value writer already installed"); }
+        localValueWriter = Objects.requireNonNull(writer);
+    }
+
+    boolean hasLocalValueWriter() {
+        return localValueWriter != null;
+    }
+
+    public void persistLocalValue(String resourceUuid, String value) {
+        if (value == null) {
+            deleteInDb(resourceUuid);
+        } else {
+            updateValueInDb(resourceUuid, getResourceType(resourceUuid), value);
+        }
+    }
+
+    /** Optional live evidence for this configuration, queried under the existing resource API authorization. */
+    public void installRuntimeStateReader(Function<String, Map<String, Object>> reader) {
+        if (runtimeStateReader != null) { throw new IllegalStateException("Runtime state reader already installed"); }
+        runtimeStateReader = reader;
+    }
+
+    public Map<String, Object> getRuntimeState(String resourceUuid) {
+        return runtimeStateReader == null ? null : runtimeStateReader.apply(resourceUuid);
+    }
 
     public static ResourceConfig valueOf(GlobalConfig globalConfig, BindResourceConfig bindInfo) {
         ResourceConfig result = new ResourceConfig();
@@ -190,7 +224,8 @@ public class ResourceConfig {
             globalConfig.getValidators().forEach(it ->
                     it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
             validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
-            updateValueInDb(resourceUuid, resourceType, newValue);
+            if (localValueWriter == null) { updateValueInDb(resourceUuid, resourceType, newValue); }
+            else { localValueWriter.accept(resourceUuid, newValue); }
             localUpdateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
         }
 
@@ -212,7 +247,8 @@ public class ResourceConfig {
         String oldValue = originValue == null ? globalConfig.value() : originValue;
 
         if (localDelete) {
-            deleteInDb(resourceUuid);
+            if (localValueWriter == null) { deleteInDb(resourceUuid); }
+            else { localValueWriter.accept(resourceUuid, null); }
             localDeleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
         }
 

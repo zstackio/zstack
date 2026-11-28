@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 
 import javax.persistence.EntityManager;
@@ -63,6 +64,25 @@ public class MemoryRepositoryRulesTest {
                     }
                     return null;
                 }));
+    }
+
+    @Test public void batchConfigLookupMayConsumeResolvedVmIds() throws Exception {
+        Field facade = MemoryRepository.class.getDeclaredField("rcf");
+        facade.setAccessible(true);
+        facade.set(repository, Proxy.newProxyInstance(ResourceConfigFacade.class.getClassLoader(),
+                new Class<?>[]{ResourceConfigFacade.class}, (proxy, method, args) -> {
+                    List<?> pending = (List<?>) args[1];
+                    pending.removeAll(Arrays.asList("vm1", "vm2"));
+                    Map<String, Boolean> values = new HashMap<>();
+                    values.put("vm1", true);
+                    values.put("vm2", false);
+                    return values;
+                }));
+        List<String> requested = Collections.unmodifiableList(Arrays.asList("vm1", "vm2", "missing"));
+        Map<String, String> modes = repository.vmReclaimModes(requested);
+        assertEquals("auto", modes.get("vm1"));
+        assertEquals("deny", modes.get("vm2"));
+        assertFalse(modes.containsKey("missing"));
     }
 
     @After public void restore() throws Exception {

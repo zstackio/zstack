@@ -32,6 +32,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GuestOsHelper;
 import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.Q;
+import org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO;
+import org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO_;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
@@ -221,6 +223,8 @@ public class KVMHost extends HostBase implements Host {
     private RESTFacade restf;
     @Autowired
     private KVMExtensionEmitter extEmitter;
+    @Autowired
+    private org.zstack.kvm.memory.MemoryLifecycleHooks memoryLifecycleHooks;
     @Autowired
     private TagManager tagmgr;
     @Autowired
@@ -588,7 +592,8 @@ public class KVMHost extends HostBase implements Host {
         }
 
         void call(String resourceUuid, ReturnValueCompletion<T> completion) {
-            ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(self.getUuid(), commandName, commandStr != null ? commandStr : cmd);
+            String agentUuid = cmd instanceof MigrateVmCmd && resourceUuid != null ? resourceUuid : self.getUuid();
+            ErrorCode errorCode = upgradeChecker.checkAgentHttpParamChanges(agentUuid, commandName, commandStr != null ? commandStr : cmd);
             if (errorCode != null) {
                 completion.fail(errorCode);
                 return;
@@ -3526,7 +3531,27 @@ public class KVMHost extends HostBase implements Host {
 
                         boolean xbzrle = KVMGlobalConfig.MIGRATE_XBZRLE.value(Boolean.class);
 
+                        String migrateAgentUuid = migrateFromDestination ? dstHostUuid : srcHostUuid;
                         MigrateVmCmd cmd = new MigrateVmCmd();
+                        ResourceConfig memorySharing = rcf.getResourceConfig("vmMemory.memory.backing.share.pages");
+                        if (memorySharing != null) {
+                            Boolean sharing = memorySharing.getResourceConfigValue(vmUuid, Boolean.class);
+                            if (sharing != null) {
+                                // A user XML Hook owns its memoryBacking policy. Otherwise the
+                                // current configuration replaces a stale nosharepages from start.
+                                boolean hookBound = Q.New(XmlHookVmInstanceRefVO.class)
+                                        .eq(XmlHookVmInstanceRefVO_.vmInstanceUuid, vmUuid).isExists();
+                                if (!hookBound) {
+                                    cmd.setNoSharePages(!sharing);
+                                    ErrorCode compatibility = upgradeChecker.checkAgentHttpParamChanges(
+                                            migrateAgentUuid, MigrateVmCmd.class.getName(), cmd);
+                                    if (compatibility != null) {
+                                        cmd.setNoSharePages(null);
+                                    }
+                                }
+                            }
+                        }
+
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
                         cmd.setDestHostManagementIp(dstHostMnIp);
@@ -3563,30 +3588,43 @@ public class KVMHost extends HostBase implements Host {
                         String migrateUrl = buildAgentUrl(
                                 migrateFromDestination ? dstHostMnIp : srcHostMnIp,
                                 KVMConstant.KVM_MIGRATE_VM_PATH);
-                        new Http<>(migrateUrl, cmd, MigrateVmResponse.class).call(migrateFromDestination ? dstHostUuid : srcHostUuid, new ReturnValueCompletion<MigrateVmResponse>(trigger) {
-                            @Override
-                            public void success(MigrateVmResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    ErrorCode err = err(ORG_ZSTACK_KVM_10063, HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
-                                            "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
-                                            vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()
-                                    );
+                        memoryLifecycleHooks.prepareMigrationCommand(cmd, srcHostUuid, dstHostUuid, new Completion(trigger) {
+                            @Override public void success() {
+                                new Http<>(migrateUrl, cmd, MigrateVmResponse.class).call(migrateAgentUuid, new ReturnValueCompletion<MigrateVmResponse>(trigger) {
+                                    @Override
+                                    public void success(MigrateVmResponse ret) {
+                                        memoryLifecycleHooks.recordDirectMigrationResult(vmUuid, cmd.getSwapDirect(), ret.getSwapDirect(), true);
+                                        boolean directFailed = cmd.getSwapDirect() != null
+                                                && (ret.getSwapDirect() == null || ret.getSwapDirect().get("fallback") == null);
+                                        if (!ret.isSuccess() && directFailed) {
+                                            // Failed after the cold-page direct transfer began: name it, and tell how to avoid it.
+                                            trigger.fail(err(ORG_ZSTACK_KVM_10163, HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
+                                                    "Cold-page direct migration of VM [uuid:%s] from host [uuid:%s, ip:%s] to host [ip:%s] failed: %s. The VM is still running on the source host. If it fails again, set memory.swapDirect.enabled to false for the cluster or host and migrate again; the VM will then migrate the ordinary way.",
+                                                    vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()));
+                                        } else if (!ret.isSuccess()) {
+                                            ErrorCode err = err(ORG_ZSTACK_KVM_10063, HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
+                                                    "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
+                                                    vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()
+                                            );
 
-                                    trigger.fail(err);
-                                } else {
-                                    String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
-                                            vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp);
-                                    logger.debug(info);
+                                            trigger.fail(err);
+                                        } else {
+                                            String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
+                                                    vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp);
+                                            logger.debug(info);
 
-                                    reportProgress(stage.getEnd().toString());
-                                    trigger.next();
-                                }
+                                            reportProgress(stage.getEnd().toString());
+                                            trigger.next();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
                             }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
+                            @Override public void fail(ErrorCode errorCode) { trigger.fail(errorCode); }
                         });
                     }
                 });
