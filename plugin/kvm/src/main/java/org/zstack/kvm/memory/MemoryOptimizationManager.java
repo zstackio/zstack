@@ -133,7 +133,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /**
      * Supplies memory defaults during GlobalConfig initialization on management
      * node startup. The legacy host.ksm row identifies an existing cloud even
-     * without KVM Hosts; an existing cloud keeps its stored values and code defaults.
+     * without KVM Hosts; an existing cloud keeps its stored values and code defaults,
+     * and starts with zero-page scanning off until an operator sets it.
      */
     @Override
     public List<GlobalConfig> getGenerationGlobalConfig() {
@@ -143,7 +144,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         if (hostKsm != null) {
             List<GlobalConfig> existing = new ArrayList<>();
             preserveExisting(existing, KVMGlobalConfig.HOST_KSM);
-            preserveExisting(existing, MemoryStandardGlobalConfig.KSM_ZERO_PAGES);
+            if (!preserveExisting(existing, MemoryStandardGlobalConfig.KSM_ZERO_PAGES)) {
+                existing.add(config(MemoryStandardGlobalConfig.KSM_ZERO_PAGES, "KSM zero-page scanning", "false"));
+            }
             preserveExisting(existing, MemoryStandardGlobalConfig.ZRAM_ENABLED);
             return existing;
         }
@@ -158,13 +161,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         return configs;
     }
 
-    private void preserveExisting(List<GlobalConfig> configs, GlobalConfig source) {
+    private boolean preserveExisting(List<GlobalConfig> configs, GlobalConfig source) {
         GlobalConfigVO row = Q.New(GlobalConfigVO.class)
                 .eq(GlobalConfigVO_.category, source.getCategory())
                 .eq(GlobalConfigVO_.name, source.getName()).find();
-        if (row != null) {
-            configs.add(config(source, row.getDescription(), row.getDefaultValue(), row.getValue()));
+        if (row == null) {
+            return false;
         }
+        configs.add(config(source, row.getDescription(), row.getDefaultValue(), row.getValue()));
+        return true;
     }
 
     private GlobalConfig config(GlobalConfig source, String description, String value) {
